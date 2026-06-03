@@ -37,21 +37,25 @@ export default async function RootLayout({
   const session = await auth();
 
   return (
-    <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
+    <html lang="en" className={`${geistSans.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="h-full bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
-        <div className="flex flex-col h-full mx-auto max-w-md relative">
-          {session?.user && (
-            <header className="flex items-center justify-between px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shrink-0">
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 truncate">
-                {session.user.name}
-              </span>
-              <LogoutButton />
-            </header>
-          )}
-          <main className={`flex-1 overflow-y-auto ${session?.user ? "pb-16" : ""}`}>
-            {children}
-          </main>
-          {session?.user && <BottomNav />}
+        {session?.user && <BottomNav />}
+        <div className={`flex flex-col h-full ${session?.user ? "lg:pl-56" : ""}`}>
+          <div className="flex flex-col h-full mx-auto w-full max-w-md lg:max-w-none">
+            {session?.user && (
+              <header className="flex items-center justify-between px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shrink-0">
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 truncate">
+                  {session.user.name}
+                </span>
+                <LogoutButton />
+              </header>
+            )}
+            <main className={`flex-1 overflow-y-auto ${session?.user ? "pb-16 lg:pb-0" : ""}`}>
+              <div className="w-full lg:w-4/5 lg:mx-auto">
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
       </body>
     </html>

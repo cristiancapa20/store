@@ -3,10 +3,10 @@
   "sessionId": "1ece79ff-3b9f-4373-99d2-f45194022a86",
   "status": "running",
   "startedAt": "2026-06-03T18:59:32.760Z",
-  "updatedAt": "2026-06-03T20:06:19.912Z",
-  "currentIteration": 9,
+  "updatedAt": "2026-06-03T20:06:20.317Z",
+  "currentIteration": 10,
   "maxIterations": 0,
-  "tasksCompleted": 9,
+  "tasksCompleted": 10,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -65,8 +65,8 @@
       {
         "id": "store-bd8.9",
         "title": "US-009: Sales history with filters",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "store-bd8.10",
@@ -166,6 +166,16 @@
       "durationMs": 1371191,
       "startedAt": "2026-06-03T19:39:55.808Z",
       "endedAt": "2026-06-03T20:02:46.999Z"
+    },
+    {
+      "iteration": 10,
+      "status": "completed",
+      "taskId": "store-bd8.9",
+      "taskTitle": "US-009: Sales history with filters",
+      "taskCompleted": true,
+      "durationMs": 206838,
+      "startedAt": "2026-06-03T20:02:52.028Z",
+      "endedAt": "2026-06-03T20:06:18.866Z"
     }
   ],
   "skippedTaskIds": [],

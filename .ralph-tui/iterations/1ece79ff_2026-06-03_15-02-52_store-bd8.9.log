@@ -1,0 +1,65 @@
+# Iteration 10 Log
+
+## Metadata
+
+- **Task ID**: store-bd8.9
+- **Task Title**: US-009: Sales history with filters
+- **Description**: As a manager, I want to see all sales filtered by date range and staff member so that I can track performance and reconcile the till.
+
+## Acceptance Criteria
+- [ ] `/history` screen calls `listSales()...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-06-03T20:02:52.028Z
+- **Ended At**: 2026-06-03T20:06:18.866Z
+- **Duration**: 3m 26s
+- **Input Tokens**: 53
+- **Output Tokens**: 13871
+- **Total Tokens**: 13924
+- **Agent**: claude
+- **Model**: claude-sonnet-4-6
+- **Epic**: store-bd8
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reading the progress file and understanding the current codebase state.
+[94m[Read][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m
+[94m[Glob][0m pattern: [96m/Users/cristian/dev/store/app/**/*.tsx[0m
+Let me look at the existing history page and relevant files.
+[94m[Read][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+Now let me check the types and the DB module to understand the users query for the staff dropdown.
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/types.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/db.ts[0m
+Let me read the ProductList and adjust page for patterns I should follow.
+[94m[Read][0m [95m/Users/cristian/dev/store/app/products/ProductList.tsx[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m
+Let me check next.config.ts and package.json to understand what's already configured.
+[94m[Read][0m [95m/Users/cristian/dev/store/next.config.ts[0m
+I have all the context I need. Now I'll implement `listStaff` in `lib/actions.ts` and the full history page.
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: ""use server";
+
+import type {
+  ActionResult,
+  Car..." → ""use server";
+
+import db from "./db";
+import type ..."
+Now write the full history page:
+[94m[Write][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m ""use client";
+
+import { useState, useCallback, useTransition, useEffect } from "react";
+import Link from "next/link";
+import { listSales, listStaff } from "@/lib/actions";
+import type { Sale, SaleFilt... (9494 chars)"
+Now run typecheck and lint:
+[94m[Bash][0m Run TypeScript type check $ node node_modules/typescript/bin/tsc --noEmit 2>&1
+[94m[Bash][0m Run ESLint on changed files $ node node_modules/eslint/bin/eslint.js app/history/page.tsx lib/actions.ts 2>&1
+Both pass cleanly. Now close the bead and update progress.md:
+[94m[Bash][0m Close the bead issue $ bd close store-bd8.9 --db /Users/cristian/dev/store/.beads/beads.db --reason "Implemented /history w...
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "## 2026-06-03 - store-bd8.10" → "## 2026-06-03 - store-bd8.9
+- Implemented `/histor..."
+Typecheck and lint pass. The `/history` page is fully implemented with date-range + staff filters, expandable sale cards with line items, Download Invoice button, loading skeleton, and empty state.
+
+<promise>COMPLETE</promise>
