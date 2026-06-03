@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import BarcodeInput from "@/components/BarcodeInput";
 import { addProduct } from "@/lib/actions";
 
@@ -14,6 +15,7 @@ type FormErrors = {
 };
 
 export default function AddProductForm() {
+  const t = useTranslations("addProduct");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState("");
@@ -31,17 +33,17 @@ export default function AddProductForm() {
 
   const handleSubmit = () => {
     const errs: FormErrors = {};
-    if (!name.trim()) errs.name = "Name is required";
-    if (!sku.trim()) errs.sku = "SKU is required";
+    if (!name.trim()) errs.name = t("nameRequired");
+    if (!sku.trim()) errs.sku = t("skuRequired");
     if (!price.trim()) {
-      errs.price = "Price is required";
+      errs.price = t("priceRequired");
     } else if (isNaN(Number(price)) || Number(price) < 0) {
-      errs.price = "Price must be a valid non-negative number";
+      errs.price = t("priceInvalid");
     }
     if (!initialStock.trim()) {
-      errs.initialStock = "Initial stock is required";
+      errs.initialStock = t("stockRequired");
     } else if (!Number.isInteger(Number(initialStock)) || Number(initialStock) < 0) {
-      errs.initialStock = "Initial stock must be a non-negative whole number";
+      errs.initialStock = t("stockInvalid");
     }
 
     if (Object.keys(errs).length > 0) {
@@ -67,22 +69,22 @@ export default function AddProductForm() {
   };
 
   return (
-    <div className="flex flex-col h-full p-4 gap-4 overflow-y-auto">
-      <h1 className="text-xl font-semibold">Add Product</h1>
+    <div className="flex flex-col h-full gap-4 overflow-y-auto">
+      <h1 className="ui-page-title">{t("title")}</h1>
 
       {/* SKU barcode scanner inline overlay */}
       {showSkuScanner && (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Point your camera at the product barcode to fill the SKU field.
+            {t("scanHint")}
           </p>
           <BarcodeInput onScan={handleSkuScan} initialMode="camera" />
           <button
             type="button"
             onClick={() => setShowSkuScanner(false)}
-            className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 py-3 text-sm text-zinc-600 dark:text-zinc-400 min-h-[48px] hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            className="w-full rounded-full py-3 text-sm text-brand-700 dark:text-brand-200 min-h-[48px] hover:bg-brand-50/80 dark:hover:bg-brand-800/30 transition-colors"
           >
-            Cancel Scan
+            {t("cancelScan")}
           </button>
         </div>
       )}
@@ -98,12 +100,8 @@ export default function AddProductForm() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Product name"
-              className={`w-full rounded-2xl border px-4 py-3 text-sm min-h-[48px] bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                errors.name
-                  ? "border-red-400 dark:border-red-600"
-                  : "border-zinc-200 dark:border-zinc-700"
-              }`}
+              placeholder={t("namePlaceholder")}
+              className={`ui-input ${errors.name ? "ring-2 ring-red-400" : ""}`}
             />
             {errors.name && (
               <p className="text-xs text-red-600 dark:text-red-400">{errors.name}</p>
@@ -121,17 +119,13 @@ export default function AddProductForm() {
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
                 placeholder="Product SKU or barcode"
-                className={`flex-1 rounded-2xl border px-4 py-3 text-sm min-h-[48px] bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                  errors.sku
-                    ? "border-red-400 dark:border-red-600"
-                    : "border-zinc-200 dark:border-zinc-700"
-                }`}
+                className={`ui-input flex-1 ${errors.sku ? "ring-2 ring-red-400" : ""}`}
               />
               <button
                 type="button"
                 onClick={() => setShowSkuScanner(true)}
                 aria-label="Scan barcode for SKU"
-                className="flex items-center justify-center rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 min-h-[48px] min-w-[48px] w-12 h-12 transition-colors shrink-0"
+                className="flex items-center justify-center rounded-full bg-surface dark:bg-brand-900 shadow-[0_6px_20px_rgba(3,15,34,0.08)] hover:bg-brand-50 min-h-[48px] min-w-[48px] w-12 h-12 transition-all shrink-0 text-brand-800"
               >
                 <svg
                   className="w-5 h-5 text-zinc-600 dark:text-zinc-400"
@@ -165,11 +159,7 @@ export default function AddProductForm() {
               placeholder="0.00"
               min="0"
               step="0.01"
-              className={`w-full rounded-2xl border px-4 py-3 text-sm min-h-[48px] bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                errors.price
-                  ? "border-red-400 dark:border-red-600"
-                  : "border-zinc-200 dark:border-zinc-700"
-              }`}
+              className={`ui-input ${errors.price ? "ring-2 ring-red-400" : ""}`}
             />
             {errors.price && (
               <p className="text-xs text-red-600 dark:text-red-400">{errors.price}</p>
@@ -188,11 +178,7 @@ export default function AddProductForm() {
               placeholder="0"
               min="0"
               step="1"
-              className={`w-full rounded-2xl border px-4 py-3 text-sm min-h-[48px] bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                errors.initialStock
-                  ? "border-red-400 dark:border-red-600"
-                  : "border-zinc-200 dark:border-zinc-700"
-              }`}
+              className={`ui-input ${errors.initialStock ? "ring-2 ring-red-400" : ""}`}
             />
             {errors.initialStock && (
               <p className="text-xs text-red-600 dark:text-red-400">
@@ -209,9 +195,9 @@ export default function AddProductForm() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional product description"
+              placeholder={t("descriptionPlaceholder")}
               rows={3}
-              className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 px-4 py-3 text-sm bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              className="ui-input resize-none rounded-3xl"
             />
           </div>
 
@@ -227,9 +213,9 @@ export default function AddProductForm() {
             type="button"
             onClick={handleSubmit}
             disabled={isPending}
-            className="w-full rounded-2xl bg-green-600 text-white py-4 font-semibold text-base min-h-[48px] hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="ui-btn-primary-block py-4 text-base"
           >
-            {isPending ? "Adding…" : "Add Product"}
+            {isPending ? t("adding") : t("submit")}
           </button>
         </>
       )}

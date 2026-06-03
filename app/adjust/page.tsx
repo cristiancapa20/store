@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import BarcodeInput from "@/components/BarcodeInput";
 import { scanBarcode, listInventory, adjustStock } from "@/lib/actions";
 import type { Product } from "@/lib/types";
@@ -8,6 +9,7 @@ import type { Product } from "@/lib/types";
 type Reason = "Restock" | "Shrinkage" | "Correction" | "Other";
 
 export default function AdjustPage() {
+  const t = useTranslations("adjust");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [delta, setDelta] = useState<number>(0);
   const [reason, setReason] = useState<Reason>("Restock");
@@ -98,8 +100,8 @@ export default function AdjustPage() {
   }, []);
 
   return (
-    <div className="flex flex-col h-full p-4 gap-4 overflow-y-auto">
-      <h1 className="text-xl font-semibold">Stock Adjustment</h1>
+    <div className="flex flex-col h-full gap-4 overflow-y-auto">
+      <h1 className="ui-page-title">{t("title")}</h1>
 
       {/* Barcode Input */}
       <BarcodeInput onScan={handleScan} disabled={isPending} />
@@ -110,17 +112,17 @@ export default function AdjustPage() {
           type="text"
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="Or search by name / SKU…"
-          className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-sm min-h-[48px] focus:outline-none focus:ring-2 focus:ring-green-500"
+          placeholder={t("searchPlaceholder")}
+          className="ui-input"
         />
         {searchResults.length > 0 && (
-          <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-700 shadow-lg z-10 overflow-hidden">
+          <div className="absolute left-0 right-0 top-full mt-2 bg-surface dark:bg-brand-900 rounded-3xl shadow-[0_16px_40px_rgba(3,15,34,0.14)] z-10 overflow-hidden">
             {searchResults.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => selectProduct(p)}
-                className="w-full text-left px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 min-h-[48px] flex items-center justify-between border-b last:border-0 border-zinc-100 dark:border-zinc-800"
+                className="w-full text-left px-4 py-3 hover:bg-brand-50 dark:hover:bg-brand-800/40 min-h-[48px] flex items-center justify-between"
               >
                 <span className="font-medium text-sm">{p.name}</span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-2 shrink-0">
@@ -143,7 +145,7 @@ export default function AdjustPage() {
       {selectedProduct ? (
         <div className="flex flex-col gap-4">
           {/* Product info card */}
-          <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-4 py-3 flex items-center justify-between">
+          <div className="ui-card flex items-center justify-between">
             <div>
               <p className="font-semibold">{selectedProduct.name}</p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
@@ -151,7 +153,7 @@ export default function AdjustPage() {
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Current Stock</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">{t("currentStock")}</p>
               <p className="text-2xl font-bold">{selectedProduct.stock}</p>
             </div>
           </div>
@@ -159,14 +161,14 @@ export default function AdjustPage() {
           {/* Delta stepper */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Adjustment
+              {t("adjustment")}
             </label>
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setDelta((d) => d - 1)}
                 aria-label="Decrease"
-                className="flex items-center justify-center rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xl font-bold hover:bg-zinc-50 dark:hover:bg-zinc-800 min-h-[48px] min-w-[48px] w-12 h-12 transition-colors"
+                className="flex items-center justify-center rounded-full bg-surface dark:bg-brand-900 text-xl font-bold text-brand-800 shadow-[0_6px_20px_rgba(3,15,34,0.08)] hover:bg-brand-50 min-h-[48px] min-w-[48px] w-12 h-12 transition-all"
               >
                 −
               </button>
@@ -175,13 +177,13 @@ export default function AdjustPage() {
                 value={delta}
                 onChange={(e) => handleDeltaInput(e.target.value)}
                 aria-label="Adjustment amount"
-                className="flex-1 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-center text-lg font-semibold min-h-[48px] focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="ui-input flex-1 text-center text-lg font-semibold"
               />
               <button
                 type="button"
                 onClick={() => setDelta((d) => d + 1)}
                 aria-label="Increase"
-                className="flex items-center justify-center rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-xl font-bold hover:bg-zinc-50 dark:hover:bg-zinc-800 min-h-[48px] min-w-[48px] w-12 h-12 transition-colors"
+                className="flex items-center justify-center rounded-full bg-surface dark:bg-brand-900 text-xl font-bold text-brand-800 shadow-[0_6px_20px_rgba(3,15,34,0.08)] hover:bg-brand-50 min-h-[48px] min-w-[48px] w-12 h-12 transition-all"
               >
                 +
               </button>
@@ -194,27 +196,27 @@ export default function AdjustPage() {
               }`}
             >
               {belowZero
-                ? `Cannot adjust: new stock would be ${projectedStock} (below 0)`
+                ? t("belowZero", { stock: projectedStock })
                 : delta !== 0
-                ? `New stock will be: ${projectedStock}`
-                : "Enter a positive or negative amount"}
+                ? t("newStock", { stock: projectedStock })
+                : t("enterAmount")}
             </p>
           </div>
 
           {/* Reason dropdown */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Reason
+              {t("reason")}
             </label>
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value as Reason)}
-              className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-sm min-h-[48px] focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="ui-input"
             >
-              <option value="Restock">Restock</option>
-              <option value="Shrinkage">Shrinkage</option>
-              <option value="Correction">Correction</option>
-              <option value="Other">Other</option>
+              <option value="Restock">{t("restock")}</option>
+              <option value="Shrinkage">{t("shrinkage")}</option>
+              <option value="Correction">{t("correction")}</option>
+              <option value="Other">{t("other")}</option>
             </select>
           </div>
 
@@ -227,8 +229,8 @@ export default function AdjustPage() {
 
           {/* Success */}
           {newStock !== null && (
-            <div className="rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-700 dark:text-green-400 font-medium">
-              Stock updated to {newStock}
+            <div className="ui-alert-success">
+              {t("updated", { stock: newStock })}
             </div>
           )}
 
@@ -237,25 +239,25 @@ export default function AdjustPage() {
             type="button"
             onClick={handleApply}
             disabled={isPending || belowZero || delta === 0}
-            className="w-full rounded-2xl bg-green-600 text-white py-4 font-semibold text-base min-h-[48px] hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="ui-btn-primary-block py-4 text-base"
           >
-            {isPending ? "Applying…" : "Apply Adjustment"}
+            {isPending ? t("applying") : t("apply")}
           </button>
 
           {/* Select another */}
           <button
             type="button"
             onClick={resetSelection}
-            className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 py-3 text-sm text-zinc-600 dark:text-zinc-400 min-h-[48px] hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            className="w-full rounded-full py-3 text-sm text-brand-700 dark:text-brand-200 min-h-[48px] hover:bg-brand-50/80 dark:hover:bg-brand-800/30 transition-colors"
           >
-            Select Another Product
+            {t("selectAnother")}
           </button>
         </div>
       ) : (
         !scanError && (
           <div className="flex-1 flex items-center justify-center py-12">
             <p className="text-zinc-400 dark:text-zinc-500 text-sm text-center px-4">
-              Scan a barcode or search by name to select a product for adjustment
+              {t("emptyHint")}
             </p>
           </div>
         )

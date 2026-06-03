@@ -1,18 +1,18 @@
 export default function GuidePage() {
   return (
-    <div className="p-4 pb-8 space-y-6">
+    <div className="space-y-6 pb-4">
       <div>
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+        <h1 className="ui-page-title">
           App Guide
         </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+        <p className="text-sm text-brand-700/70 dark:text-brand-100/60 mt-1">
           How to use the Store Inventory app
         </p>
       </div>
 
       <Section
         step="1"
-        color="green"
+        color="brand"
         title="Scan & Sell"
         subtitle="Main daily workflow"
         icon={
@@ -170,7 +170,7 @@ export default function GuidePage() {
         />
       </Section>
 
-      <div className="rounded-2xl bg-zinc-100 dark:bg-zinc-800 p-4 space-y-2">
+      <div className="ui-card bg-brand-50/80 dark:bg-brand-900/40 space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
           Quick reference
         </p>
@@ -196,10 +196,10 @@ export default function GuidePage() {
 // --- Internal components ---
 
 const colorMap = {
-  green: {
-    badge: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400",
-    icon: "text-green-600 dark:text-green-400",
-    border: "border-green-200 dark:border-green-800",
+  brand: {
+    badge: "bg-brand-100 dark:bg-brand-800/50 text-brand-800 dark:text-brand-50",
+    icon: "text-brand-600 dark:text-brand-400",
+    border: "border-brand-600/40 dark:border-brand-600",
   },
   blue: {
     badge: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
@@ -240,8 +240,8 @@ function Section({
 }) {
   const c = colorMap[color];
   return (
-    <div className={`rounded-2xl border ${c.border} bg-white dark:bg-zinc-900 overflow-hidden`}>
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
+    <div className="ui-card overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-3 bg-brand-50/70 dark:bg-brand-800/25">
         <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${c.badge}`}>
           {step}
         </span>
@@ -263,7 +263,7 @@ function Steps({ items }: { items: { label: string; detail?: string }[] }) {
     <ol className="space-y-2">
       {items.map((item, i) => (
         <li key={i} className="flex gap-3">
-          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs font-semibold flex items-center justify-center mt-0.5">
+          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-100 dark:bg-brand-800 text-brand-800 dark:text-brand-100 text-xs font-semibold flex items-center justify-center mt-0.5">
             {i + 1}
           </span>
           <div>
@@ -280,7 +280,7 @@ function Steps({ items }: { items: { label: string; detail?: string }[] }) {
 
 function Tip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex gap-2 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl px-3 py-2">
+    <div className="flex gap-2 bg-brand-50/80 dark:bg-brand-800/30 rounded-3xl px-3 py-2">
       <svg className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>

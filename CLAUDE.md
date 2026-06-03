@@ -95,6 +95,7 @@ For UI changes, also verify visually in the browser using the dev-browser skill.
 - **No new SQLite tables** without a clear reason — the inventory service owns the data.
 - **TypeScript strict** — no `any`, no `@ts-ignore`. Use proper types or generics.
 - **No comments** unless the WHY is non-obvious (hidden constraint, workaround, invariant).
+- **i18n required** — all user-visible text must live in `messages/es.json` AND `messages/en.json`. Never hardcode UI strings. Client components use `useTranslations`, server components use `getTranslations` (from `next-intl/server`). Default locale is `es`.
 
 ## Environment Variables
 

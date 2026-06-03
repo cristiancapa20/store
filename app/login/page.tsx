@@ -1,20 +1,22 @@
-"use client"
+"use client";
 
-import { useActionState } from "react"
-import { loginAction } from "./actions"
+import { useActionState } from "react";
+import { useTranslations } from "next-intl";
+import { loginAction } from "./actions";
 
 export default function LoginPage() {
-  const [state, formAction, pending] = useActionState(loginAction, null)
+  const [state, formAction, pending] = useActionState(loginAction, null);
+  const t = useTranslations("auth");
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-zinc-50 dark:bg-zinc-950">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-brand-50 via-[#d8efff] to-brand-100 dark:from-brand-950 dark:via-brand-900 dark:to-brand-950">
+      <div className="ui-shell w-full max-w-sm p-6 sm:p-8">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-            Store Inventory
+          <h1 className="text-2xl font-bold text-brand-950 dark:text-brand-50 tracking-tight">
+            {t("title")}
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-            Sign in to continue
+          <p className="text-brand-700/70 dark:text-brand-100/60 mt-1 text-sm">
+            {t("subtitle")}
           </p>
         </div>
 
@@ -22,9 +24,9 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
+              className="block text-sm font-medium text-brand-800 dark:text-brand-100 mb-1.5 px-1"
             >
-              Email
+              {t("email")}
             </label>
             <input
               id="email"
@@ -32,17 +34,17 @@ export default function LoginPage() {
               type="email"
               required
               autoComplete="email"
-              className="w-full px-4 py-3 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent min-h-[48px]"
-              placeholder="you@example.com"
+              className="ui-input"
+              placeholder={t("emailPlaceholder")}
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
+              className="block text-sm font-medium text-brand-800 dark:text-brand-100 mb-1.5 px-1"
             >
-              Password
+              {t("password")}
             </label>
             <input
               id="password"
@@ -50,13 +52,13 @@ export default function LoginPage() {
               type="password"
               required
               autoComplete="current-password"
-              className="w-full px-4 py-3 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent min-h-[48px]"
+              className="ui-input"
               placeholder="••••••••"
             />
           </div>
 
           {state?.error && (
-            <p className="text-sm text-red-600 dark:text-red-400 text-center">
+            <p className="text-sm text-red-600 dark:text-red-400 text-center px-2">
               {state.error}
             </p>
           )}
@@ -64,9 +66,9 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={pending}
-            className="w-full py-3 px-4 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-semibold rounded-2xl min-h-[48px] transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            className="ui-btn-primary-block mt-2"
           >
-            {pending ? "Signing in…" : "Sign in"}
+            {pending ? t("signingIn") : t("signIn")}
           </button>
         </form>
       </div>

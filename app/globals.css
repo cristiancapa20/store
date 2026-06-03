@@ -1,14 +1,29 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-50: #c2e8fe;
+  --color-brand-100: #c2e8fe;
+  --color-brand-200: #c2e8fe;
+  --color-brand-400: #4f7ba8;
+  --color-brand-500: #4f7ba8;
+  --color-brand-600: #4f7ba8;
+  --color-brand-700: #042658;
+  --color-brand-800: #042658;
+  --color-brand-900: #030f22;
+  --color-brand-950: #030f22;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef6fc;
+}
+
 :root {
-  --background: #f4f4f5;
-  --foreground: #09090b;
+  --background: #c2e8fe;
+  --foreground: #030f22;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #09090b;
-    --foreground: #fafafa;
+    --background: #030f22;
+    --foreground: #c2e8fe;
   }
 }
 
@@ -16,4 +31,50 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+@layer components {
+  .ui-shell {
+    @apply flex flex-col min-h-0 overflow-hidden bg-surface dark:bg-brand-900 rounded-[2rem] shadow-[0_24px_64px_rgba(3,15,34,0.12)];
+  }
+
+  .ui-panel {
+    @apply flex-1 overflow-y-auto min-h-0 rounded-[1.75rem] bg-surface-muted dark:bg-brand-950/60 m-3 sm:m-4 p-4 sm:p-5;
+  }
+
+  .ui-card {
+    @apply bg-surface dark:bg-brand-900 rounded-3xl p-4 shadow-[0_10px_36px_rgba(3,15,34,0.08)];
+  }
+
+  .ui-input {
+    @apply w-full px-5 py-3 rounded-full bg-surface dark:bg-brand-900 text-brand-950 dark:text-brand-50 placeholder:text-brand-600/45 shadow-[0_6px_24px_rgba(3,15,34,0.07)] border-0 focus:outline-none focus:ring-2 focus:ring-brand-500/35 min-h-[48px] text-sm;
+  }
+
+  .ui-btn-primary {
+    @apply inline-flex items-center justify-center bg-brand-600 hover:bg-brand-800 text-white font-semibold rounded-full min-h-[48px] px-6 shadow-[0_12px_32px_rgba(79,123,168,0.38)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .ui-btn-primary-block {
+    @apply inline-flex items-center justify-center w-full py-3.5 bg-brand-600 hover:bg-brand-800 text-white font-semibold rounded-full min-h-[48px] px-6 shadow-[0_12px_32px_rgba(79,123,168,0.38)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .ui-segment-track {
+    @apply flex p-1.5 rounded-full bg-surface dark:bg-brand-900 shadow-[0_6px_24px_rgba(3,15,34,0.08)];
+  }
+
+  .ui-segment-on {
+    @apply flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium min-h-[48px] rounded-full bg-brand-600 text-white shadow-[0_6px_20px_rgba(79,123,168,0.35)] transition-all;
+  }
+
+  .ui-segment-off {
+    @apply flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium min-h-[48px] rounded-full text-brand-800/75 dark:text-brand-100/70 hover:bg-brand-50/80 dark:hover:bg-brand-800/30 transition-all;
+  }
+
+  .ui-page-title {
+    @apply text-xl font-semibold text-brand-900 dark:text-brand-50 tracking-tight;
+  }
+
+  .ui-alert-success {
+    @apply rounded-3xl bg-brand-50 dark:bg-brand-800/30 px-4 py-3 text-sm text-brand-800 dark:text-brand-100 font-medium shadow-[0_6px_20px_rgba(79,123,168,0.12)];
+  }
 }

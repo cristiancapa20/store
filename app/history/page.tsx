@@ -2,40 +2,43 @@
 
 import { useState, useCallback, useTransition, useEffect } from "react";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 import { listSales, listStaff } from "@/lib/actions";
 import type { Sale, SaleFilters } from "@/lib/types";
 
 type StaffUser = { id: string; name: string };
 
 function SaleCard({ sale }: { sale: Sale }) {
+  const t = useTranslations("history");
+  const locale = useLocale();
   const [expanded, setExpanded] = useState(false);
 
   const date = new Date(sale.createdAt);
-  const dateStr = date.toLocaleDateString("en-US", {
+  const dateStr = date.toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
-  const timeStr = date.toLocaleTimeString("en-US", {
+  const timeStr = date.toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
   });
   const itemCount = sale.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+    <div className="ui-card overflow-hidden p-0">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full text-left px-4 py-4 flex items-center justify-between min-h-[48px] hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
+        className="w-full text-left px-4 py-4 flex items-center justify-between min-h-[48px] hover:bg-brand-50/60 dark:hover:bg-brand-800/30 transition-colors"
       >
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-0.5">
             {dateStr} · {timeStr}
           </p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            {sale.staffName ?? "Staff"} ·{" "}
-            {itemCount} item{itemCount !== 1 ? "s" : ""}
+            {sale.staffName ?? "—"} ·{" "}
+            {t("items", { count: itemCount })}
           </p>
         </div>
         <div className="flex items-center gap-3 ml-4 shrink-0">
@@ -59,7 +62,7 @@ function SaleCard({ sale }: { sale: Sale }) {
       </button>
 
       {expanded && (
-        <div className="border-t border-zinc-100 dark:border-zinc-700 px-4 py-3 flex flex-col gap-3">
+        <div className="border-t border-brand-200/50 dark:border-brand-700/40 px-4 py-3 flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             {sale.items.map((item, i) => (
               <div key={i} className="flex items-center justify-between text-sm">
@@ -78,7 +81,7 @@ function SaleCard({ sale }: { sale: Sale }) {
             ))}
           </div>
           <div className="flex justify-between text-sm pt-2 border-t border-zinc-100 dark:border-zinc-700">
-            <span className="text-zinc-500 dark:text-zinc-400">Total</span>
+            <span className="text-zinc-500 dark:text-zinc-400">{t("total")}</span>
             <span className="font-semibold text-zinc-900 dark:text-zinc-100">
               ${sale.total.toFixed(2)}
             </span>
@@ -87,7 +90,7 @@ function SaleCard({ sale }: { sale: Sale }) {
             href={`/api/invoices/${sale.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 px-4 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors min-h-[48px]"
+            className="flex items-center justify-center gap-2 w-full rounded-full bg-brand-50 dark:bg-brand-800/30 px-4 py-3 text-sm font-medium text-brand-800 dark:text-brand-100 hover:bg-brand-100 transition-colors min-h-[48px]"
           >
             <svg
               className="w-4 h-4"
@@ -102,7 +105,7 @@ function SaleCard({ sale }: { sale: Sale }) {
                 d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            Download Invoice
+            {t("downloadInvoice")}
           </Link>
         </div>
       )}
@@ -112,7 +115,7 @@ function SaleCard({ sale }: { sale: Sale }) {
 
 function SaleSkeleton() {
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-4 animate-pulse flex flex-col gap-2">
+    <div className="ui-card animate-pulse flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1.5 flex-1">
           <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-2/3" />
@@ -125,6 +128,7 @@ function SaleSkeleton() {
 }
 
 export default function HistoryPage() {
+  const t = useTranslations("history");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [staffId, setStaffId] = useState("");
@@ -169,41 +173,41 @@ export default function HistoryPage() {
   }, [fetchSales]);
 
   return (
-    <div className="flex flex-col h-full p-4 gap-4 overflow-y-auto pb-24">
-      <h1 className="text-xl font-semibold">Sales History</h1>
+    <div className="flex flex-col h-full gap-4 overflow-y-auto pb-20">
+      <h1 className="ui-page-title">{t("title")}</h1>
 
       {/* Filters */}
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
           <div className="flex-1">
             <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-              From
+              {t("from")}
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm min-h-[48px] focus:outline-none focus:ring-2 focus:ring-green-500 text-zinc-900 dark:text-zinc-100"
+              className="ui-input"
             />
           </div>
           <div className="flex-1">
             <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-              To
+              {t("to")}
             </label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm min-h-[48px] focus:outline-none focus:ring-2 focus:ring-green-500 text-zinc-900 dark:text-zinc-100"
+              className="ui-input"
             />
           </div>
         </div>
         <select
           value={staffId}
           onChange={(e) => setStaffId(e.target.value)}
-          className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-3 text-sm min-h-[48px] focus:outline-none focus:ring-2 focus:ring-green-500 text-zinc-900 dark:text-zinc-100"
+          className="ui-input"
         >
-          <option value="">All staff</option>
+          <option value="">{t("allStaff")}</option>
           {staffUsers.map((u) => (
             <option key={u.id} value={u.id}>
               {u.name}
@@ -240,7 +244,7 @@ export default function HistoryPage() {
                 />
               </svg>
               <p className="text-sm">
-                {hasFetched ? "No sales found." : "Loading sales…"}
+                {hasFetched ? t("noSales") : t("loading")}
               </p>
             </div>
           ) : (

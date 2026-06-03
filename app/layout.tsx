@@ -1,8 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import LogoutButton from "@/components/LogoutButton";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { auth } from "@/auth";
 
 const geistSans = Geist({
@@ -22,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#16a34a",
+  themeColor: "#4f7ba8",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -35,28 +38,38 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
+  const locale = await getLocale();
+  const messages = await getMessages();
 
   return (
-    <html lang="en" className={`${geistSans.variable} h-full antialiased`} suppressHydrationWarning>
-      <body className="h-full bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50" suppressHydrationWarning>
-        {session?.user && <BottomNav />}
-        <div className={`flex flex-col h-full ${session?.user ? "lg:pl-56" : ""}`}>
-          <div className="flex flex-col h-full mx-auto w-full max-w-md lg:max-w-none">
-            {session?.user && (
-              <header className="flex items-center justify-between px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shrink-0">
-                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 truncate">
-                  {session.user.name}
-                </span>
-                <LogoutButton />
-              </header>
-            )}
-            <main className={`flex-1 overflow-y-auto ${session?.user ? "pb-16 lg:pb-0" : ""}`}>
-              <div className="w-full lg:w-4/5 lg:mx-auto">
-                {children}
+    <html lang={locale} className={`${geistSans.variable} h-full antialiased`} suppressHydrationWarning>
+      <body
+        className="h-full bg-gradient-to-br from-brand-50 via-[#d8efff] to-brand-100 text-brand-950 dark:from-brand-950 dark:via-brand-900 dark:to-brand-950 dark:text-brand-50"
+        suppressHydrationWarning
+      >
+        <NextIntlClientProvider messages={messages} locale={locale}>
+          {session?.user && <BottomNav />}
+          {session?.user ? (
+            <div className="flex flex-col h-full lg:pl-64 p-3 sm:p-4 lg:p-6 min-h-0">
+              <div className="ui-shell flex-1 w-full max-w-md lg:max-w-none mx-auto min-h-0 h-full lg:max-h-[calc(100vh-3rem)]">
+                <header className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 shrink-0">
+                  <span className="text-sm font-semibold text-brand-900 dark:text-brand-50 truncate">
+                    {session.user.name}
+                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <LanguageSwitcher />
+                    <LogoutButton />
+                  </div>
+                </header>
+                <main className="ui-panel pb-24 lg:pb-5">
+                  {children}
+                </main>
               </div>
-            </main>
-          </div>
-        </div>
+            </div>
+          ) : (
+            children
+          )}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

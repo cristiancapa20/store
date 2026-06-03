@@ -2,34 +2,37 @@
 
 import { useState, useCallback, useTransition, useEffect } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { listInventory } from "@/lib/actions";
 import type { Product } from "@/lib/types";
 
 function StockBadge({ stock }: { stock: number }) {
+  const t = useTranslations("products");
   if (stock === 0) {
     return (
       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-        Out of stock
+        {t("outOfStock")}
       </span>
     );
   }
   if (stock <= 10) {
     return (
       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-        {stock} in stock
+        {t("inStock", { count: stock })}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-      {stock} in stock
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-800/40 dark:text-brand-50">
+      {t("inStock", { count: stock })}
     </span>
   );
 }
 
 function ProductCard({ product }: { product: Product }) {
+  const t = useTranslations("products");
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-4 flex flex-col gap-2">
+    <div className="ui-card flex flex-col gap-2">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <p className="font-medium text-zinc-900 dark:text-zinc-100 truncate">
@@ -47,9 +50,9 @@ function ProductCard({ product }: { product: Product }) {
         </p>
         <Link
           href="/adjust"
-          className="text-xs text-green-600 dark:text-green-400 font-medium hover:underline min-h-[48px] flex items-center"
+          className="text-xs text-brand-600 dark:text-brand-400 font-medium hover:underline min-h-[48px] flex items-center"
         >
-          Adjust Stock
+          {t("adjustStock")}
         </Link>
       </div>
     </div>
@@ -58,7 +61,7 @@ function ProductCard({ product }: { product: Product }) {
 
 function ProductSkeleton() {
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-4 animate-pulse flex flex-col gap-2">
+    <div className="ui-card animate-pulse flex flex-col gap-2">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4 mb-2" />
@@ -75,6 +78,7 @@ function ProductSkeleton() {
 }
 
 export default function ProductList() {
+  const t = useTranslations("products");
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -112,16 +116,16 @@ export default function ProductList() {
       <div className="flex gap-2">
         <input
           type="search"
-          placeholder="Search by name or SKU..."
+          placeholder={t("searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 rounded-2xl border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-4 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="ui-input flex-1"
         />
         <button
           onClick={fetchInventory}
           disabled={isPending}
-          aria-label="Refresh inventory"
-          className="flex items-center justify-center min-w-[48px] min-h-[48px] rounded-2xl border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+          aria-label={t("refreshLabel")}
+          className="flex items-center justify-center min-w-[48px] min-h-[48px] rounded-full bg-surface dark:bg-brand-900 text-brand-700 dark:text-brand-200 shadow-[0_6px_20px_rgba(3,15,34,0.08)] hover:bg-brand-50 disabled:opacity-50 transition-all"
         >
           <svg
             className={`w-5 h-5 ${isPending ? "animate-spin" : ""}`}
@@ -171,7 +175,7 @@ export default function ProductList() {
                 />
               </svg>
               <p className="text-sm">
-                {search ? "No products match your search." : "No products yet."}
+                {search ? t("noMatch") : t("noProducts")}
               </p>
             </div>
           ) : (
