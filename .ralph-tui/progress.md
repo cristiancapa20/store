@@ -31,6 +31,17 @@ after each iteration and it's included in prompts for context.
   - `create-next-app` refuses to scaffold into a non-empty dir — scaffold into `/tmp` and copy files over
 ---
 
+## 2026-06-03 - store-bd8.3
+- Created `lib/types.ts` with all shared types: `Product`, `CartItem`, `SaleItem`, `Sale`, `NewProduct`, `SaleFilters`, `InventoryPage`, `ActionResult<T>`
+- Created `lib/actions.ts` with `"use server"` directive; implements all 6 server actions: `scanBarcode`, `createSale`, `listInventory`, `addProduct`, `adjustStock`, `listSales`
+- Internal `apiFetch<T>` helper adds `Authorization: Bearer` header and catches all errors, returning `{ error: string }` instead of throwing
+- `INVENTORY_API_URL` and `INVENTORY_API_KEY` read only via `process.env` inside `lib/actions.ts` — never in any client file
+- **Learnings:**
+  - Spread `init?.headers` after `authHeader()` so callers can't accidentally override the auth header (put auth header last)
+  - `"use server"` at file top marks all exports as server actions; no per-function annotation needed
+  - `encodeURIComponent` on path segments prevents injection into URL construction
+---
+
 ## 2026-06-03 - store-bd8.4
 - Implemented `components/BarcodeInput.tsx` — reusable dual-mode barcode input component
 - Installed `@zxing/browser` and `@zxing/library` as Safari/iOS fallback for `BarcodeDetector` API

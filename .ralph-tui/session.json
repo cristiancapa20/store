@@ -3,10 +3,10 @@
   "sessionId": "1ece79ff-3b9f-4373-99d2-f45194022a86",
   "status": "running",
   "startedAt": "2026-06-03T18:59:32.760Z",
-  "updatedAt": "2026-06-03T19:15:10.754Z",
-  "currentIteration": 1,
+  "updatedAt": "2026-06-03T19:16:35.273Z",
+  "currentIteration": 2,
   "maxIterations": 0,
-  "tasksCompleted": 1,
+  "tasksCompleted": 2,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -35,8 +35,8 @@
       {
         "id": "store-bd8.4",
         "title": "US-004: Barcode input component (camera + physical scanner)",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "store-bd8.5",
@@ -86,6 +86,16 @@
       "durationMs": 418074,
       "startedAt": "2026-06-03T19:00:20.995Z",
       "endedAt": "2026-06-03T19:07:19.069Z"
+    },
+    {
+      "iteration": 2,
+      "status": "completed",
+      "taskId": "store-bd8.4",
+      "taskTitle": "US-004: Barcode input component (camera + physical scanner)",
+      "taskCompleted": true,
+      "durationMs": 464634,
+      "startedAt": "2026-06-03T19:07:24.960Z",
+      "endedAt": "2026-06-03T19:15:09.594Z"
     }
   ],
   "skippedTaskIds": [],

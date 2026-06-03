@@ -1,0 +1,192 @@
+# Iteration 2 Log
+
+## Metadata
+
+- **Task ID**: store-bd8.4
+- **Task Title**: US-004: Barcode input component (camera + physical scanner)
+- **Description**: As a cashier, I want to scan barcodes with my phone camera or a plugged-in scanner so that I can identify products instantly.
+
+## Acceptance Criteria
+- [ ] `<BarcodeInput>` component supports two mode...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-06-03T19:07:24.960Z
+- **Ended At**: 2026-06-03T19:15:09.594Z
+- **Duration**: 7m 44s
+- **Input Tokens**: 108
+- **Output Tokens**: 31457
+- **Total Tokens**: 31565
+- **Agent**: claude
+- **Model**: claude-sonnet-4-6
+- **Epic**: store-bd8
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the progress file and existing codebase structure.
+[94m[Read][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m
+[94m[Glob][0m pattern: [96m/Users/cristian/dev/store/components/**/*[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/components/BottomNav.tsx[0m
+[94m[Bash][0m $ ls /Users/cristian/dev/store && cat /Users/cristian/dev/store/package.json
+Now let me check if zxing-js is installed and look at the app structure.
+[94m[Bash][0m $ ls /Users/cristian/dev/store/app && ls /Users/cristian/dev/store/node_modules | grep zxing
+`zxing-js` is not installed. I need to install it and then create the `BarcodeInput` component.
+[94m[Bash][0m $ npm install @zxing/browser @zxing/library 2>&1 | tail -5
+[94m[Bash][0m $ ls /Users/cristian/dev/store/node_modules | grep zxing
+Good, `@zxing` is installed. Now I'll create the `BarcodeInput` component.
+[94m[Bash][0m $ ls /Users/cristian/dev/store/node_modules/@zxing/
+[94m[Write][0m [95m/Users/cristian/dev/store/components/BarcodeInput.tsx[0m ""use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BrowserMultiFormatReader } from "@zxing/browser";
+
+interface BarcodeInputProps {
+  onScan: (barcode: string) =... (13690 chars)"
+Now let me run typecheck to see if there are any issues:
+[94m[Bash][0m $ node node_modules/typescript/bin/tsc --noEmit 2>&1
+
+[91m[Error: Exit code 2
+components/BarcodeInput.tsx(120,33): error TS2554: Expected 2 arguments, but got 1.
+components/BarcodeInput.tsx(122,35): error TS2339: Property 'getText' does not exist on type 'Promise<IScannerControls>'.][0m
+[94m[Bash][0m $ ls /Users/cristian/dev/store/node_modules/@zxing/browser/esm/ && head -100 /Users/cristian/dev/store...
+[94m[Bash][0m $ grep -n "decodeFrom\|decodeOnce\|IScannerControls\|ScannerControls" /Users/cristian/dev/store/node_m...
+[94m[Bash][0m $ find /Users/cristian/dev/store/node_modules/@zxing/browser -name "*.d.ts" | head -5 && cat /Users/cr...
+[94m[Read][0m [95m/Users/cristian/dev/store/node_modules/@zxing/browser/esm/readers/BrowserMultiFormatReader.d.ts[0m
+[94m[Bash][0m $ grep -n "decodeFrom\|decodeContinuously\|decodeOnce\|static\|releaseAll" /Users/cristian/dev/store/n...
+[94m[Read][0m [95m/Users/cristian/dev/store/node_modules/@zxing/browser/esm/common/DecodeContinuouslyCallback.d.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/node_modules/@zxing/browser/esm/common/IScannerControls.d.ts[0m
+Now I'll rewrite the component with the correct zxing API:
+[94m[Write][0m [95m/Users/cristian/dev/store/components/BarcodeInput.tsx[0m ""use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BrowserMultiFormatReader, IScannerControls } from "@zxing/browser";
+
+interface BarcodeInputProps {
+  onScan: (... (13136 chars)"
+[94m[Bash][0m $ node node_modules/typescript/bin/tsc --noEmit 2>&1
+Typecheck passes. Now run lint:
+[94m[Bash][0m $ node node_modules/eslint/bin/eslint.js . 2>&1
+
+[91m[Error: Exit code 1
+
+/Users/cristian/dev/store/components/BarcodeInput.tsx
+  148:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/cristian/dev/store/components/BarcodeInput.tsx:148:7
+  146 |   useEffect(() => {
+  147 |     if (mode === "camera") {
+> 148 |       startCamera();
+      |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  149 |     } else {
+  150 |       stopCamera();
+  151 |       setCameraState("idle");  react-hooks/set-state-in-effect
+
+✖ 1 problem (1 error, 0 warnings)][0m
+[94m[Bash][0m $ cat /Users/cristian/dev/store/eslint.config.mjs
+[94m[Bash][0m $ cat /Users/cristian/dev/store/node_modules/eslint-plugin-react-hooks/package.json | grep '"version"'
+The fix is to move `setCameraState("requesting")` to after the first `await` in `startCamera` so no setState is called synchronously in the effect:
+[94m[Edit][0m [95m/Users/cristian/dev/store/components/BarcodeInput.tsx[0m edit: "  const startCamera = useCallback(async () => {
+  ..." → "  const startCamera = useCallback(async () => {
+  ..."
+Now show "requesting" state when `mode === "camera"` and `cameraState === "idle"` — update the JSX condition:
+[94m[Edit][0m [95m/Users/cristian/dev/store/components/BarcodeInput.tsx[0m edit: "          {/* Requesting camera */}
+          {cam..." → "          {/* Requesting camera (idle before permi..."
+[94m[Bash][0m $ node node_modules/eslint/bin/eslint.js . 2>&1 && echo "LINT OK"
+
+[91m[Error: Exit code 1
+
+/Users/cristian/dev/store/components/BarcodeInput.tsx
+  147:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/cristian/dev/store/components/BarcodeInput.tsx:147:7
+  145 |   useEffect(() => {
+  146 |     if (mode === "camera") {
+> 147 |       startCamera();
+      |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  148 |     } else {
+  149 |       stopCamera();
+  150 |       setCameraState("idle");  react-hooks/set-state-in-effect
+
+✖ 1 problem (1 error, 0 warnings)][0m
+The rule traces through `useCallback` closures. I'll inline the async camera logic directly in the effect (standard React pattern):
+[94m[Read][0m [95m/Users/cristian/dev/store/components/BarcodeInput.tsx[0m
+Let me rewrite the component with the async logic properly inlined in the effect to satisfy the linter:
+[94m[Write][0m [95m/Users/cristian/dev/store/components/BarcodeInput.tsx[0m ""use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BrowserMultiFormatReader, IScannerControls } from "@zxing/browser";
+
+interface BarcodeInputProps {
+  onScan: (... (13056 chars)"
+[94m[Bash][0m $ node node_modules/eslint/bin/eslint.js . 2>&1 && echo "LINT OK"
+
+[91m[Error: Exit code 1
+
+/Users/cristian/dev/store/components/BarcodeInput.tsx
+  64:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/cristian/dev/store/components/BarcodeInput.tsx:64:7
+  62 |     if (mode !== "camera") {
+  63 |       stopCamera();
+> 64 |       setCameraState("idle");
+     |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  65 |       const t = setTimeout(() => scannerInputRef.current?.focus(), 50);
+  66 |       return () => clearTimeout(t);
+  67 |     }  react-hooks/set-state-in-effect
+
+✖ 1 problem (1 error, 0 warnings)][0m
+The rule flags ALL direct synchronous setState calls in effects. I need to defer them all:
+[94m[Edit][0m [95m/Users/cristian/dev/store/components/BarcodeInput.tsx[0m edit: "    if (mode !== "camera") {
+      stopCamera();
+ ..." → "    if (mode !== "camera") {
+      stopCamera();
+ ..."
+Also need to fix the cleanup function:
+[94m[Edit][0m [95m/Users/cristian/dev/store/components/BarcodeInput.tsx[0m edit: "    return () => {
+      cancelled = true;
+      s..." → "    return () => {
+      cancelled = true;
+      s..."
+[94m[Bash][0m $ node node_modules/eslint/bin/eslint.js . 2>&1 && echo "LINT OK"
+Now run typecheck:
+[94m[Bash][0m $ node node_modules/typescript/bin/tsc --noEmit 2>&1 && echo "TYPECHECK OK"
+Both pass. Now close the bead and update progress:
+[94m[Bash][0m $ bd close store-bd8.4 --db /Users/cristian/dev/store/.beads/beads.db --reason "Implemented BarcodeInp...
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "## Codebase Patterns (Study These First)
+
+- **`.bi..." → "## Codebase Patterns (Study These First)
+
+- **`rea..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "---
+
+" → "---
+
+## 2026-06-03 - store-bd8.4
+- Implemented `co..."
+
+[91m[Error: <tool_use_error>Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String: ---
+
+</tool_use_error>][0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "  - `create-next-app` refuses to scaffold into a n..." → "  - `create-next-app` refuses to scaffold into a n..."
+`components/BarcodeInput.tsx` is complete. Both `npm run typecheck` and `npm run lint` pass. The component supports camera mode (native `BarcodeDetector` + zxing fallback), HID scanner mode, haptic feedback, green overlay on detection, and graceful permission-denied/error states with retry buttons.
+
+<promise>COMPLETE</promise>
