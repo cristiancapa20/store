@@ -8,21 +8,36 @@ export default function LanguageSwitcher() {
   const locale = useLocale();
   const [isPending, startTransition] = useTransition();
 
-  const toggle = () => {
-    startTransition(() => {
-      setLocale(locale === "es" ? "en" : "es");
-    });
+  const switchTo = (next: "es" | "en") => {
+    if (next === locale || isPending) return;
+    startTransition(() => setLocale(next));
   };
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      disabled={isPending}
-      className="text-xs font-semibold px-3 py-1.5 rounded-full bg-brand-50 dark:bg-brand-800/50 text-brand-800 dark:text-brand-100 shadow-[0_4px_12px_rgba(3,15,34,0.06)] hover:bg-brand-100 transition-colors disabled:opacity-50 min-h-[32px]"
-      aria-label={locale === "es" ? "Switch to English" : "Cambiar a Español"}
+    <div
+      role="group"
+      aria-label="Cambiar idioma"
+      className="flex items-center gap-0.5 rounded-full bg-brand-100 dark:bg-brand-800/50 p-0.5"
     >
-      {locale === "es" ? "EN" : "ES"}
-    </button>
+      {(["es", "en"] as const).map((lang) => {
+        const isActive = locale === lang;
+        return (
+          <button
+            key={lang}
+            type="button"
+            onClick={() => switchTo(lang)}
+            disabled={isPending}
+            aria-pressed={isActive}
+            className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide transition-all duration-200 min-h-[24px] disabled:opacity-60 ${
+              isActive
+                ? "bg-brand-600 text-white shadow-sm"
+                : "text-brand-500 dark:text-brand-300 hover:text-brand-700 dark:hover:text-brand-100"
+            }`}
+          >
+            {lang}
+          </button>
+        );
+      })}
+    </div>
   );
 }
