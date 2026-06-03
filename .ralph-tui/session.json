@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "sessionId": "1ece79ff-3b9f-4373-99d2-f45194022a86",
+  "status": "running",
+  "startedAt": "2026-06-03T18:59:32.760Z",
+  "updatedAt": "2026-06-03T19:07:20.236Z",
+  "currentIteration": 0,
+  "maxIterations": 0,
+  "tasksCompleted": 0,
+  "isPaused": false,
+  "agentPlugin": "claude",
+  "trackerState": {
+    "plugin": "beads",
+    "epicId": "store-bd8",
+    "totalTasks": 10,
+    "tasks": [
+      {
+        "id": "store-bd8.1",
+        "title": "US-001: Project scaffolding and PWA setup",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "store-bd8.2",
+        "title": "US-002: Staff authentication (NextAuth + SQLite)",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "store-bd8.3",
+        "title": "US-003: Inventory API proxy layer (server actions)",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "store-bd8.4",
+        "title": "US-004: Barcode input component (camera + physical scanner)",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "store-bd8.5",
+        "title": "US-005: Scan & sell — cart and checkout",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "store-bd8.6",
+        "title": "US-006: Product list with stock levels",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "store-bd8.7",
+        "title": "US-007: Add product",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "store-bd8.8",
+        "title": "US-008: Stock adjustment",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "store-bd8.9",
+        "title": "US-009: Sales history with filters",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "store-bd8.10",
+        "title": "US-010: Invoice PDF generation",
+        "status": "open",
+        "completedInSession": false
+      }
+    ]
+  },
+  "iterations": [],
+  "skippedTaskIds": [],
+  "cwd": "/Users/cristian/dev/store",
+  "activeTaskIds": [],
+  "subagentPanelVisible": false
+}

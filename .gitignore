@@ -2,5 +2,31 @@
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db
+*.sqlite
 .beads-credential-key
 .beads/proxieddb/
+
+# Next.js
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+
+# Environment
+.env.local
+.env*.local
+
+# PWA generated files
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+
+# SQLite database
+data/
+
+# Misc
+.DS_Store
+*.pem
