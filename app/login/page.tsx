@@ -22,10 +22,7 @@ export default function LoginPage() {
 
         <form action={formAction} className="space-y-4">
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-brand-800 dark:text-brand-100 mb-1.5 px-1"
-            >
+            <label htmlFor="email" className="ui-label mb-1.5">
               {t("email")}
             </label>
             <input
@@ -40,10 +37,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-brand-800 dark:text-brand-100 mb-1.5 px-1"
-            >
+            <label htmlFor="password" className="ui-label mb-1.5">
               {t("password")}
             </label>
             <input

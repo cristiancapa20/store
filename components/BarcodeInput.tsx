@@ -169,7 +169,7 @@ export default function BarcodeInput({ onScan, disabled, initialMode = "scanner"
   );
 
   return (
-    <div className="flex flex-col gap-3 w-full">
+    <div className="flex flex-col gap-3 w-full min-w-0 max-w-full">
       {/* Mode toggle */}
       <div className="ui-segment-track w-full">
         <button

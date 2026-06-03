@@ -26,7 +26,7 @@ export default async function ProductsPage({ searchParams }: Props) {
       {/* FAB — Add Product */}
       <Link
         href="/products/new"
-        aria-label="Add product"
+        aria-label={t("addProduct")}
         className="fixed bottom-[4.5rem] right-4 lg:bottom-8 lg:right-10 flex items-center justify-center w-14 h-14 rounded-full bg-brand-600 text-white shadow-[0_12px_32px_rgba(79,123,168,0.45)] hover:bg-brand-800 transition-all active:scale-95"
       >
         <svg

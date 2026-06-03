@@ -107,14 +107,30 @@ export default function AdjustPage() {
       <BarcodeInput onScan={handleScan} disabled={isPending} />
 
       {/* Name / SKU search */}
-      <div className="relative">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder={t("searchPlaceholder")}
-          className="ui-input"
-        />
+      <div className="relative w-full min-w-0">
+        <div className="ui-search">
+          <svg
+            className="w-5 h-5 text-brand-400 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder={t("searchPlaceholder")}
+            className="ui-search-field"
+          />
+        </div>
         {searchResults.length > 0 && (
           <div className="absolute left-0 right-0 top-full mt-2 bg-surface dark:bg-brand-900 rounded-3xl shadow-[0_16px_40px_rgba(3,15,34,0.14)] z-10 overflow-hidden">
             {searchResults.map((p) => (
@@ -160,14 +176,12 @@ export default function AdjustPage() {
 
           {/* Delta stepper */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {t("adjustment")}
-            </label>
+            <label className="ui-label">{t("adjustment")}</label>
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setDelta((d) => d - 1)}
-                aria-label="Decrease"
+                aria-label={t("decrease")}
                 className="flex items-center justify-center rounded-full bg-surface dark:bg-brand-900 text-xl font-bold text-brand-800 shadow-[0_6px_20px_rgba(3,15,34,0.08)] hover:bg-brand-50 min-h-[48px] min-w-[48px] w-12 h-12 transition-all"
               >
                 −
@@ -176,13 +190,13 @@ export default function AdjustPage() {
                 type="number"
                 value={delta}
                 onChange={(e) => handleDeltaInput(e.target.value)}
-                aria-label="Adjustment amount"
+                aria-label={t("adjustAmount")}
                 className="ui-input flex-1 text-center text-lg font-semibold"
               />
               <button
                 type="button"
                 onClick={() => setDelta((d) => d + 1)}
-                aria-label="Increase"
+                aria-label={t("increase")}
                 className="flex items-center justify-center rounded-full bg-surface dark:bg-brand-900 text-xl font-bold text-brand-800 shadow-[0_6px_20px_rgba(3,15,34,0.08)] hover:bg-brand-50 min-h-[48px] min-w-[48px] w-12 h-12 transition-all"
               >
                 +
@@ -205,9 +219,7 @@ export default function AdjustPage() {
 
           {/* Reason dropdown */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {t("reason")}
-            </label>
+            <label className="ui-label">{t("reason")}</label>
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value as Reason)}

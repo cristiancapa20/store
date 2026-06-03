@@ -180,9 +180,7 @@ export default function HistoryPage() {
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-              {t("from")}
-            </label>
+            <label className="ui-label-muted">{t("from")}</label>
             <input
               type="date"
               value={startDate}
@@ -191,9 +189,7 @@ export default function HistoryPage() {
             />
           </div>
           <div className="flex-1">
-            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-              {t("to")}
-            </label>
+            <label className="ui-label-muted">{t("to")}</label>
             <input
               type="date"
               value={endDate}
@@ -202,6 +198,7 @@ export default function HistoryPage() {
             />
           </div>
         </div>
+        <label className="ui-label-muted">{t("staffFilter")}</label>
         <select
           value={staffId}
           onChange={(e) => setStaffId(e.target.value)}

@@ -93,15 +93,15 @@ export default function AddProductForm() {
         <>
           {/* Name */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Name <span className="text-red-500">*</span>
+            <label className="ui-label">
+              {t("nameLabel")} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("namePlaceholder")}
-              className={`ui-input ${errors.name ? "ring-2 ring-red-400" : ""}`}
+              className={`ui-input ${errors.name ? "ui-input-error" : ""}`}
             />
             {errors.name && (
               <p className="text-xs text-red-600 dark:text-red-400">{errors.name}</p>
@@ -110,21 +110,21 @@ export default function AddProductForm() {
 
           {/* SKU */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              SKU <span className="text-red-500">*</span>
+            <label className="ui-label">
+              {t("skuLabel")} <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
-                placeholder="Product SKU or barcode"
-                className={`ui-input flex-1 ${errors.sku ? "ring-2 ring-red-400" : ""}`}
+                placeholder={t("skuPlaceholder")}
+                className={`ui-input flex-1 ${errors.sku ? "ui-input-error" : ""}`}
               />
               <button
                 type="button"
                 onClick={() => setShowSkuScanner(true)}
-                aria-label="Scan barcode for SKU"
+                aria-label={t("scanSkuLabel")}
                 className="flex items-center justify-center rounded-full bg-surface dark:bg-brand-900 shadow-[0_6px_20px_rgba(3,15,34,0.08)] hover:bg-brand-50 min-h-[48px] min-w-[48px] w-12 h-12 transition-all shrink-0 text-brand-800"
               >
                 <svg
@@ -149,8 +149,8 @@ export default function AddProductForm() {
 
           {/* Price */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Price <span className="text-red-500">*</span>
+            <label className="ui-label">
+              {t("priceLabel")} <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -159,7 +159,7 @@ export default function AddProductForm() {
               placeholder="0.00"
               min="0"
               step="0.01"
-              className={`ui-input ${errors.price ? "ring-2 ring-red-400" : ""}`}
+              className={`ui-input ${errors.price ? "ui-input-error" : ""}`}
             />
             {errors.price && (
               <p className="text-xs text-red-600 dark:text-red-400">{errors.price}</p>
@@ -168,8 +168,8 @@ export default function AddProductForm() {
 
           {/* Initial Stock */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Initial Stock <span className="text-red-500">*</span>
+            <label className="ui-label">
+              {t("stockLabel")} <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -178,7 +178,7 @@ export default function AddProductForm() {
               placeholder="0"
               min="0"
               step="1"
-              className={`ui-input ${errors.initialStock ? "ring-2 ring-red-400" : ""}`}
+              className={`ui-input ${errors.initialStock ? "ui-input-error" : ""}`}
             />
             {errors.initialStock && (
               <p className="text-xs text-red-600 dark:text-red-400">
@@ -189,15 +189,13 @@ export default function AddProductForm() {
 
           {/* Description */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Description
-            </label>
+            <label className="ui-label">{t("descriptionLabel")}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t("descriptionPlaceholder")}
               rows={3}
-              className="ui-input resize-none rounded-3xl"
+              className="ui-input ui-textarea"
             />
           </div>
 

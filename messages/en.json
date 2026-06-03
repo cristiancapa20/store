@@ -34,7 +34,9 @@
     "decreaseQty": "Decrease quantity of {name}",
     "increaseQty": "Increase quantity of {name}",
     "removeItem": "Remove {name} from cart",
-    "saleConfirmedToast": "Sale confirmed!"
+    "saleConfirmedToast": "Sale confirmed!",
+    "searchPlaceholder": "Search product by name or SKU…",
+    "noResults": "No results"
   },
   "products": {
     "title": "Products",
@@ -45,7 +47,8 @@
     "noMatch": "No products match your search.",
     "noProducts": "No products yet.",
     "outOfStock": "Out of stock",
-    "inStock": "{count} in stock"
+    "inStock": "{count} in stock",
+    "addProduct": "Add product"
   },
   "addProduct": {
     "title": "Add Product",
@@ -97,6 +100,7 @@
     "title": "Sales History",
     "from": "From",
     "to": "To",
+    "staffFilter": "Staff member",
     "allStaff": "All staff",
     "noSales": "No sales found.",
     "loading": "Loading sales…",

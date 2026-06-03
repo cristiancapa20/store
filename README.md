@@ -135,8 +135,11 @@ Staff accounts live in a local SQLite database (`data/store.db`). NextAuth handl
 ### Barcode Scanning
 
 `BarcodeInput` supports two modes toggled by a button:
-- **Camera** — uses `BarcodeDetector` with `@zxing/browser` fallback for Safari
-- **Scanner** — hidden `<input>` that captures HID keyboard-emulating scanners (rapid keystroke + Enter)
+
+- **Camera** — uses `BarcodeDetector` with `@zxing/browser` fallback for Safari/iOS. The component opens the device camera and detects barcodes visually in real time. Best for phones on the shop floor.
+- **Scanner** — designed for physical USB or Bluetooth barcode scanners (the "gun" style readers). These devices emulate a keyboard: when aimed at a barcode they fire the digits very quickly and send an Enter keystroke. The component keeps a hidden `<input>` focused to capture that keystroke stream. The on-screen message *"Listo para escanear"* confirms the hidden input is active and waiting. If your store doesn't use a physical reader, this mode is not needed — Camera or the product search input are the alternatives.
+
+The **product search input** on the Sell screen is a third option: type a product name or SKU and select from the dropdown. Useful on desktop where there is no scanner and the camera is inconvenient.
 
 ### Sales History
 

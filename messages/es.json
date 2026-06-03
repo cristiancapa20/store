@@ -34,7 +34,9 @@
     "decreaseQty": "Disminuir cantidad de {name}",
     "increaseQty": "Aumentar cantidad de {name}",
     "removeItem": "Eliminar {name} del carrito",
-    "saleConfirmedToast": "¡Venta confirmada!"
+    "saleConfirmedToast": "¡Venta confirmada!",
+    "searchPlaceholder": "Buscar producto por nombre o SKU…",
+    "noResults": "Sin resultados"
   },
   "products": {
     "title": "Productos",
@@ -45,7 +47,8 @@
     "noMatch": "Ningún producto coincide con la búsqueda.",
     "noProducts": "Aún no hay productos.",
     "outOfStock": "Sin stock",
-    "inStock": "{count} en stock"
+    "inStock": "{count} en stock",
+    "addProduct": "Agregar producto"
   },
   "addProduct": {
     "title": "Agregar Producto",
@@ -97,6 +100,7 @@
     "title": "Historial de Ventas",
     "from": "Desde",
     "to": "Hasta",
+    "staffFilter": "Empleado",
     "allStaff": "Todo el personal",
     "noSales": "No se encontraron ventas.",
     "loading": "Cargando ventas…",
