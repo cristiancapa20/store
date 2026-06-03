@@ -3,10 +3,10 @@
   "sessionId": "1ece79ff-3b9f-4373-99d2-f45194022a86",
   "status": "running",
   "startedAt": "2026-06-03T18:59:32.760Z",
-  "updatedAt": "2026-06-03T19:36:43.406Z",
-  "currentIteration": 6,
+  "updatedAt": "2026-06-03T19:39:51.860Z",
+  "currentIteration": 7,
   "maxIterations": 0,
-  "tasksCompleted": 6,
+  "tasksCompleted": 7,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -47,8 +47,8 @@
       {
         "id": "store-bd8.6",
         "title": "US-006: Product list with stock levels",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "store-bd8.7",
@@ -136,6 +136,16 @@
       "durationMs": 226122,
       "startedAt": "2026-06-03T19:29:42.909Z",
       "endedAt": "2026-06-03T19:33:29.031Z"
+    },
+    {
+      "iteration": 7,
+      "status": "completed",
+      "taskId": "store-bd8.6",
+      "taskTitle": "US-006: Product list with stock levels",
+      "taskCompleted": true,
+      "durationMs": 187336,
+      "startedAt": "2026-06-03T19:33:34.630Z",
+      "endedAt": "2026-06-03T19:36:41.966Z"
     }
   ],
   "skippedTaskIds": [],

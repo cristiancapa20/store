@@ -117,3 +117,19 @@ after each iteration and it's included in prompts for context.
   - Pad product list with `pb-24` to prevent content hiding behind the fixed FAB button
 ---
 
+## 2026-06-03 - store-bd8.5
+- Implemented `/sell` page as a single `"use client"` component
+- `<BarcodeInput>` at top calls `scanBarcode()` server action; adds product to cart or increments quantity
+- "Product not found" toast on API error; "Out of stock" toast when `stock <= 0`
+- Cart rows: product name, unit price × qty = line total, −/+ stepper (decrements to 0 = remove), trash icon remove button
+- Fixed cart footer (above BottomNav at `bottom-16`) showing item count, subtotal, green "Confirm Sale" button with spinner while pending
+- On success: cart clears, `lastSaleId` saved, empty state shows "View Invoice" link to `/api/invoices/<id>` + success toast
+- Two separate `useTransition` hooks (`startScan` / `startConfirm`) so scan-pending and confirm-pending states are independent
+- Files changed: `app/sell/page.tsx`
+- **Learnings:**
+  - Use two separate `useTransition` hooks for scan vs confirm — keeps spinner logic clean: `confirmPending` drives the button spinner, `scanPending` disables the BarcodeInput, `isPending = scanPending || confirmPending` gates both
+  - Cart footer positioning: BottomNav is `fixed bottom-0` with `min-h-[48px]` tabs (~64px rendered); use `bottom-16` (64px) for the cart footer overlay to sit flush above it
+  - `setLastSaleId` after `setCart([])` — empty cart triggers the "post-sale" empty state with View Invoice; this state clears when a new item is added (cart non-empty again)
+  - `pb-40` on the scrollable body prevents cart items from hiding behind the fixed footer panel
+---
+
