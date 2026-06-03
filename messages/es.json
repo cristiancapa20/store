@@ -6,6 +6,7 @@
     "adjustStock": "Ajustar",
     "history": "Historial",
     "guide": "Guía",
+    "profile": "Tienda",
     "appName": "Inventario"
   },
   "auth": {
@@ -114,6 +115,20 @@
     "cameraError": "Error de cámara",
     "retry": "Reintentar",
     "scannerInput": "Entrada de escáner de código de barras"
+  },
+  "profile": {
+    "title": "Perfil de Tienda",
+    "locationName": "Ubicación",
+    "locationUnknown": "No disponible",
+    "taxRate": "Tasa de impuesto",
+    "negativeStock": "Stock negativo",
+    "allowed": "Permitido",
+    "notAllowed": "No permitido",
+    "staffCount": "Empleados registrados",
+    "session": "Sesión activa",
+    "apiStatus": "Inventory Service",
+    "connected": "Conectado",
+    "disconnected": "Sin conexión"
   },
   "guide": {
     "title": "Guía de Uso",

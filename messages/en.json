@@ -6,6 +6,7 @@
     "adjustStock": "Adjust",
     "history": "History",
     "guide": "Guide",
+    "profile": "Store",
     "appName": "Inventory"
   },
   "auth": {
@@ -114,6 +115,20 @@
     "cameraError": "Camera error",
     "retry": "Retry",
     "scannerInput": "Barcode scanner input"
+  },
+  "profile": {
+    "title": "Store Profile",
+    "locationName": "Location",
+    "locationUnknown": "Not available",
+    "taxRate": "Tax rate",
+    "negativeStock": "Negative stock",
+    "allowed": "Allowed",
+    "notAllowed": "Not allowed",
+    "staffCount": "Registered staff",
+    "session": "Active session",
+    "apiStatus": "Inventory Service",
+    "connected": "Connected",
+    "disconnected": "Disconnected"
   },
   "guide": {
     "title": "App Guide",

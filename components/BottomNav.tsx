@@ -4,7 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-type NavKey = "sell" | "products" | "addProduct" | "adjustStock" | "history" | "guide";
+type NavKey = "sell" | "products" | "addProduct" | "adjustStock" | "history" | "guide" | "profile";
+
+const StoreIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+  </svg>
+);
 
 const tabs: { href: string; key: NavKey; icon: React.ReactNode }[] = [
   {
@@ -61,85 +68,105 @@ const tabs: { href: string; key: NavKey; icon: React.ReactNode }[] = [
       </svg>
     ),
   },
+  {
+    href: "/profile",
+    key: "profile" as NavKey,
+    icon: <StoreIcon />,
+  },
 ];
 
-function NavLinks({ variant }: { variant: "sidebar" | "bottom" }) {
-  const pathname = usePathname();
-  const t = useTranslations("nav");
-
-  if (variant === "sidebar") {
-    return (
-      <nav className="flex-1 px-4 py-2 space-y-1">
-        {tabs.map((tab) => {
-          const active =
-            tab.href === "/products/new"
-              ? pathname === "/products/new"
-              : pathname === tab.href ||
-                (pathname.startsWith(tab.href) && tab.href !== "/products/new");
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium transition-all ${
-                active
-                  ? "bg-brand-600 text-white shadow-[0_8px_24px_rgba(79,123,168,0.35)]"
-                  : "text-brand-800/70 dark:text-brand-100/65 hover:bg-brand-50 dark:hover:bg-brand-800/40 hover:text-brand-900 dark:hover:text-brand-50"
-              }`}
-              aria-current={active ? "page" : undefined}
-            >
-              {tab.icon}
-              <span>{t(tab.key)}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    );
-  }
-
-  return (
-    <div className="flex items-center justify-around gap-0.5 px-1">
-      {tabs.map((tab) => {
-        const active =
-          tab.href === "/products/new"
-            ? pathname === "/products/new"
-            : pathname === tab.href ||
-              (pathname.startsWith(tab.href) && tab.href !== "/products/new");
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={`flex flex-col items-center justify-center flex-1 min-h-[48px] py-1.5 gap-0.5 text-[10px] sm:text-xs font-medium transition-all rounded-full ${
-              active
-                ? "bg-brand-600 text-white shadow-[0_6px_18px_rgba(79,123,168,0.4)]"
-                : "text-brand-800/65 dark:text-brand-100/60"
-            }`}
-            aria-current={active ? "page" : undefined}
-          >
-            {tab.icon}
-            <span className="truncate max-w-full px-0.5">{t(tab.key)}</span>
-          </Link>
-        );
-      })}
-    </div>
-  );
+function isActive(pathname: string, href: string) {
+  if (href === "/products/new") return pathname === "/products/new";
+  return pathname === href || (pathname.startsWith(href) && href !== "/products/new");
 }
 
 export default function BottomNav() {
+  const pathname = usePathname();
   const t = useTranslations("nav");
+
+  // Main tabs (all except profile)
+  const mainTabs = tabs.filter((tab) => tab.key !== "profile");
+  const profileTab = tabs.find((tab) => tab.key === "profile")!;
+
   return (
     <>
+      {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col fixed inset-y-4 left-4 w-56 bg-surface dark:bg-brand-900 rounded-[2rem] shadow-[0_20px_56px_rgba(3,15,34,0.14)] z-40 py-6">
-        <div className="px-6 pb-6">
+        {/* Brand */}
+        <div className="px-6 pb-4">
           <span className="font-semibold text-brand-900 dark:text-brand-50 text-base tracking-tight">
             {t("appName")}
           </span>
         </div>
-        <NavLinks variant="sidebar" />
+
+        {/* Main nav */}
+        <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+          {mainTabs.map((tab) => {
+            const active = isActive(pathname, tab.href);
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium transition-all ${
+                  active
+                    ? "bg-brand-600 text-white shadow-[0_8px_24px_rgba(74,92,186,0.30)]"
+                    : "text-brand-800/70 dark:text-brand-100/65 hover:bg-brand-100 dark:hover:bg-brand-800/40 hover:text-brand-900 dark:hover:text-brand-50"
+                }`}
+                aria-current={active ? "page" : undefined}
+              >
+                {tab.icon}
+                <span>{t(tab.key)}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Divider + Profile pinned at bottom */}
+        <div className="px-4 pt-2 pb-2">
+          <div className="h-px bg-brand-100 dark:bg-brand-800/60 mb-3" />
+          {(() => {
+            const active = isActive(pathname, profileTab.href);
+            return (
+              <Link
+                href={profileTab.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium transition-all ${
+                  active
+                    ? "bg-brand-600 text-white shadow-[0_8px_24px_rgba(74,92,186,0.30)]"
+                    : "text-brand-800/70 dark:text-brand-100/65 hover:bg-brand-100 dark:hover:bg-brand-800/40 hover:text-brand-900 dark:hover:text-brand-50"
+                }`}
+                aria-current={active ? "page" : undefined}
+              >
+                {profileTab.icon}
+                <span>{t("profile")}</span>
+              </Link>
+            );
+          })()}
+        </div>
       </aside>
 
+      {/* Mobile bottom nav — all tabs including profile */}
       <nav className="lg:hidden fixed bottom-3 left-3 right-3 z-40 max-w-md mx-auto pointer-events-none">
         <div className="pointer-events-auto bg-surface dark:bg-brand-900 rounded-full shadow-[0_16px_48px_rgba(3,15,34,0.18)] px-1 py-1.5">
-          <NavLinks variant="bottom" />
+          <div className="flex items-center justify-around gap-0.5 px-1">
+            {tabs.map((tab) => {
+              const active = isActive(pathname, tab.href);
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  className={`flex flex-col items-center justify-center flex-1 min-h-[48px] py-1.5 gap-0.5 text-[9px] sm:text-[11px] font-medium transition-all rounded-full ${
+                    active
+                      ? "bg-brand-600 text-white shadow-[0_6px_18px_rgba(74,92,186,0.35)]"
+                      : "text-brand-800/65 dark:text-brand-100/60"
+                  }`}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {tab.icon}
+                  <span className="truncate max-w-full px-0.5">{t(tab.key)}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </nav>
     </>
