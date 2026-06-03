@@ -38,7 +38,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className={`${geistSans.variable} h-full antialiased`} suppressHydrationWarning>
-      <body className="h-full bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
+      <body className="h-full bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50" suppressHydrationWarning>
         {session?.user && <BottomNav />}
         <div className={`flex flex-col h-full ${session?.user ? "lg:pl-56" : ""}`}>
           <div className="flex flex-col h-full mx-auto w-full max-w-md lg:max-w-none">

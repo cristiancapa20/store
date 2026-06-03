@@ -58,20 +58,72 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 <!-- END BEADS INTEGRATION -->
 
 
-## Build & Test
+## Quality Gates
 
-_Add your build and test commands here_
+Run these before marking any task done. Both must exit with code 0:
 
 ```bash
-# Example:
-# npm install
-# npm test
+npm run typecheck   # tsc --noEmit — zero errors required
+npm run lint        # eslint — zero errors required (warnings ok)
 ```
 
-## Architecture Overview
+For UI changes, also verify visually in the browser using the dev-browser skill.
 
-_Add a brief overview of your project architecture_
+## Architecture
 
-## Conventions & Patterns
+- **Frontend only** — no backend logic lives here. The Inventory Service owns all inventory and sales data.
+- **Server actions** (`lib/actions.ts`) are the only place that calls the Inventory Service API. No `fetch` to the inventory API in `"use client"` files — ever.
+- **SQLite** (`lib/db.ts`) stores only the `users` table for auth. No other data is persisted locally.
+- **Auth**: NextAuth v5, Credentials provider, `httpOnly` session cookies.
 
-_Add your project-specific conventions here_
+## Key Files
+
+| File | Purpose |
+|---|---|
+| `lib/actions.ts` | All server actions — API proxy layer |
+| `lib/db.ts` | SQLite setup — users table only |
+| `lib/types.ts` | Shared TypeScript types |
+| `components/BottomNav.tsx` | Responsive nav (sidebar lg+, bottom bar mobile) |
+| `components/BarcodeInput.tsx` | Camera + HID scanner component |
+| `app/layout.tsx` | Root layout |
+
+## Conventions
+
+- **Never expose `INVENTORY_API_KEY` to the client.** All API calls go through server actions.
+- **Tailwind only** — no inline styles, no CSS modules. Use `rounded-2xl` or higher for cards and buttons.
+- **Min 48px tap targets** on all interactive elements (buttons, links, steppers).
+- **No new SQLite tables** without a clear reason — the inventory service owns the data.
+- **TypeScript strict** — no `any`, no `@ts-ignore`. Use proper types or generics.
+- **No comments** unless the WHY is non-obvious (hidden constraint, workaround, invariant).
+
+## Environment Variables
+
+Required in `.env.local`:
+
+```
+INVENTORY_API_URL      # Must include /v1 suffix: http://localhost:3001/v1
+INVENTORY_API_KEY      # Bearer token — server-side only
+INVENTORY_LOCATION_ID  # UUID of the store location
+NEXTAUTH_SECRET        # NextAuth session secret
+NEXTAUTH_URL           # Full app URL
+STORE_NAME             # Shown on PDF invoices
+TAX_RATE               # Decimal (e.g. 0.10 for 10%)
+SEED_ADMIN_EMAIL       # Used by npm run seed
+SEED_ADMIN_PASSWORD    # Used by npm run seed
+```
+
+## Dev Setup
+
+```bash
+# 1 — Install
+npm install
+
+# 2 — Configure env
+cp .env.local.example .env.local   # then fill in values
+
+# 3 — Seed admin user (first time only)
+npm run seed
+
+# 4 — Run (inventory service must be on port 3001)
+npm run dev
+```
