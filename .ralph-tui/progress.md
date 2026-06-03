@@ -105,3 +105,15 @@ after each iteration and it's included in prompts for context.
   - `useCallback` for all handlers that touch state prevents stale closure issues without needing `useEffect`
 ---
 
+## 2026-06-03 - store-bd8.6
+- Implemented `/products` product list with full acceptance criteria
+- Created `app/products/ProductList.tsx` — `"use client"` component: fetches `listInventory(1,200)` on mount via `startTransition`, client-side search filter by name/SKU, refresh button (spinning icon while pending), 4 loading skeletons on initial fetch, product cards with name/SKU/price/StockBadge, "Adjust Stock" link per card
+- Updated `app/products/page.tsx` — server component now renders `<ProductList />` alongside existing added-toast and FAB
+- Stock badge: green (>10), amber (1-10), red (0) using Tailwind color classes
+- **Learnings:**
+  - Split server/client: keep `page.tsx` as server component to read `searchParams`; extract `ProductList.tsx` as `"use client"` for stateful inventory fetch — avoids `useSearchParams()` Suspense boundary requirement
+  - Use `hasFetched` flag + `isPending` from `useTransition` to distinguish initial load (show skeleton) from refresh (spin icon only)
+  - setState calls after `await` inside `startTransition(async () => {...})` don't trigger `react-hooks/set-state-in-effect` — only synchronous setState in effect bodies (or synchronous calls in traced useCallback functions) need `setTimeout` deferral
+  - Pad product list with `pb-24` to prevent content hiding behind the fixed FAB button
+---
+

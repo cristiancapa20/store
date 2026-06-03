@@ -3,10 +3,10 @@
   "sessionId": "1ece79ff-3b9f-4373-99d2-f45194022a86",
   "status": "running",
   "startedAt": "2026-06-03T18:59:32.760Z",
-  "updatedAt": "2026-06-03T19:33:30.208Z",
-  "currentIteration": 5,
+  "updatedAt": "2026-06-03T19:36:43.406Z",
+  "currentIteration": 6,
   "maxIterations": 0,
-  "tasksCompleted": 5,
+  "tasksCompleted": 6,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -53,8 +53,8 @@
       {
         "id": "store-bd8.7",
         "title": "US-007: Add product",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "store-bd8.8",
@@ -126,6 +126,16 @@
       "durationMs": 175018,
       "startedAt": "2026-06-03T19:26:42.939Z",
       "endedAt": "2026-06-03T19:29:37.957Z"
+    },
+    {
+      "iteration": 6,
+      "status": "completed",
+      "taskId": "store-bd8.7",
+      "taskTitle": "US-007: Add product",
+      "taskCompleted": true,
+      "durationMs": 226122,
+      "startedAt": "2026-06-03T19:29:42.909Z",
+      "endedAt": "2026-06-03T19:33:29.031Z"
     }
   ],
   "skippedTaskIds": [],

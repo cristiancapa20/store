@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ProductList from "./ProductList";
 
 type Props = {
   searchParams: Promise<{ added?: string }>;
@@ -18,7 +19,7 @@ export default async function ProductsPage({ searchParams }: Props) {
         </div>
       )}
 
-      <p className="text-zinc-500 dark:text-zinc-400">Inventory list coming soon.</p>
+      <ProductList />
 
       {/* FAB — Add Product */}
       <Link
@@ -26,7 +27,12 @@ export default async function ProductsPage({ searchParams }: Props) {
         aria-label="Add product"
         className="fixed bottom-24 right-4 flex items-center justify-center w-14 h-14 rounded-full bg-green-600 text-white shadow-lg hover:bg-green-700 transition-colors"
       >
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-7 h-7"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
