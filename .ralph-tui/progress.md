@@ -133,3 +133,18 @@ after each iteration and it's included in prompts for context.
   - `pb-40` on the scrollable body prevents cart items from hiding behind the fixed footer panel
 ---
 
+## 2026-06-03 - store-bd8.10
+- Implemented `GET /api/invoices/[saleId]` route handler at `app/api/invoices/[saleId]/route.tsx`
+- Route fetches sale from Inventory API using `INVENTORY_API_KEY` server-side only; returns PDF via `@react-pdf/renderer`
+- PDF contains: store name (STORE_NAME env), sale ID, date/time, staff name, line items table, subtotal, tax (TAX_RATE env), grand total
+- Protected with `auth()` from NextAuth — unauthenticated requests return 401
+- Response headers: `Content-Type: application/pdf`, `Content-Disposition: attachment; filename="invoice-{saleId}.pdf"`
+- Added `serverExternalPackages: ["@react-pdf/renderer"]` to `next.config.ts` to prevent webpack bundling issues
+- Files changed: `app/api/invoices/[saleId]/route.tsx`, `next.config.ts`, `package.json`
+- **Learnings:**
+  - `@react-pdf/renderer` uses `export = ReactPDF` (CJS); import as `import ReactPDF from '@react-pdf/renderer'` and destructure — works with `esModuleInterop: true`
+  - `renderToBuffer()` returns `Promise<Buffer>` — must convert to `new Uint8Array(buffer)` for `NextResponse` body (TypeScript `BodyInit` type requires `BufferSource | Blob | ...`, not `Buffer`)
+  - Add `serverExternalPackages: ["@react-pdf/renderer"]` in Next.js config to prevent webpack from bundling the package — avoids ESM/CJS interop issues at runtime
+  - Route handlers use `context: { params: Promise<{ saleId: string }> }` in Next.js 15+ — must `await context.params` before accessing dynamic segments
+---
+

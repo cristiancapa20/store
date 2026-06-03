@@ -3,10 +3,10 @@
   "sessionId": "1ece79ff-3b9f-4373-99d2-f45194022a86",
   "status": "running",
   "startedAt": "2026-06-03T18:59:32.760Z",
-  "updatedAt": "2026-06-03T19:39:51.860Z",
-  "currentIteration": 7,
+  "updatedAt": "2026-06-03T20:02:48.014Z",
+  "currentIteration": 8,
   "maxIterations": 0,
-  "tasksCompleted": 7,
+  "tasksCompleted": 8,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -41,8 +41,8 @@
       {
         "id": "store-bd8.5",
         "title": "US-005: Scan & sell — cart and checkout",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "store-bd8.6",
@@ -146,6 +146,16 @@
       "durationMs": 187336,
       "startedAt": "2026-06-03T19:33:34.630Z",
       "endedAt": "2026-06-03T19:36:41.966Z"
+    },
+    {
+      "iteration": 8,
+      "status": "completed",
+      "taskId": "store-bd8.5",
+      "taskTitle": "US-005: Scan & sell — cart and checkout",
+      "taskCompleted": true,
+      "durationMs": 182356,
+      "startedAt": "2026-06-03T19:36:47.655Z",
+      "endedAt": "2026-06-03T19:39:50.011Z"
     }
   ],
   "skippedTaskIds": [],

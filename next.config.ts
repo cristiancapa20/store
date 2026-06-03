@@ -15,6 +15,7 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   // next-pwa uses webpack workbox; turbopack is incompatible with it
   turbopack: {},
+  serverExternalPackages: ["@react-pdf/renderer"],
 };
 
 export default withPWA(nextConfig);
