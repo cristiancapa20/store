@@ -1,0 +1,19 @@
+- generic [active] [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - heading "Store Inventory" [level=1] [ref=e59]
+        - paragraph [ref=e60]: Sign in to continue
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - generic [ref=e63]: Email
+          - textbox "Email" [ref=e64]:
+            - /placeholder: you@example.com
+        - generic [ref=e65]:
+          - generic [ref=e66]: Password
+          - textbox "Password" [ref=e67]:
+            - /placeholder: ••••••••
+        - button "Sign in" [ref=e68]
+  - button "Open Next.js Dev Tools" [ref=e23] [cursor=pointer]:
+    - img [ref=e24]
+  - alert [ref=e17]

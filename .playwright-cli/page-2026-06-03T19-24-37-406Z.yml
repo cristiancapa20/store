@@ -1,0 +1,17 @@
+- generic [active] [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - heading "Store Inventory" [level=1] [ref=e7]
+        - paragraph [ref=e8]: Sign in to continue
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]: Email
+          - textbox "Email" [ref=e12]:
+            - /placeholder: you@example.com
+        - generic [ref=e13]:
+          - generic [ref=e14]: Password
+          - textbox "Password" [ref=e15]:
+            - /placeholder: ••••••••
+        - button "Sign in" [ref=e16]
+  - alert [ref=e17]

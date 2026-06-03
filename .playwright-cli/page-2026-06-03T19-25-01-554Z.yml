@@ -1,0 +1,34 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e27]:
+      - generic [ref=e28]: Admin
+      - button "Sign out" [ref=e30]
+    - main [ref=e3]:
+      - generic [ref=e31]:
+        - heading "Sell" [level=1] [ref=e32]
+        - paragraph [ref=e33]: Scan a product to add it to the cart.
+    - navigation [ref=e34]:
+      - generic [ref=e35]:
+        - link "Sell" [ref=e36] [cursor=pointer]:
+          - /url: /sell
+          - img [ref=e37]
+          - generic [ref=e39]: Sell
+        - link "Products" [ref=e40] [cursor=pointer]:
+          - /url: /products
+          - img [ref=e41]
+          - generic [ref=e43]: Products
+        - link "Add" [ref=e44] [cursor=pointer]:
+          - /url: /products/new
+          - img [ref=e45]
+          - generic [ref=e47]: Add
+        - link "Adjust" [ref=e48] [cursor=pointer]:
+          - /url: /adjust
+          - img [ref=e49]
+          - generic [ref=e51]: Adjust
+        - link "History" [ref=e52] [cursor=pointer]:
+          - /url: /history
+          - img [ref=e53]
+          - generic [ref=e55]: History
+  - button "Open Next.js Dev Tools" [ref=e23] [cursor=pointer]:
+    - img [ref=e24]
+  - alert [ref=e17]

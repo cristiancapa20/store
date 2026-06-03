@@ -1,0 +1,72 @@
+# Iteration 3 Log
+
+## Metadata
+
+- **Task ID**: store-bd8.3
+- **Task Title**: US-003: Inventory API proxy layer (server actions)
+- **Description**: As a developer, I want all calls to the Inventory Service routed through Next.js server actions so that the API key never reaches the browser.
+
+## Acceptance Criteria
+- [ ] `INVENTORY_API_URL` and `IN...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-06-03T19:15:15.221Z
+- **Ended At**: 2026-06-03T19:16:34.103Z
+- **Duration**: 1m 18s
+- **Input Tokens**: 43
+- **Output Tokens**: 4183
+- **Total Tokens**: 4226
+- **Agent**: claude
+- **Model**: claude-sonnet-4-6
+- **Epic**: store-bd8
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing the progress file and codebase structure before implementing the server actions.
+[94m[Read][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m
+[94m[Glob][0m pattern: [96m/Users/cristian/dev/store/**/*.ts[0m
+[94m[Glob][0m pattern: [96m/Users/cristian/dev/store/app/**/*.ts[0m
+[94m[Glob][0m pattern: [96m/Users/cristian/dev/store/lib/**/*[0m
+[94m[Glob][0m pattern: [96m/Users/cristian/dev/store/app/**/*[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/.env.local[0m
+Now I have enough context. Let me create the types file and server actions.
+[94m[Read][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m
+I'll create the types file and server actions file now.
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/types.ts[0m "export type Product = {
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  stock: number;
+  description?: string;
+};
+
+export type CartItem = {
+  productId: string;
+  quantity: number;
+  u... (972 chars)"
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m ""use server";
+
+import type {
+  ActionResult,
+  CartItem,
+  InventoryPage,
+  NewProduct,
+  Product,
+  Sale,
+  SaleFilters,
+} from "./types";
+
+function apiUrl(path: string): string {
+  const base = proc... (2666 chars)"
+Now run typecheck and lint to verify.
+[94m[Bash][0m Run TypeScript type check $ node node_modules/typescript/bin/tsc --noEmit 2>&1
+[94m[Bash][0m Run ESLint on new lib files $ node node_modules/eslint/bin/eslint.js lib/actions.ts lib/types.ts 2>&1
+Both pass clean. Now close the bead and update progress.
+[94m[Bash][0m Close bead store-bd8.3 $ typecheck and lint pass"
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "## 2026-06-03 - store-bd8.4" → "## 2026-06-03 - store-bd8.3
+- Created `lib/types.t..."
+US-003 is done. Created `lib/types.ts` (shared types) and `lib/actions.ts` (all 6 server actions behind `"use server"`). The `INVENTORY_API_KEY` only appears server-side, every action returns `T | { error: string }` without throwing, and both `typecheck` and `lint` pass clean.
+
+<promise>COMPLETE</promise>

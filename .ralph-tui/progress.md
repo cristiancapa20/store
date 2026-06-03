@@ -56,3 +56,26 @@ after each iteration and it's included in prompts for context.
   - Dropped "requesting" from `CameraState` — use `"idle"` for the waiting-for-permission state.
 ---
 
+## 2026-06-03 - store-bd8.2
+- Installed `next-auth@beta` (v5.0.0-beta.31), `better-sqlite3`, `bcryptjs` and their TypeScript types
+- Created `lib/db.ts` — initializes SQLite at `./data/store.db` with WAL mode; creates `users` table on first run
+- Created `auth.config.ts` — Edge-safe NextAuth config (no DB imports); handles route protection via `authorized` callback, plus `jwt`/`session` callbacks to thread `id` and `role`
+- Created `auth.ts` — full NextAuth config extending `authConfig`, adds Credentials provider querying SQLite + bcrypt password comparison
+- Created `types/next-auth.d.ts` — module augmentation for `Session.user.{id, role}`, `User.role`, `JWT.{id, role}`
+- Created `app/api/auth/[...nextauth]/route.ts` — NextAuth route handler
+- Created `middleware.ts` — uses `NextAuth(authConfig).auth`; matcher excludes `/api/auth/*`, static assets, manifests
+- Created `app/login/page.tsx` — client component using `useActionState` for pending + error state; rounded-2xl inputs, green Sign in button, mobile-optimized
+- Created `app/login/actions.ts` — `loginAction` server action; catches `AuthError` and returns `{ error }`, re-throws redirect to Next.js
+- Created `components/LogoutButton.tsx` — server component with inline `"use server"` action calling `signOut`; no SessionProvider needed
+- Updated `app/layout.tsx` — calls `auth()` server-side; conditionally renders header (name + LogoutButton) and BottomNav only when session active
+- Created `scripts/seed.ts` — creates admin user from `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` env vars; added `seed` npm script using `--experimental-strip-types`
+- Added `AUTH_SECRET` and `AUTH_URL` to `.env.local` alongside existing `NEXTAUTH_*` vars
+- **Learnings:**
+  - NextAuth v5 Edge middleware pattern: split `auth.config.ts` (Edge-safe, no DB) from `auth.ts` (Node-only, has Credentials/DB). Middleware imports only `auth.config.ts`.
+  - `signIn("credentials", { redirectTo })` in a server action throws `NEXT_REDIRECT` on success — re-throw it so Next.js handles navigation; catch only `AuthError` for credential failures.
+  - `useActionState` (React 19) pairs cleanly with NextAuth v5 server actions: pending/error state from the action, redirect handled by the re-thrown NEXT_REDIRECT.
+  - `LogoutButton` as a server component with inline `"use server"` avoids needing `SessionProvider` entirely.
+  - Seed script runs with `node --env-file=.env.local --experimental-strip-types` on Node 26 — triggers MODULE_TYPELESS_PACKAGE_JSON warning but works fine.
+  - `better-sqlite3` is sync — fine in Node.js `authorize` callback; no async issues.
+---
+
