@@ -3,10 +3,10 @@
   "sessionId": "1ece79ff-3b9f-4373-99d2-f45194022a86",
   "status": "running",
   "startedAt": "2026-06-03T18:59:32.760Z",
-  "updatedAt": "2026-06-03T19:26:39.012Z",
-  "currentIteration": 3,
+  "updatedAt": "2026-06-03T19:29:39.088Z",
+  "currentIteration": 4,
   "maxIterations": 0,
-  "tasksCompleted": 3,
+  "tasksCompleted": 4,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -23,8 +23,8 @@
       {
         "id": "store-bd8.2",
         "title": "US-002: Staff authentication (NextAuth + SQLite)",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "store-bd8.3",
@@ -106,6 +106,16 @@
       "durationMs": 78882,
       "startedAt": "2026-06-03T19:15:15.221Z",
       "endedAt": "2026-06-03T19:16:34.103Z"
+    },
+    {
+      "iteration": 4,
+      "status": "completed",
+      "taskId": "store-bd8.2",
+      "taskTitle": "US-002: Staff authentication (NextAuth + SQLite)",
+      "taskCompleted": true,
+      "durationMs": 598645,
+      "startedAt": "2026-06-03T19:16:39.222Z",
+      "endedAt": "2026-06-03T19:26:37.867Z"
     }
   ],
   "skippedTaskIds": [],

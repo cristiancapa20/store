@@ -79,3 +79,14 @@ after each iteration and it's included in prompts for context.
   - `better-sqlite3` is sync — fine in Node.js `authorize` callback; no async issues.
 ---
 
+## 2026-06-03 - store-bd8.8
+- Implemented `/adjust` page as a `"use client"` component
+- Features: `<BarcodeInput>` at top, name/SKU search with dropdown (fetches `listInventory(1,200)` and filters client-side), selected product card showing current stock, delta +/- stepper with numeric input, reason dropdown (Restock/Shrinkage/Correction/Other), `adjustStock()` server action call, new stock display on success, validation preventing stock below 0
+- Files changed: `app/adjust/page.tsx`
+- **Learnings:**
+  - React 19 `startTransition` accepts async callbacks directly — no `useEffect` wrapping needed for transition-based server action calls
+  - For client-side name search, call `listInventory(1, 200)` and filter locally — avoids adding a search endpoint while keeping the pattern simple
+  - `"error" in result` type narrowing works for `ActionResult<T>` as long as `T` has no `error` field — Product, InventoryPage, and `{stock: number}` all satisfy this
+  - `useCallback` for all handlers that touch state prevents stale closure issues without needing `useEffect`
+---
+
