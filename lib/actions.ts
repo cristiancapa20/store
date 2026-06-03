@@ -1,5 +1,6 @@
 "use server";
 
+import db from "./db";
 import type {
   ActionResult,
   CartItem,
@@ -9,6 +10,16 @@ import type {
   Sale,
   SaleFilters,
 } from "./types";
+
+export async function listStaff(): Promise<{ id: string; name: string }[]> {
+  try {
+    return db
+      .prepare("SELECT id, name FROM users ORDER BY name")
+      .all() as { id: string; name: string }[];
+  } catch {
+    return [];
+  }
+}
 
 function apiUrl(path: string): string {
   const base = process.env.INVENTORY_API_URL ?? "";

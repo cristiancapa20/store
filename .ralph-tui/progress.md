@@ -133,6 +133,19 @@ after each iteration and it's included in prompts for context.
   - `pb-40` on the scrollable body prevents cart items from hiding behind the fixed footer panel
 ---
 
+## 2026-06-03 - store-bd8.9
+- Implemented `/history` page as a `"use client"` component
+- Added `listStaff()` server action to `lib/actions.ts` — queries SQLite `users` table directly; used for the staff dropdown in history filters
+- Features: date-range pickers (From/To), staff member dropdown (all/per-user), sales card list with date/time/staff name/item count/total, tap-to-expand showing line items + totals, "Download Invoice" link per expanded sale, loading skeleton (4 cards) on initial fetch, empty state with icon
+- Filters trigger re-fetch on change via `useCallback` + `useEffect([fetchSales])` pattern (same as ProductList)
+- Two separate `useTransition` hooks (`staffPending`/`salesPending`) to independently track staff-load vs sales-load transitions
+- Files changed: `app/history/page.tsx`, `lib/actions.ts`
+- **Learnings:**
+  - `listStaff` DB query in `lib/actions.ts` works without adding `better-sqlite3` to `serverExternalPackages` — Next.js auto-externalises native Node addons
+  - Use two `useTransition` hooks (not one shared) when two independent async flows need independent pending tracking — combine with `isPending = aP || bP`
+  - `useCallback` deps `[startDate, endDate, staffId]` cause `fetchSales` to re-create on filter change, which triggers the `useEffect([fetchSales])` re-run — clean filter-reactive fetch with no direct `useEffect` dep on filter state
+---
+
 ## 2026-06-03 - store-bd8.10
 - Implemented `GET /api/invoices/[saleId]` route handler at `app/api/invoices/[saleId]/route.tsx`
 - Route fetches sale from Inventory API using `INVENTORY_API_KEY` server-side only; returns PDF via `@react-pdf/renderer`

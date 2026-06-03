@@ -3,10 +3,10 @@
   "sessionId": "1ece79ff-3b9f-4373-99d2-f45194022a86",
   "status": "running",
   "startedAt": "2026-06-03T18:59:32.760Z",
-  "updatedAt": "2026-06-03T20:02:48.014Z",
-  "currentIteration": 8,
+  "updatedAt": "2026-06-03T20:06:19.912Z",
+  "currentIteration": 9,
   "maxIterations": 0,
-  "tasksCompleted": 8,
+  "tasksCompleted": 9,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -71,8 +71,8 @@
       {
         "id": "store-bd8.10",
         "title": "US-010: Invoice PDF generation",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       }
     ]
   },
@@ -156,6 +156,16 @@
       "durationMs": 182356,
       "startedAt": "2026-06-03T19:36:47.655Z",
       "endedAt": "2026-06-03T19:39:50.011Z"
+    },
+    {
+      "iteration": 9,
+      "status": "completed",
+      "taskId": "store-bd8.10",
+      "taskTitle": "US-010: Invoice PDF generation",
+      "taskCompleted": true,
+      "durationMs": 1371191,
+      "startedAt": "2026-06-03T19:39:55.808Z",
+      "endedAt": "2026-06-03T20:02:46.999Z"
     }
   ],
   "skippedTaskIds": [],

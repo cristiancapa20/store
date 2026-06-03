@@ -1,0 +1,81 @@
+# Iteration 9 Log
+
+## Metadata
+
+- **Task ID**: store-bd8.10
+- **Task Title**: US-010: Invoice PDF generation
+- **Description**: As a cashier or manager, I want to download a PDF invoice for any sale so that I can give a receipt to the customer or keep records.
+
+## Acceptance Criteria
+- [ ] `GET /api/invoices/[saleId]` route ha...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-06-03T19:39:55.808Z
+- **Ended At**: 2026-06-03T20:02:46.999Z
+- **Duration**: 22m 51s
+- **Input Tokens**: 92
+- **Output Tokens**: 26480
+- **Total Tokens**: 26572
+- **Agent**: claude
+- **Model**: claude-sonnet-4-6
+- **Epic**: store-bd8
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reading the progress file and studying the existing codebase structure.
+[94m[Read][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/cristian/dev/store/app[0m pattern: [96m**/*.ts[0m
+[94m[Glob][0m [95m/Users/cristian/dev/store/app/api[0m pattern: [96m**/*[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/types.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/auth.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m
+[94m[Bash][0m Check if history page exists $ ls /Users/cristian/dev/store/app/history/ 2>/dev/null || echo "no history dir"
+[94m[Bash][0m Check installed packages $ cat package.json
+[94m[Read][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m
+Now I'll install `@react-pdf/renderer` and then create the invoice route handler.
+[94m[Bash][0m Install @react-pdf/renderer $ npm install @react-pdf/renderer 2>&1 | tail -5
+[94m[Read][0m [95m/Users/cristian/dev/store/.env.local[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/next.config.ts[0m
+[94m[Bash][0m Check @react-pdf/renderer package structure $ ls /Users/cristian/dev/store/node_modules/@react-pdf/renderer/dist 2>/dev/null | head -10
+[94m[Bash][0m List @react-pdf/renderer package files $ ls /Users/cristian/dev/store/node_modules/@react-pdf/renderer/ 2>/dev/null | head -20
+[94m[Bash][0m Check @react-pdf/renderer export structure $ print('module:', d.get('module'))"
+[94m[Bash][0m Check lib directory of react-pdf/renderer $ ls /Users/cristian/dev/store/node_modules/@react-pdf/renderer/lib/ | head -10
+[94m[Bash][0m Check available APIs in react-pdf types $ grep -n "renderToBuffer\|renderToStream\|pdf" /Users/cristian/dev/store/node_modules/@react-pdf/rend...
+[94m[Bash][0m Check all exports from react-pdf types $ grep -n "export" /Users/cristian/dev/store/node_modules/@react-pdf/renderer/lib/react-pdf.d.ts | hea...
+[94m[Bash][0m Check buffer/stream render APIs in react-pdf $ grep -n "renderToBuffer\|renderToStream\|renderToFile\|toBuffer\|toStream" /Users/cristian/dev/store...
+[94m[Bash][0m Check renderToBuffer signature $ grep -A5 "renderToBuffer" /Users/cristian/dev/store/node_modules/@react-pdf/renderer/lib/react-pdf.d...
+[94m[Read][0m [95m/Users/cristian/dev/store/tsconfig.json[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/api/auth/[...nextauth]/route.ts[0m
+[94m[Bash][0m Check @react-pdf/renderer dependencies $ print('deps:', list(d.get('dependencies', {}).keys()))"
+Now I have all the information I need. Let me create the invoice route handler and update the Next.js config.
+[94m[Bash][0m Create invoice route directory $ mkdir -p /Users/cristian/dev/store/app/api/invoices/\[saleId\]
+[94m[Write][0m [95m/Users/cristian/dev/store/app/api/invoices/[saleId]/route.tsx[0m "import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import ReactPDF from "@react-pdf/renderer";
+import React from "react";
+import type { Sale } from "@/lib/types";
+... (6047 chars)"
+Now add `@react-pdf/renderer` to `serverExternalPackages` in Next.js config to prevent webpack bundling issues:
+[94m[Edit][0m [95m/Users/cristian/dev/store/next.config.ts[0m edit: "const nextConfig: NextConfig = {
+  // next-pwa use..." → "const nextConfig: NextConfig = {
+  // next-pwa use..."
+Now run the quality checks:
+[94m[Bash][0m Run TypeScript typecheck $ node node_modules/typescript/bin/tsc --noEmit 2>&1
+
+[91m[Error: Exit code 2
+app/api/invoices/[saleId]/route.tsx(184,27): error TS2345: Argument of type 'Buffer<ArrayBufferLike>' is not assignable to parameter of type 'BodyInit | null | undefined'.
+  Type 'Buffer<ArrayBufferLike>' is missing the following properties from type 'URLSearchParams': size, append, delete, get, and 2 more.][0m
+The `Buffer` type isn't assignable to `BodyInit` in this TypeScript context. I'll convert it to `Uint8Array`:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/api/invoices/[saleId]/route.tsx[0m edit: "  return new NextResponse(buffer, {" → "  return new NextResponse(new Uint8Array(buffer), ..."
+[94m[Bash][0m Re-run typecheck $ node node_modules/typescript/bin/tsc --noEmit 2>&1
+Typecheck passes. Now run lint:
+[94m[Bash][0m Run ESLint $ node node_modules/eslint/bin/eslint.js . 2>&1
+Both checks pass. Now let me close the bead and update the progress log:
+[94m[Bash][0m Close the beads issue $ bd close store-bd8.10 --db /Users/cristian/dev/store/.beads/beads.db --reason "Implemented GET /api/...
+[94m[Read][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "  - `pb-40` on the scrollable body prevents cart i..." → "  - `pb-40` on the scrollable body prevents cart i..."
+US-010 is complete. The invoice PDF route is live at `app/api/invoices/[saleId]/route.tsx` — it checks the NextAuth session (401 if missing), fetches the sale from the Inventory API with the server-side API key, renders a PDF with `@react-pdf/renderer` (store name, sale ID, date/time, staff, line items, subtotal/tax/total), and returns it as a download attachment. Both `typecheck` and `lint` pass.
+
+<promise>COMPLETE</promise>
