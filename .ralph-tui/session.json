@@ -3,10 +3,10 @@
   "sessionId": "1ece79ff-3b9f-4373-99d2-f45194022a86",
   "status": "running",
   "startedAt": "2026-06-03T18:59:32.760Z",
-  "updatedAt": "2026-06-03T19:07:20.236Z",
-  "currentIteration": 0,
+  "updatedAt": "2026-06-03T19:15:10.754Z",
+  "currentIteration": 1,
   "maxIterations": 0,
-  "tasksCompleted": 0,
+  "tasksCompleted": 1,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -17,8 +17,8 @@
       {
         "id": "store-bd8.1",
         "title": "US-001: Project scaffolding and PWA setup",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "store-bd8.2",
@@ -76,7 +76,18 @@
       }
     ]
   },
-  "iterations": [],
+  "iterations": [
+    {
+      "iteration": 1,
+      "status": "completed",
+      "taskId": "store-bd8.1",
+      "taskTitle": "US-001: Project scaffolding and PWA setup",
+      "taskCompleted": true,
+      "durationMs": 418074,
+      "startedAt": "2026-06-03T19:00:20.995Z",
+      "endedAt": "2026-06-03T19:07:19.069Z"
+    }
+  ],
   "skippedTaskIds": [],
   "cwd": "/Users/cristian/dev/store",
   "activeTaskIds": [],
