@@ -6,6 +6,7 @@ import { BrowserMultiFormatReader, IScannerControls } from "@zxing/browser";
 interface BarcodeInputProps {
   onScan: (barcode: string) => void;
   disabled?: boolean;
+  initialMode?: Mode;
 }
 
 type Mode = "camera" | "scanner";
@@ -23,8 +24,8 @@ interface NativeBarcodeDetector {
   detect(image: ImageBitmapSource): Promise<Array<{ rawValue: string }>>;
 }
 
-export default function BarcodeInput({ onScan, disabled }: BarcodeInputProps) {
-  const [mode, setMode] = useState<Mode>("scanner");
+export default function BarcodeInput({ onScan, disabled, initialMode = "scanner" }: BarcodeInputProps) {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [cameraState, setCameraState] = useState<CameraState>("idle");
   const [lastBarcode, setLastBarcode] = useState<string | null>(null);
   const [showOverlay, setShowOverlay] = useState(false);

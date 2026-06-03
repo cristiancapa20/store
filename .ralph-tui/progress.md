@@ -79,6 +79,21 @@ after each iteration and it's included in prompts for context.
   - `better-sqlite3` is sync — fine in Node.js `authorize` callback; no async issues.
 ---
 
+## 2026-06-03 - store-bd8.7
+- Implemented `/products/new` — server component checks `session.user.role === "admin"`; non-admins see a 403 card
+- Created `app/products/new/AddProductForm.tsx` — `"use client"` form with: Name, SKU+scan button, Price, Initial Stock (all required), Description (optional)
+- SKU scan button toggles an inline `<BarcodeInput initialMode="camera" />` that fills the SKU field on scan and dismisses itself
+- Client-side validation with inline per-field error messages before calling `addProduct()` server action
+- Success redirects to `/products?added=1`; API errors surface as a form-level error banner
+- Added FAB (`fixed bottom-24 right-4`) to `/products/page.tsx` linking to `/products/new`; reads `?added=1` searchParam to show a success toast
+- Files changed: `components/BarcodeInput.tsx`, `app/products/new/page.tsx`, `app/products/new/AddProductForm.tsx`, `app/products/page.tsx`
+- **Learnings:**
+  - BarcodeInput needed an `initialMode` prop to start in camera mode — a minimal addition that allows reuse without mounting and immediately toggling
+  - Admin guard in App Router: make the page a server component that calls `auth()`, render a 403 card for non-admins, and render the `"use client"` form component for admins — no middleware change needed
+  - `searchParams` in Next.js 15+ is `Promise<{...}>` — must `await searchParams` in async server page component before reading keys
+  - For a simple form submit handler, avoid `useCallback` wrapping — re-creation on each render is fine and avoids stale-closure ESLint issues with validation logic that reads multiple state vars
+---
+
 ## 2026-06-03 - store-bd8.8
 - Implemented `/adjust` page as a `"use client"` component
 - Features: `<BarcodeInput>` at top, name/SKU search with dropdown (fetches `listInventory(1,200)` and filters client-side), selected product card showing current stock, delta +/- stepper with numeric input, reason dropdown (Restock/Shrinkage/Correction/Other), `adjustStock()` server action call, new stock display on success, validation preventing stock below 0

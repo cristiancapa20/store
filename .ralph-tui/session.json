@@ -3,10 +3,10 @@
   "sessionId": "1ece79ff-3b9f-4373-99d2-f45194022a86",
   "status": "running",
   "startedAt": "2026-06-03T18:59:32.760Z",
-  "updatedAt": "2026-06-03T19:29:39.088Z",
-  "currentIteration": 4,
+  "updatedAt": "2026-06-03T19:33:30.208Z",
+  "currentIteration": 5,
   "maxIterations": 0,
-  "tasksCompleted": 4,
+  "tasksCompleted": 5,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -59,8 +59,8 @@
       {
         "id": "store-bd8.8",
         "title": "US-008: Stock adjustment",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "store-bd8.9",
@@ -116,6 +116,16 @@
       "durationMs": 598645,
       "startedAt": "2026-06-03T19:16:39.222Z",
       "endedAt": "2026-06-03T19:26:37.867Z"
+    },
+    {
+      "iteration": 5,
+      "status": "completed",
+      "taskId": "store-bd8.8",
+      "taskTitle": "US-008: Stock adjustment",
+      "taskCompleted": true,
+      "durationMs": 175018,
+      "startedAt": "2026-06-03T19:26:42.939Z",
+      "endedAt": "2026-06-03T19:29:37.957Z"
     }
   ],
   "skippedTaskIds": [],
