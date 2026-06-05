@@ -15,7 +15,14 @@ export async function loginAction(
     })
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: "Invalid email or password" }
+      const cause = (error.cause as { err?: Error } | undefined)?.err
+      if (cause?.message === "ACCOUNT_SUSPENDED") {
+        return { error: "Tu cuenta está suspendida. Contacta a soporte." }
+      }
+      if (cause?.message === "ACCOUNT_NOT_CONFIGURED") {
+        return { error: "Cuenta no configurada. Contacta a soporte." }
+      }
+      return { error: "Credenciales inválidas. Inténtalo de nuevo." }
     }
     throw error
   }

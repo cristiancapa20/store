@@ -15,8 +15,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
-        const user = db
-          .prepare("SELECT * FROM users WHERE email = ?")
+        const row = db
+          .prepare(`
+            SELECT u.id, u.name, u.email, u.password_hash, u.role,
+                   u.organization_id,
+                   o.inventory_api_key, o.inventory_location_id,
+                   o.status, o.plan
+            FROM users u
+            LEFT JOIN organizations o ON u.organization_id = o.id
+            WHERE u.email = ?
+          `)
           .get(credentials.email as string) as
           | {
               id: string
@@ -24,22 +32,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               email: string
               password_hash: string
               role: string
+              organization_id: string | null
+              inventory_api_key: string | null
+              inventory_location_id: string | null
+              status: string | null
+              plan: string | null
             }
           | undefined
 
-        if (!user) return null
+        if (!row) return null
 
-        const passwordMatch = await bcrypt.compare(
+        const ok = await bcrypt.compare(
           credentials.password as string,
-          user.password_hash
+          row.password_hash
         )
-        if (!passwordMatch) return null
+        if (!ok) return null
+
+        if (row.role !== "super_admin" && !row.organization_id) {
+          throw new Error("ACCOUNT_NOT_CONFIGURED")
+        }
+
+        if (row.status === "inactive") {
+          throw new Error("ACCOUNT_SUSPENDED")
+        }
 
         return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
+          id: row.id,
+          name: row.name,
+          email: row.email,
+          role: row.role,
+          organizationId: row.organization_id,
+          inventoryApiKey: row.inventory_api_key,
+          inventoryLocationId: row.inventory_location_id,
+          organizationStatus: row.status,
+          organizationPlan: row.plan,
         }
       },
     }),
