@@ -3,8 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import PlanCard from "./PlanCard";
 
-type NavKey = "sell" | "products" | "addProduct" | "adjustStock" | "history" | "guide" | "profile";
+type NavKey =
+  | "sell"
+  | "products"
+  | "addProduct"
+  | "adjustStock"
+  | "history"
+  | "guide"
+  | "profile"
+  | "staff";
 
 const StoreIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -13,7 +22,14 @@ const StoreIcon = () => (
   </svg>
 );
 
-const tabs: { href: string; key: NavKey; icon: React.ReactNode }[] = [
+const UsersIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
+const allTabs: { href: string; key: NavKey; icon: React.ReactNode; adminOnly?: boolean }[] = [
   {
     href: "/sell",
     key: "sell",
@@ -25,7 +41,7 @@ const tabs: { href: string; key: NavKey; icon: React.ReactNode }[] = [
   },
   {
     href: "/products",
-    key: "products" as NavKey,
+    key: "products",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -34,7 +50,8 @@ const tabs: { href: string; key: NavKey; icon: React.ReactNode }[] = [
   },
   {
     href: "/products/new",
-    key: "addProduct" as NavKey,
+    key: "addProduct",
+    adminOnly: true,
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -43,7 +60,7 @@ const tabs: { href: string; key: NavKey; icon: React.ReactNode }[] = [
   },
   {
     href: "/adjust",
-    key: "adjustStock" as NavKey,
+    key: "adjustStock",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -52,7 +69,7 @@ const tabs: { href: string; key: NavKey; icon: React.ReactNode }[] = [
   },
   {
     href: "/history",
-    key: "history" as NavKey,
+    key: "history",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -60,8 +77,14 @@ const tabs: { href: string; key: NavKey; icon: React.ReactNode }[] = [
     ),
   },
   {
+    href: "/staff",
+    key: "staff",
+    adminOnly: true,
+    icon: <UsersIcon />,
+  },
+  {
     href: "/guide",
-    key: "guide" as NavKey,
+    key: "guide",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -70,7 +93,7 @@ const tabs: { href: string; key: NavKey; icon: React.ReactNode }[] = [
   },
   {
     href: "/profile",
-    key: "profile" as NavKey,
+    key: "profile",
     icon: <StoreIcon />,
   },
 ];
@@ -80,18 +103,32 @@ function isActive(pathname: string, href: string) {
   return pathname === href || (pathname.startsWith(href) && href !== "/products/new");
 }
 
-export default function BottomNav() {
+type Props = {
+  userRole?: string;
+  organizationPlan?: string | null;
+};
+
+export default function BottomNav({ userRole, organizationPlan }: Props) {
   const pathname = usePathname();
   const t = useTranslations("nav");
 
-  // Main tabs (all except profile)
-  const mainTabs = tabs.filter((tab) => tab.key !== "profile");
-  const profileTab = tabs.find((tab) => tab.key === "profile")!;
+  const isAdmin = userRole === "admin";
+  const visibleTabs = allTabs.filter(tab => !tab.adminOnly || isAdmin);
+  const mainTabs = visibleTabs.filter(tab => tab.key !== "profile");
+  const profileTab = visibleTabs.find(tab => tab.key === "profile")!;
+
+  function navLinkClass(active: boolean) {
+    return `flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium transition-all ${
+      active
+        ? "bg-brand-600 text-white shadow-[0_8px_24px_rgba(74,92,186,0.30)]"
+        : "text-brand-800/70 dark:text-brand-100/65 hover:bg-brand-100 dark:hover:bg-brand-800/40 hover:text-brand-900 dark:hover:text-brand-50"
+    }`;
+  }
 
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col fixed inset-y-4 left-4 w-56 bg-surface dark:bg-brand-900 rounded-[2rem] shadow-[0_20px_56px_rgba(3,15,34,0.14)] z-40 py-6">
+      <aside className="hidden lg:flex flex-col fixed inset-y-4 left-4 w-56 bg-[var(--bg-sidebar)] rounded-[2rem] shadow-[0_20px_56px_rgba(3,15,34,0.14)] dark:shadow-[0_20px_56px_rgba(0,0,0,0.5)] z-40 py-6 border border-[var(--border-color)]">
         {/* Brand */}
         <div className="px-6 pb-4">
           <span className="font-semibold text-brand-900 dark:text-brand-50 text-base tracking-tight">
@@ -107,33 +144,28 @@ export default function BottomNav() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium transition-all ${
-                  active
-                    ? "bg-brand-600 text-white shadow-[0_8px_24px_rgba(74,92,186,0.30)]"
-                    : "text-brand-800/70 dark:text-brand-100/65 hover:bg-brand-100 dark:hover:bg-brand-800/40 hover:text-brand-900 dark:hover:text-brand-50"
-                }`}
+                className={navLinkClass(active)}
                 aria-current={active ? "page" : undefined}
               >
                 {tab.icon}
-                <span>{t(tab.key)}</span>
+                <span>{t(tab.key as NavKey)}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Divider + Profile pinned at bottom */}
+        {/* Plan card (admin only) */}
+        <PlanCard role={userRole} plan={organizationPlan} />
+
+        {/* Profile pinned at bottom */}
         <div className="px-4 pt-2 pb-2">
-          <div className="h-px bg-brand-100 dark:bg-brand-800/60 mb-3" />
+          <div className="h-px bg-[var(--border-color)] mb-3" />
           {(() => {
             const active = isActive(pathname, profileTab.href);
             return (
               <Link
                 href={profileTab.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium transition-all ${
-                  active
-                    ? "bg-brand-600 text-white shadow-[0_8px_24px_rgba(74,92,186,0.30)]"
-                    : "text-brand-800/70 dark:text-brand-100/65 hover:bg-brand-100 dark:hover:bg-brand-800/40 hover:text-brand-900 dark:hover:text-brand-50"
-                }`}
+                className={navLinkClass(active)}
                 aria-current={active ? "page" : undefined}
               >
                 {profileTab.icon}
@@ -144,11 +176,11 @@ export default function BottomNav() {
         </div>
       </aside>
 
-      {/* Mobile bottom nav — all tabs including profile */}
+      {/* Mobile bottom nav */}
       <nav className="lg:hidden fixed bottom-3 left-3 right-3 z-40 max-w-md mx-auto pointer-events-none">
-        <div className="pointer-events-auto bg-surface dark:bg-brand-900 rounded-full shadow-[0_16px_48px_rgba(3,15,34,0.18)] px-1 py-1.5">
+        <div className="pointer-events-auto bg-[var(--bg-surface)] rounded-full shadow-[0_16px_48px_rgba(3,15,34,0.18)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.5)] px-1 py-1.5 border border-[var(--border-color)]">
           <div className="flex items-center justify-around gap-0.5 px-1">
-            {tabs.map((tab) => {
+            {visibleTabs.map((tab) => {
               const active = isActive(pathname, tab.href);
               return (
                 <Link
@@ -162,7 +194,7 @@ export default function BottomNav() {
                   aria-current={active ? "page" : undefined}
                 >
                   {tab.icon}
-                  <span className="truncate max-w-full px-0.5">{t(tab.key)}</span>
+                  <span className="truncate max-w-full px-0.5">{t(tab.key as NavKey)}</span>
                 </Link>
               );
             })}

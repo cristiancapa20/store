@@ -7,7 +7,8 @@
     "history": "Historial",
     "guide": "Guía",
     "profile": "Tienda",
-    "appName": "Inventario"
+    "appName": "Mi Comercio",
+    "staff": "Equipo"
   },
   "auth": {
     "title": "Inventario de Tienda",
