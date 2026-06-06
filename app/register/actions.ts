@@ -48,56 +48,75 @@ export async function registerAction(
   let inventoryApiKey: string | null = null
   let inventoryLocationId: string | null = null
 
-  try {
-    // 1. Create organization
-    const orgRes = await fetch(`${apiBase}/v1/admin/organizations`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-admin-secret": adminSecret,
-      },
-      body: JSON.stringify({ name: storeName }),
-    })
-    if (!orgRes.ok) {
-      return { error: "Servicio no disponible, intenta más tarde." }
-    }
-    const org = (await orgRes.json()) as { id: string }
-    inventoryOrgId = org.id
+  const inventoryConfigured = !!apiBase && !!adminSecret
 
-    // 2. Create API key
-    const keyRes = await fetch(
-      `${apiBase}/v1/admin/organizations/${inventoryOrgId}/api-keys`,
-      {
+  if (inventoryConfigured) {
+    try {
+      // 1. Create organization
+      const orgRes = await fetch(`${apiBase}/v1/admin/organizations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-admin-secret": adminSecret,
         },
-        body: JSON.stringify({ name: `${storeName} - Main` }),
-      }
-    )
-    if (!keyRes.ok) {
-      return { error: "Servicio no disponible, intenta más tarde." }
-    }
-    const keyData = (await keyRes.json()) as { key: string }
-    inventoryApiKey = keyData.key
+        body: JSON.stringify({ name: storeName }),
+      })
+      if (!orgRes.ok) {
+        if (process.env.NODE_ENV === "production") {
+          return { error: "Servicio no disponible, intenta más tarde." }
+        }
+        console.warn("[register] inventory org creation failed, proceeding without inventory linkage")
+      } else {
+        const org = (await orgRes.json()) as { id: string }
+        inventoryOrgId = org.id
 
-    // 3. Create default location
-    const locRes = await fetch(`${apiBase}/v1/locations`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${inventoryApiKey}`,
-      },
-      body: JSON.stringify({ name: `${storeName} - Principal` }),
-    })
-    if (!locRes.ok) {
-      return { error: "Servicio no disponible, intenta más tarde." }
+        // 2. Create API key
+        const keyRes = await fetch(
+          `${apiBase}/v1/admin/organizations/${inventoryOrgId}/api-keys`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-secret": adminSecret,
+            },
+            body: JSON.stringify({ name: `${storeName} - Main` }),
+          }
+        )
+        if (!keyRes.ok) {
+          if (process.env.NODE_ENV === "production") {
+            return { error: "Servicio no disponible, intenta más tarde." }
+          }
+          console.warn("[register] inventory api-key creation failed, proceeding without inventory linkage")
+        } else {
+          const keyData = (await keyRes.json()) as { key: string }
+          inventoryApiKey = keyData.key
+
+          // 3. Create default location
+          const locRes = await fetch(`${apiBase}/v1/locations`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${inventoryApiKey}`,
+            },
+            body: JSON.stringify({ name: `${storeName} - Principal` }),
+          })
+          if (!locRes.ok) {
+            if (process.env.NODE_ENV === "production") {
+              return { error: "Servicio no disponible, intenta más tarde." }
+            }
+            console.warn("[register] inventory location creation failed, proceeding without inventory linkage")
+          } else {
+            const loc = (await locRes.json()) as { id: string }
+            inventoryLocationId = loc.id
+          }
+        }
+      }
+    } catch {
+      if (process.env.NODE_ENV === "production") {
+        return { error: "Servicio no disponible, intenta más tarde." }
+      }
+      console.warn("[register] inventory service unreachable, proceeding without inventory linkage")
     }
-    const loc = (await locRes.json()) as { id: string }
-    inventoryLocationId = loc.id
-  } catch {
-    return { error: "Servicio no disponible, intenta más tarde." }
   }
 
   // Persist to SQLite
