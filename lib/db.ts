@@ -27,6 +27,15 @@ db.exec(`
   )
 `)
 
+// Organizations table — add missing columns if created before phone/address were added
+const orgCols = (
+  db.prepare("PRAGMA table_info(organizations)").all() as { name: string }[]
+).map(c => c.name)
+if (orgCols.length > 0) {
+  if (!orgCols.includes("phone"))   db.exec("ALTER TABLE organizations ADD COLUMN phone TEXT")
+  if (!orgCols.includes("address")) db.exec("ALTER TABLE organizations ADD COLUMN address TEXT")
+}
+
 // Users table — create fresh or migrate from old schema
 const userCols = (
   db.prepare("PRAGMA table_info(users)").all() as { name: string }[]
