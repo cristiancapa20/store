@@ -118,17 +118,17 @@ export default function BottomNav({ userRole, organizationPlan }: Props) {
   const profileTab = visibleTabs.find(tab => tab.key === "profile")!;
 
   function navLinkClass(active: boolean) {
-    return `flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium transition-all ${
+    return `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all w-full ${
       active
-        ? "bg-brand-600 text-white shadow-[0_8px_24px_rgba(74,92,186,0.30)]"
-        : "text-brand-800/70 dark:text-brand-100/65 hover:bg-brand-100 dark:hover:bg-brand-800/40 hover:text-brand-900 dark:hover:text-brand-50"
+        ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-none"
+        : "text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
     }`;
   }
 
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col fixed inset-y-4 left-4 w-56 bg-[var(--bg-sidebar)] rounded-[2rem] shadow-[0_20px_56px_rgba(3,15,34,0.14)] dark:shadow-[0_20px_56px_rgba(0,0,0,0.5)] z-40 py-6 border border-[var(--border-color)]">
+      <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-56 bg-[var(--bg-sidebar)] z-40 py-6 border-r border-[var(--border-color)]">
         {/* Brand */}
         <div className="px-6 pb-4">
           <span className="font-semibold text-brand-900 dark:text-brand-50 text-base tracking-tight">

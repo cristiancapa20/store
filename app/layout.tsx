@@ -89,22 +89,20 @@ export default async function RootLayout({
                 userRole={role}
                 organizationPlan={session.user.organizationPlan}
               />
-              <div className="flex flex-col h-full lg:pl-64 p-3 sm:p-4 lg:p-6 min-h-0">
-                <div className="ui-shell flex-1 w-full max-w-md lg:max-w-none mx-auto min-h-0 h-full lg:max-h-[calc(100vh-3rem)]">
-                  <header className="flex items-center justify-between gap-3 px-5 sm:px-6 py-3 shrink-0 border-b border-[var(--border-color)]">
-                    <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                      {session.user.name}
-                    </span>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <ThemeToggle current={theme} />
-                      <LanguageSwitcher />
-                      <LogoutButton />
-                    </div>
-                  </header>
-                  <main className="ui-panel pb-24 lg:pb-5">
-                    {children}
-                  </main>
-                </div>
+              <div className="flex flex-col min-h-screen lg:pl-56">
+                <header className="flex items-center justify-between gap-3 px-5 sm:px-6 py-3 shrink-0 border-b border-[var(--border-color)] bg-[var(--bg-surface)]">
+                  <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                    {session.user.name}
+                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <ThemeToggle current={theme} />
+                    <LanguageSwitcher />
+                    <LogoutButton />
+                  </div>
+                </header>
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6" style={{ background: "var(--bg-base)" }}>
+                  {children}
+                </main>
               </div>
             </>
           )}
