@@ -98,7 +98,8 @@
     "stockLabel": "Stock:"
   },
   "history": {
-    "title": "Sales History",
+    "title": "Billing History",
+    "subtitle": "Manage and review recent sales transactions.",
     "from": "From",
     "to": "To",
     "staffFilter": "Staff member",
@@ -107,7 +108,23 @@
     "loading": "Loading sales…",
     "total": "Total",
     "downloadInvoice": "Download Invoice",
-    "items": "{count, plural, one {# item} other {# items}}"
+    "items": "{count, plural, one {# item} other {# items}}",
+    "filters": "Filters",
+    "export": "Export",
+    "invoiceId": "Invoice ID",
+    "client": "Client",
+    "date": "Date",
+    "status": "Status",
+    "actions": "Actions",
+    "paid": "Paid",
+    "todayTotal": "Today's Total",
+    "invoicesIssued": "Invoices Issued",
+    "pendingCount": "Pending",
+    "avgTicket": "Avg Ticket",
+    "consumerFinal": "Final Consumer",
+    "showing": "Showing {from}–{to} of {total} results",
+    "viewSale": "View invoice",
+    "printInvoice": "Print / Download invoice"
   },
   "barcode": {
     "cameraMode": "Camera",
