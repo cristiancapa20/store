@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import db from "./db";
+import { apiFetch, getInventoryConfig } from "./inventoryClient";
 import type {
   ActionResult,
   CartItem,
@@ -19,47 +20,6 @@ export async function listStaff(): Promise<{ id: string; name: string }[]> {
       .all() as { id: string; name: string }[];
   } catch {
     return [];
-  }
-}
-
-function apiUrl(path: string): string {
-  const base = process.env.INVENTORY_API_URL ?? "";
-  return `${base}${path}`;
-}
-
-function locationId(): string {
-  return process.env.INVENTORY_LOCATION_ID ?? "";
-}
-
-function authHeader(): Record<string, string> {
-  return { Authorization: `Bearer ${process.env.INVENTORY_API_KEY ?? ""}` };
-}
-
-async function apiFetch<T>(
-  path: string,
-  init?: RequestInit
-): Promise<ActionResult<T>> {
-  try {
-    const res = await fetch(apiUrl(path), {
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...authHeader(),
-        ...(init?.headers as Record<string, string> | undefined),
-      },
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => res.statusText);
-      try {
-        const json = JSON.parse(text);
-        return { error: json.error ?? json.message ?? `HTTP ${res.status}` };
-      } catch {
-        return { error: `HTTP ${res.status}` };
-      }
-    }
-    return (await res.json()) as T;
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : "Network error" };
   }
 }
 
@@ -96,8 +56,9 @@ type ApiSaleResponse = {
 export async function scanBarcode(
   barcode: string
 ): Promise<ActionResult<Product>> {
+  const { locationId } = await getInventoryConfig();
   const result = await apiFetch<ApiScanResult>(
-    `/scan?barcode=${encodeURIComponent(barcode)}&location_id=${locationId()}`
+    `/scan?barcode=${encodeURIComponent(barcode)}&location_id=${locationId}`
   );
   if ("error" in result) return result;
   if (!result.found) return { error: "Product not found" };
@@ -116,11 +77,12 @@ export async function createSale(
   const session = await auth();
   const staffId = session?.user?.id ?? "unknown";
   const staffName = session?.user?.name ?? "Staff";
+  const { locationId } = await getInventoryConfig();
 
   const result = await apiFetch<ApiSaleResponse>("/sales", {
     method: "POST",
     body: JSON.stringify({
-      location_id: locationId(),
+      location_id: locationId,
       actor_ref: staffId,
       items: items.map((i) => ({
         product_id: i.productId,
@@ -134,11 +96,10 @@ export async function createSale(
   const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const total =
     typeof result.total === "string" ? parseFloat(result.total) : result.total;
-  const createdAt = result.createdAt ?? new Date().toISOString();
 
   return {
     id: result.id,
-    createdAt,
+    createdAt: result.createdAt ?? new Date().toISOString(),
     staffId,
     staffName,
     items: items.map((i) => ({
@@ -164,8 +125,9 @@ export async function listInventory(
     limit: number;
   };
 
+  const { locationId } = await getInventoryConfig();
   const result = await apiFetch<ApiResponse>(
-    `/locations/${locationId()}/inventory?page=${page}&limit=${limit}`
+    `/locations/${locationId}/inventory?page=${page}&limit=${limit}`
   );
   if ("error" in result) return result;
 
@@ -188,7 +150,25 @@ export async function addProduct(
 ): Promise<ActionResult<Product>> {
   type ApiProduct = { id: string; name: string; barcode: string | null };
 
-  // 1. Create product
+  const session = await auth();
+  const plan = session?.user?.organizationPlan ?? "basic";
+  const { locationId } = await getInventoryConfig();
+
+  // Enforce plan limit: basic allows up to 500 products
+  if (plan === "basic") {
+    type CountResponse = { total: number };
+    const countResult = await apiFetch<CountResponse>(
+      `/locations/${locationId}/inventory?page=1&limit=1`
+    );
+    if (!("error" in countResult) && countResult.total >= 500) {
+      return {
+        error:
+          "Límite del plan alcanzado (500 productos). Mejora a Pro para continuar.",
+      };
+    }
+  }
+
+  // 1. Create product in catalog
   const productResult = await apiFetch<ApiProduct>("/products", {
     method: "POST",
     body: JSON.stringify({ name: data.name, barcode: data.sku }),
@@ -197,7 +177,7 @@ export async function addProduct(
 
   // 2. Register in location (sets price)
   const invResult = await apiFetch<Record<string, unknown>>(
-    `/locations/${locationId()}/inventory`,
+    `/locations/${locationId}/inventory`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -216,7 +196,7 @@ export async function addProduct(
       {
         method: "POST",
         body: JSON.stringify({
-          location_id: locationId(),
+          location_id: locationId,
           product_id: productResult.id,
           delta: data.initialStock,
           reason: "initial",
@@ -240,10 +220,11 @@ export async function adjustStock(
   delta: number,
   reason = "manual"
 ): Promise<ActionResult<{ stock: number }>> {
+  const { locationId } = await getInventoryConfig();
   return apiFetch<{ stock: number }>("/inventory-adjustments", {
     method: "POST",
     body: JSON.stringify({
-      location_id: locationId(),
+      location_id: locationId,
       product_id: productId,
       delta,
       reason,
@@ -268,7 +249,12 @@ export async function listSales(
       lineTotal: number;
     }>;
   };
-  type ApiResponse = { data: ApiSale[]; total: number; page: number; limit: number };
+  type ApiResponse = {
+    data: ApiSale[];
+    total: number;
+    page: number;
+    limit: number;
+  };
 
   const params = new URLSearchParams();
   if (filters.startDate) params.set("startDate", filters.startDate);
@@ -279,10 +265,12 @@ export async function listSales(
   const result = await apiFetch<ApiResponse>(`/sales?${params.toString()}`);
   if ("error" in result) return result;
 
-  // Resolve staff names from local users table
   const staffMap = new Map(
-    (db.prepare("SELECT id, name FROM users").all() as { id: string; name: string }[])
-      .map((u) => [u.id, u.name])
+    (
+      db
+        .prepare("SELECT id, name FROM users")
+        .all() as { id: string; name: string }[]
+    ).map((u) => [u.id, u.name])
   );
 
   let sales: Sale[] = result.data.map((s) => ({
@@ -301,7 +289,6 @@ export async function listSales(
     total: s.total,
   }));
 
-  // staffId filter applied client-side (API doesn't support it yet)
   if (filters.staffId) {
     sales = sales.filter((s) => s.staffId === filters.staffId);
   }

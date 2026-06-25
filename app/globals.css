@@ -4,24 +4,45 @@
 @variant dark (&:where(.dark, .dark *));
 
 /* ─── Brand Palette ──────────────────────────────────────────────────────────
-   #4a5cba = brand-600  →  buttons / primary actions
-   #e0e6f4 = brand-100  →  panel backgrounds / muted surfaces
+   #4c6ef5 = brand-600  →  buttons / primary actions (electric blue)
    ─────────────────────────────────────────────────────────────────────────── */
 @theme {
-  --color-brand-50:  #f4f6fd;
-  --color-brand-100: #e0e6f4;
-  --color-brand-200: #c5cfee;
-  --color-brand-300: #9aaae3;
-  --color-brand-400: #6f83d9;
-  --color-brand-500: #5468cc;
-  --color-brand-600: #4a5cba;
-  --color-brand-700: #3d4ea0;
-  --color-brand-800: #2e3b7e;
-  --color-brand-900: #1e2654;
-  --color-brand-950: #131829;
+  --color-brand-50:  #eef2ff;
+  --color-brand-100: #dce6ff;
+  --color-brand-200: #b9ccff;
+  --color-brand-300: #86a3ff;
+  --color-brand-400: #6080ff;
+  --color-brand-500: #4c6ef5;
+  --color-brand-600: #3d5de8;
+  --color-brand-700: #2f4bd0;
+  --color-brand-800: #1e3399;
+  --color-brand-900: #122069;
+  --color-brand-950: #0a1240;
 
   --color-surface:       #ffffff;
   --color-surface-muted: #f4f6fd;
+}
+
+/* ─── Semantic tokens — light mode ─────────────────────────────────────────── */
+:root {
+  --bg-base:      #f4f6fc;
+  --bg-surface:   #ffffff;
+  --bg-sidebar:   #eef1fa;
+  --bg-elevated:  #e4e8f5;
+  --border-color: #dde2f0;
+  --text-primary: #0e1229;
+  --text-muted:   #64708a;
+}
+
+/* ─── Semantic tokens — dark mode (navy-blue SaaS) ──────────────────────────── */
+.dark {
+  --bg-base:      #0c0e1a;
+  --bg-surface:   #161928;
+  --bg-sidebar:   #111320;
+  --bg-elevated:  #1d2035;
+  --border-color: #252a42;
+  --text-primary: #e2e6f8;
+  --text-muted:   #64708a;
 }
 
 /* ─── Base ─────────────────────────────────────────────────────────────────── */
@@ -34,7 +55,7 @@ body {
 }
 
 *:focus-visible:not(:where(.ui-search-field, .ui-search *, .ui-input)) {
-  outline: 2px solid #4a5cba66;
+  outline: 2px solid #4c6ef566;
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -44,40 +65,41 @@ body {
 
   /* Shell */
   .ui-shell {
-    @apply flex flex-col min-h-0 overflow-hidden
-           bg-surface dark:bg-brand-900
-           rounded-[2rem]
+    @apply flex flex-col min-h-0 overflow-hidden rounded-[2rem]
            shadow-[0_8px_40px_rgba(30,38,84,0.10)]
            dark:shadow-[0_8px_40px_rgba(0,0,0,0.50)];
+    background-color: var(--bg-surface);
   }
 
-  /* Inner panel — extra horizontal padding so rounded children are not clipped at corners */
+  /* Inner panel */
   .ui-panel {
     @apply flex-1 overflow-y-auto overflow-x-clip min-h-0
-           bg-brand-100 dark:bg-brand-950/80
-           rounded-2xl
-           m-3 sm:m-4 px-5 sm:px-6 py-4 sm:py-5;
+           rounded-2xl m-3 sm:m-4 px-5 sm:px-6 py-4 sm:py-5;
+    background-color: var(--bg-base);
   }
 
   /* Card */
   .ui-card {
-    @apply bg-surface dark:bg-brand-800/60
-           rounded-2xl p-4
-           border border-brand-100 dark:border-brand-700/40
+    @apply rounded-2xl p-4
            shadow-[0_2px_8px_rgba(30,38,84,0.06)]
            dark:shadow-none;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
   }
 
-  /* Interactive card — expands ui-card inline to avoid @apply of custom class */
+  /* Interactive card */
   .ui-card-interactive {
-    @apply bg-surface dark:bg-brand-800/60
-           rounded-2xl p-4
-           border border-brand-100 dark:border-brand-700/40
+    @apply rounded-2xl p-4
            shadow-[0_2px_8px_rgba(30,38,84,0.06)]
            dark:shadow-none
            transition-shadow duration-150 cursor-pointer
-           hover:shadow-[0_4px_16px_rgba(30,38,84,0.12)]
-           dark:hover:bg-brand-800/80;
+           hover:shadow-[0_4px_16px_rgba(30,38,84,0.12)];
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+  }
+
+  .ui-card-interactive:hover {
+    background-color: var(--bg-elevated);
   }
 
   /* Label */
@@ -89,21 +111,29 @@ body {
     @apply block text-xs font-medium text-brand-600/80 dark:text-brand-300/80 mb-1.5 px-1;
   }
 
-  /* Text field — same shell as .ui-search */
+  /* Text field */
   .ui-input {
     @apply w-full max-w-full min-w-0 box-border
            rounded-full
-           bg-surface dark:bg-brand-950/60
            text-brand-900 dark:text-brand-50
            placeholder:text-brand-400/60 dark:placeholder:text-brand-400/50
-           border border-brand-200/80 dark:border-brand-700/50
            px-4 sm:px-5 py-3
            shadow-[0_2px_8px_rgba(30,38,84,0.06)]
-           focus:outline-none focus:border-brand-600 dark:focus:border-brand-400
+           focus:outline-none
            focus:shadow-[0_4px_16px_rgba(74,92,186,0.14)]
            focus-visible:outline-none
            min-h-[48px] text-sm
            transition-[box-shadow,border-color] duration-150;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+  }
+
+  .ui-input:focus {
+    border-color: #4c6ef5;
+  }
+
+  .dark .ui-input:focus {
+    border-color: #6080ff;
   }
 
   .ui-input-error {
@@ -118,30 +148,34 @@ body {
 
   select.ui-input {
     @apply cursor-pointer pr-11 appearance-none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234a5cba'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234c6ef5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 1.125rem center;
     background-size: 1rem;
   }
 
   .dark select.ui-input {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239aaae3'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236080ff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
   }
 
-  /* Search bar — one outer shell, borderless inner field */
+  /* Search bar */
   .ui-search {
     @apply flex w-full max-w-full min-w-0 items-center gap-2.5
            rounded-full box-border
-           bg-surface dark:bg-brand-950/60
-           border border-brand-200/80 dark:border-brand-700/50
            px-4 sm:px-5 min-h-[52px]
            shadow-[0_2px_8px_rgba(30,38,84,0.06)]
            transition-[box-shadow,border-color] duration-150;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
   }
 
   .ui-search:focus-within {
-    @apply border-brand-600 dark:border-brand-400
-           shadow-[0_4px_16px_rgba(74,92,186,0.14)];
+    @apply shadow-[0_4px_16px_rgba(76,110,245,0.18)];
+    border-color: #4c6ef5;
+  }
+
+  .dark .ui-search:focus-within {
+    border-color: #6080ff;
   }
 
   .ui-search-field {
@@ -171,7 +205,7 @@ body {
            disabled:opacity-50 disabled:pointer-events-none;
   }
 
-  /* Primary button full-width — all classes expanded */
+  /* Primary button full-width */
   .ui-btn-primary-block {
     @apply inline-flex items-center justify-center gap-2 w-full py-3.5
            bg-brand-600 hover:bg-brand-700 active:bg-brand-800
@@ -185,13 +219,16 @@ body {
   /* Secondary button */
   .ui-btn-secondary {
     @apply inline-flex items-center justify-center gap-2
-           bg-brand-100 hover:bg-brand-200 active:bg-brand-200
-           dark:bg-brand-800/50 dark:hover:bg-brand-800
            text-brand-700 dark:text-brand-200 font-medium text-sm
            rounded-xl min-h-[48px] px-5
-           border border-brand-200 dark:border-brand-700/50
            transition-all duration-150 active:scale-[0.97]
            disabled:opacity-50 disabled:pointer-events-none;
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+  }
+
+  .ui-btn-secondary:hover {
+    filter: brightness(0.95);
   }
 
   /* Danger button */
@@ -207,9 +244,9 @@ body {
 
   /* Segment control */
   .ui-segment-track {
-    @apply flex gap-1 p-1 rounded-xl
-           bg-brand-100 dark:bg-brand-900/80
-           border border-brand-200/60 dark:border-brand-700/40;
+    @apply flex gap-1 p-1 rounded-xl;
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border-color);
   }
 
   .ui-segment-on {
@@ -230,7 +267,8 @@ body {
 
   /* Page title */
   .ui-page-title {
-    @apply text-xl font-bold text-brand-900 dark:text-brand-50 tracking-tight;
+    @apply text-xl font-bold tracking-tight;
+    color: var(--text-primary);
   }
 
   /* Alerts */
@@ -247,12 +285,13 @@ body {
   }
 
   .ui-alert-info {
-    @apply rounded-xl bg-brand-50 dark:bg-brand-900/40
-           border border-brand-200/50 dark:border-brand-700/30
-           px-4 py-3 text-sm text-brand-700 dark:text-brand-300;
+    @apply rounded-xl px-4 py-3 text-sm;
+    background-color: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
   }
 
-  /* Badges — each expanded fully */
+  /* Badges */
   .ui-badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
   }
@@ -274,7 +313,8 @@ body {
 
   /* Divider */
   .ui-divider {
-    @apply h-px bg-brand-100 dark:bg-brand-800/60 my-1;
+    @apply h-px my-1;
+    background-color: var(--border-color);
   }
 }
 
@@ -296,6 +336,6 @@ body {
 @media (hover: hover) {
   ::-webkit-scrollbar       { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #c5cfee; border-radius: 99px; }
-  .dark ::-webkit-scrollbar-thumb { background: #2e3b7e; }
+  ::-webkit-scrollbar-thumb { background: #c2caee; border-radius: 99px; }
+  .dark ::-webkit-scrollbar-thumb { background: #252a42; }
 }

@@ -16,13 +16,13 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Store Inventory",
-  description: "In-store inventory and sales management",
+  title: "Mi Comercio",
+  description: "Gestión de inventario y ventas para tu tienda",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Store Inventory",
+    title: "Mi Comercio",
   },
 };
 
@@ -47,6 +47,10 @@ export default async function RootLayout({
   const theme = cookieStore.get("STORE_THEME")?.value === "dark" ? "dark" : "light";
   const isDark = theme === "dark";
 
+  const role = session?.user?.role;
+  const isSuperAdmin = role === "super_admin";
+  const isAuthenticated = !!session?.user;
+
   return (
     <html
       lang={locale}
@@ -54,16 +58,40 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className="h-full bg-brand-100 dark:bg-brand-950 text-brand-950 dark:text-brand-50"
+        className="h-full bg-[var(--bg-base)] text-[var(--text-primary)]"
         suppressHydrationWarning
       >
         <NextIntlClientProvider messages={messages} locale={locale}>
-          {session?.user && <BottomNav />}
-          {session?.user ? (
-            <div className="flex flex-col h-full lg:pl-64 p-3 sm:p-4 lg:p-6 min-h-0">
-              <div className="ui-shell flex-1 w-full max-w-md lg:max-w-none mx-auto min-h-0 h-full lg:max-h-[calc(100vh-3rem)]">
-                <header className="flex items-center justify-between gap-3 px-5 sm:px-6 py-3 shrink-0 border-b border-brand-100 dark:border-brand-800/60">
-                  <span className="text-sm font-semibold text-brand-900 dark:text-brand-50 truncate">
+          {/* Super admin layout */}
+          {isSuperAdmin && (
+            <div className="min-h-screen">
+              <header className="flex items-center justify-between gap-4 px-6 py-3 border-b border-[var(--border-color)] bg-[var(--bg-surface)]">
+                <span className="font-semibold text-[var(--text-primary)] text-sm">
+                  Mi Comercio — Super Admin
+                  <span className="ml-2 font-normal text-[var(--text-muted)]">
+                    {session?.user.name}
+                  </span>
+                </span>
+                <div className="flex items-center gap-1">
+                  <ThemeToggle current={theme} />
+                  <LanguageSwitcher />
+                  <LogoutButton />
+                </div>
+              </header>
+              <main className="p-6">{children}</main>
+            </div>
+          )}
+
+          {/* Admin / staff layout */}
+          {isAuthenticated && !isSuperAdmin && (
+            <>
+              <BottomNav
+                userRole={role}
+                organizationPlan={session.user.organizationPlan}
+              />
+              <div className="flex flex-col min-h-screen lg:pl-56">
+                <header className="flex items-center justify-between gap-3 px-5 sm:px-6 py-3 shrink-0 border-b border-[var(--border-color)] bg-[var(--bg-surface)]">
+                  <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
                     {session.user.name}
                   </span>
                   <div className="flex items-center gap-1 shrink-0">
@@ -72,14 +100,15 @@ export default async function RootLayout({
                     <LogoutButton />
                   </div>
                 </header>
-                <main className="ui-panel pb-24 lg:pb-5">
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6" style={{ background: "var(--bg-base)" }}>
                   {children}
                 </main>
               </div>
-            </div>
-          ) : (
-            children
+            </>
           )}
+
+          {/* Unauthenticated (landing, login, register) */}
+          {!isAuthenticated && children}
         </NextIntlClientProvider>
       </body>
     </html>
