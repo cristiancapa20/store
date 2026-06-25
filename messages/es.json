@@ -97,7 +97,8 @@
     "stockLabel": "Stock:"
   },
   "history": {
-    "title": "Historial de Ventas",
+    "title": "Historial de Facturación",
+    "subtitle": "Administra y revisa las transacciones de ventas recientes.",
     "from": "Desde",
     "to": "Hasta",
     "staffFilter": "Empleado",
@@ -106,7 +107,23 @@
     "loading": "Cargando ventas…",
     "total": "Total",
     "downloadInvoice": "Descargar Factura",
-    "items": "{count, plural, one {# artículo} other {# artículos}}"
+    "items": "{count, plural, one {# artículo} other {# artículos}}",
+    "filters": "Filtros",
+    "export": "Exportar",
+    "invoiceId": "ID de Factura",
+    "client": "Cliente",
+    "date": "Fecha",
+    "status": "Estado",
+    "actions": "Acciones",
+    "paid": "Pagado",
+    "todayTotal": "Total Hoy",
+    "invoicesIssued": "Facturas Emitidas",
+    "pendingCount": "Pendientes",
+    "avgTicket": "Promedio Ticket",
+    "consumerFinal": "Consumidor Final",
+    "showing": "Mostrando {from}–{to} de {total} resultados",
+    "viewSale": "Ver factura",
+    "printInvoice": "Imprimir / Descargar factura"
   },
   "barcode": {
     "cameraMode": "Cámara",
