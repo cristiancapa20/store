@@ -1,6 +1,7 @@
 import { auth } from "@/auth"
 import { notFound } from "next/navigation"
 import db from "@/lib/db"
+import OrgDetailsModal from "@/components/OrgDetailsModal"
 import { toggleOrgStatus, changeOrgPlan } from "./actions"
 
 type OrgRow = {
@@ -8,10 +9,19 @@ type OrgRow = {
   name: string
   email: string
   phone: string | null
+  address: string | null
   plan: string
   status: string
   created_at: string
   user_count: number
+}
+
+type OrgMemberRow = {
+  id: string
+  name: string
+  email: string
+  role: string
+  organization_id: string
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -40,7 +50,7 @@ export default async function SuperAdminPage() {
 
   const orgs = db
     .prepare(`
-      SELECT o.id, o.name, o.email, o.phone, o.plan, o.status, o.created_at,
+      SELECT o.id, o.name, o.email, o.phone, o.address, o.plan, o.status, o.created_at,
              COUNT(u.id) AS user_count
       FROM organizations o
       LEFT JOIN users u ON u.organization_id = o.id
@@ -48,6 +58,39 @@ export default async function SuperAdminPage() {
       ORDER BY o.created_at DESC
     `)
     .all() as OrgRow[]
+
+  const members = db
+    .prepare(`
+      SELECT id, name, email, role, organization_id
+      FROM users
+      WHERE organization_id IS NOT NULL
+      ORDER BY role = 'admin' DESC, name
+    `)
+    .all() as OrgMemberRow[]
+
+  const membersByOrg = new Map<string, OrgMemberRow[]>()
+  for (const member of members) {
+    const list = membersByOrg.get(member.organization_id) ?? []
+    list.push(member)
+    membersByOrg.set(member.organization_id, list)
+  }
+
+  const orgDetails = new Map(
+    orgs.map((org) => [
+      org.id,
+      {
+        id: org.id,
+        name: org.name,
+        email: org.email,
+        phone: org.phone,
+        address: org.address,
+        plan: org.plan,
+        status: org.status,
+        createdAt: org.created_at,
+        members: membersByOrg.get(org.id) ?? [],
+      },
+    ])
+  )
 
   return (
     <div className="space-y-6">
@@ -68,9 +111,12 @@ export default async function SuperAdminPage() {
               <div key={org.id} className="ui-card space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-semibold text-brand-900 dark:text-brand-50 truncate">
-                      {org.name}
-                    </p>
+                    <OrgDetailsModal
+                      org={orgDetails.get(org.id)!}
+                      triggerClassName="font-semibold text-brand-900 dark:text-brand-50 truncate hover:text-brand-600 dark:hover:text-brand-300 hover:underline transition-colors block cursor-pointer"
+                    >
+                      <OrgActions org={org} />
+                    </OrgDetailsModal>
                     <p className="text-sm text-brand-600 dark:text-brand-300 truncate">
                       {org.email}
                     </p>
@@ -117,7 +163,9 @@ export default async function SuperAdminPage() {
                     }`}
                   >
                     <td className="px-5 py-3.5 font-medium text-brand-900 dark:text-brand-50">
-                      {org.name}
+                      <OrgDetailsModal org={orgDetails.get(org.id)!}>
+                        <OrgActions org={org} compact />
+                      </OrgDetailsModal>
                     </td>
                     <td className="px-5 py-3.5 text-brand-600 dark:text-brand-300">{org.email}</td>
                     <td className="px-5 py-3.5"><PlanBadge plan={org.plan} /></td>
