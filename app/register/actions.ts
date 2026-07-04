@@ -57,7 +57,7 @@ export async function registerAction(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-secret": adminSecret,
+          Authorization: `Bearer ${adminSecret}`,
         },
         body: JSON.stringify({ name: storeName }),
       })
@@ -77,7 +77,7 @@ export async function registerAction(
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "x-admin-secret": adminSecret,
+              Authorization: `Bearer ${adminSecret}`,
             },
             body: JSON.stringify({ name: `${storeName} - Main` }),
           }
@@ -88,8 +88,8 @@ export async function registerAction(
           }
           console.warn("[register] inventory api-key creation failed, proceeding without inventory linkage")
         } else {
-          const keyData = (await keyRes.json()) as { key: string }
-          inventoryApiKey = keyData.key
+          const keyData = (await keyRes.json()) as { plainKey: string }
+          inventoryApiKey = keyData.plainKey
 
           // 3. Create default location
           const locRes = await fetch(`${apiBase}/v1/locations`, {

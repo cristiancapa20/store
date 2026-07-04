@@ -18,6 +18,14 @@ export async function createStaff(
 ): Promise<{ error: string } | null> {
   const user = await requireAdmin()
 
+  const orgId = user.organizationId
+  if (!orgId) {
+    return {
+      error:
+        "Tu sesión no tiene una tienda asociada. Cierra sesión y vuelve a iniciar sesión, luego intenta de nuevo.",
+    }
+  }
+
   const name = (formData.get("name") as string)?.trim()
   const email = (formData.get("email") as string)?.trim().toLowerCase()
   const password = formData.get("password") as string
@@ -29,14 +37,13 @@ export async function createStaff(
     return { error: "La contraseña debe tener al menos 8 caracteres." }
   }
 
-  const orgId = user.organizationId
   const plan = user.organizationPlan ?? "basic"
 
   // Enforce plan limit: basic = max 2 staff
   if (plan === "basic") {
     const count = (
       db
-        .prepare("SELECT COUNT(*) AS c FROM users WHERE organization_id = ?")
+        .prepare("SELECT COUNT(*) AS c FROM users WHERE organization_id = ? AND role = 'staff'")
         .get(orgId) as { c: number }
     ).c
     if (count >= 2) {
