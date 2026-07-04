@@ -114,9 +114,9 @@ body {
   /* Text field */
   .ui-input {
     @apply w-full max-w-full min-w-0 box-border
-           rounded-full
+           rounded-xl
            text-brand-900 dark:text-brand-50
-           placeholder:text-brand-400/60 dark:placeholder:text-brand-400/50
+           placeholder:text-[var(--text-muted)]
            px-4 sm:px-5 py-3
            shadow-[0_2px_8px_rgba(30,38,84,0.06)]
            focus:outline-none
@@ -143,7 +143,7 @@ body {
   }
 
   .ui-textarea {
-    @apply rounded-2xl min-h-[100px] py-3 resize-y;
+    @apply rounded-xl min-h-[100px] py-3 resize-y;
   }
 
   select.ui-input {
@@ -161,7 +161,7 @@ body {
   /* Search bar */
   .ui-search {
     @apply flex w-full max-w-full min-w-0 items-center gap-2.5
-           rounded-full box-border
+           rounded-xl box-border
            px-4 sm:px-5 min-h-[52px]
            shadow-[0_2px_8px_rgba(30,38,84,0.06)]
            transition-[box-shadow,border-color] duration-150;
@@ -182,7 +182,7 @@ body {
     @apply flex-1 min-w-0 min-h-[48px] bg-transparent
            border-0 shadow-none outline-none ring-0
            text-sm text-brand-900 dark:text-brand-50
-           placeholder:text-brand-400/60 dark:placeholder:text-brand-400/50
+           placeholder:text-[var(--text-muted)]
            focus:outline-none focus:ring-0 focus-visible:outline-none;
     -webkit-appearance: none;
     appearance: none;
