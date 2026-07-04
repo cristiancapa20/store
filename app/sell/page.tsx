@@ -3,14 +3,27 @@
 import { useCallback, useState, useTransition, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import BarcodeInput from "@/components/BarcodeInput";
-import { scanBarcode, createSale, listInventory } from "@/lib/actions";
+import { scanBarcode, createSale, listInventory, getInvoicePreviewInfo } from "@/lib/actions";
 import type { CartItem, Product } from "@/lib/types";
+
+type InvoiceInfo = {
+  storeName: string;
+  taxRate: number;
+  staffName: string;
+};
 
 type CartEntry = {
   productId: string;
   productName: string;
   unitPrice: number;
   quantity: number;
+};
+
+type Ticket = {
+  id: number;
+  number: number;
+  cart: CartEntry[];
+  lastSaleId: string | null;
 };
 
 type Toast = {
@@ -21,11 +34,22 @@ type Toast = {
 
 let _toastId = 0;
 
+function makeTicket(number: number): Ticket {
+  return { id: number, number, cart: [], lastSaleId: null };
+}
+
 export default function SellPage() {
   const t = useTranslations("sell");
-  const [cart, setCart] = useState<CartEntry[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>(() => [makeTicket(1)]);
+  const [activeTicketId, setActiveTicketId] = useState(1);
+  const nextTicketNumber = useRef(2);
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [lastSaleId, setLastSaleId] = useState<string | null>(null);
+  const [showInvoicePreview, setShowInvoicePreview] = useState(false);
+  const [invoiceInfo, setInvoiceInfo] = useState<InvoiceInfo | null>(null);
+
+  const activeTicket = tickets.find((tk) => tk.id === activeTicketId) ?? tickets[0];
+  const cart = activeTicket.cart;
+  const lastSaleId = activeTicket.lastSaleId;
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,6 +61,7 @@ export default function SellPage() {
   const [scanPending, startScan] = useTransition();
   const [confirmPending, startConfirm] = useTransition();
   const [searchPending, startSearchLoad] = useTransition();
+  const [, startInvoiceInfoLoad] = useTransition();
 
   const isPending = scanPending || confirmPending;
 
@@ -51,6 +76,40 @@ export default function SellPage() {
       }
     });
   }, [searchLoaded]);
+
+  const updateActiveCart = useCallback(
+    (updater: (cart: CartEntry[]) => CartEntry[]) => {
+      setTickets((prev) =>
+        prev.map((tk) => (tk.id === activeTicketId ? { ...tk, cart: updater(tk.cart) } : tk))
+      );
+    },
+    [activeTicketId]
+  );
+
+  const addTicket = useCallback(() => {
+    const number = nextTicketNumber.current++;
+    const ticket = makeTicket(number);
+    setTickets((prev) => [...prev, ticket]);
+    setActiveTicketId(ticket.id);
+  }, []);
+
+  const closeTicket = useCallback(
+    (id: number) => {
+      const remaining = tickets.filter((tk) => tk.id !== id);
+      if (remaining.length === 0) {
+        const number = nextTicketNumber.current++;
+        const fresh = makeTicket(number);
+        setTickets([fresh]);
+        setActiveTicketId(fresh.id);
+        return;
+      }
+      setTickets(remaining);
+      if (activeTicketId === id) {
+        setActiveTicketId(remaining[0].id);
+      }
+    },
+    [tickets, activeTicketId]
+  );
 
   const handleSearchChange = useCallback(
     (query: string) => {
@@ -77,7 +136,7 @@ export default function SellPage() {
         setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
         return;
       }
-      setCart((prev) => {
+      updateActiveCart((prev) => {
         const idx = prev.findIndex((e) => e.productId === product.id);
         if (idx !== -1) {
           return prev.map((e, i) => (i === idx ? { ...e, quantity: e.quantity + 1 } : e));
@@ -91,7 +150,7 @@ export default function SellPage() {
       setSearchResults([]);
       searchRef.current?.blur();
     },
-    [t]
+    [t, updateActiveCart]
   );
 
   const showToast = useCallback(
@@ -115,29 +174,30 @@ export default function SellPage() {
           showToast(t("outOfStock"), "error");
           return;
         }
-        setCart((prev) => {
+        updateActiveCart((prev) => {
           const idx = prev.findIndex((e) => e.productId === result.id);
           if (idx !== -1) return prev.map((e, i) => (i === idx ? { ...e, quantity: e.quantity + 1 } : e));
           return [...prev, { productId: result.id, productName: result.name, unitPrice: result.price, quantity: 1 }];
         });
       });
     },
-    [showToast, t]
+    [showToast, t, updateActiveCart]
   );
 
   const updateQty = useCallback((productId: string, delta: number) => {
-    setCart((prev) =>
+    updateActiveCart((prev) =>
       prev.map((e) => (e.productId === productId ? { ...e, quantity: e.quantity + delta } : e))
           .filter((e) => e.quantity > 0)
     );
-  }, []);
+  }, [updateActiveCart]);
 
   const removeItem = useCallback((productId: string) => {
-    setCart((prev) => prev.filter((e) => e.productId !== productId));
-  }, []);
+    updateActiveCart((prev) => prev.filter((e) => e.productId !== productId));
+  }, [updateActiveCart]);
 
   const handleConfirm = useCallback(() => {
     if (cart.length === 0) return;
+    const ticketId = activeTicketId;
     startConfirm(async () => {
       const items: CartItem[] = cart.map((e) => ({
         productId: e.productId,
@@ -149,14 +209,29 @@ export default function SellPage() {
         showToast(result.error || t("failedToCreate"), "error");
         return;
       }
-      setCart([]);
-      setLastSaleId(result.id);
+      setTickets((prev) =>
+        prev.map((tk) => (tk.id === ticketId ? { ...tk, cart: [], lastSaleId: result.id } : tk))
+      );
+      setShowInvoicePreview(false);
       showToast(t("saleConfirmedToast"), "success");
     });
-  }, [cart, showToast, t]);
+  }, [cart, activeTicketId, showToast, t]);
+
+  const openInvoicePreview = useCallback(() => {
+    setShowInvoicePreview(true);
+    if (!invoiceInfo) {
+      startInvoiceInfoLoad(async () => {
+        const info = await getInvoicePreviewInfo();
+        setInvoiceInfo(info);
+      });
+    }
+  }, [invoiceInfo]);
 
   const subtotal = cart.reduce((s, e) => s + e.unitPrice * e.quantity, 0);
   const itemCount = cart.reduce((s, e) => s + e.quantity, 0);
+  const taxRate = invoiceInfo?.taxRate ?? 0;
+  const taxAmount = subtotal * taxRate;
+  const grandTotal = subtotal + taxAmount;
 
   return (
     <div className="flex flex-col h-full">
@@ -173,6 +248,65 @@ export default function SellPage() {
             {toast.message}
           </div>
         ))}
+      </div>
+
+      {/* Ticket tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto shrink-0 pb-3 -mx-1 px-1">
+        {tickets.map((tk) => {
+          const active = tk.id === activeTicketId;
+          const qty = tk.cart.reduce((s, e) => s + e.quantity, 0);
+          return (
+            <div
+              key={tk.id}
+              className={`shrink-0 flex items-center rounded-full text-sm font-medium transition-colors ${
+                active
+                  ? "bg-brand-600 text-white"
+                  : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setActiveTicketId(tk.id)}
+                className="flex items-center gap-2 pl-4 pr-2 h-10 rounded-full"
+              >
+                <span>{t("ticketLabel", { number: tk.number })}</span>
+                {qty > 0 && (
+                  <span
+                    className={`text-xs rounded-full px-1.5 py-0.5 ${
+                      active ? "bg-white/20" : "bg-[var(--bg-surface)]"
+                    }`}
+                  >
+                    {qty}
+                  </span>
+                )}
+              </button>
+              {tickets.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => closeTicket(tk.id)}
+                  aria-label={t("closeTicket", { number: tk.number })}
+                  className={`w-8 h-8 mr-1 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                    active ? "hover:bg-white/20" : "hover:bg-black/5 dark:hover:bg-white/10"
+                  }`}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          onClick={addTicket}
+          aria-label={t("newTicket")}
+          className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
       </div>
 
       {/* Scrollable body */}
@@ -292,7 +426,7 @@ export default function SellPage() {
                   rel="noopener noreferrer"
                   className="ui-btn-primary px-6 py-3 text-sm"
                 >
-                  {t("viewInvoice")}
+                  {t("downloadInvoicePdf")}
                 </a>
               </>
             ) : (
@@ -309,52 +443,66 @@ export default function SellPage() {
         ) : (
           <div className="flex flex-col gap-2">
             {cart.map((entry) => (
-              <div key={entry.productId} className="flex items-center gap-3 ui-card p-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{entry.productName}</p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    ${entry.unitPrice.toFixed(2)} × {entry.quantity} ={" "}
-                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                      ${(entry.unitPrice * entry.quantity).toFixed(2)}
-                    </span>
+              <div key={entry.productId} className="ui-card p-3 flex flex-col gap-3">
+                {/* Product info */}
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-brand-100 dark:bg-brand-800 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-brand-600 dark:text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-brand-900 dark:text-brand-50 truncate">
+                      {entry.productName}
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                      ${entry.unitPrice.toFixed(2)} × {entry.quantity}
+                    </p>
+                  </div>
+                  <p className="text-base font-bold text-brand-600 dark:text-brand-400 tabular-nums shrink-0">
+                    ${(entry.unitPrice * entry.quantity).toFixed(2)}
                   </p>
                 </div>
 
-                {/* Quantity stepper */}
-                <div className="flex items-center gap-1 shrink-0">
+                {/* Controls */}
+                <div className="flex items-center justify-between pt-3 border-t border-[var(--border-color)]">
+                  {/* Quantity stepper */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => updateQty(entry.productId, -1)}
+                      aria-label={t("decreaseQty", { name: entry.productName })}
+                      className="w-9 h-9 rounded-full bg-brand-50 dark:bg-brand-800/50 flex items-center justify-center text-base font-bold text-brand-800 dark:text-brand-100 hover:bg-brand-100 active:scale-95 transition-all min-h-[36px] min-w-[36px]"
+                    >
+                      −
+                    </button>
+                    <span className="w-7 text-center text-sm font-semibold tabular-nums select-none">
+                      {entry.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => updateQty(entry.productId, 1)}
+                      aria-label={t("increaseQty", { name: entry.productName })}
+                      className="w-9 h-9 rounded-full bg-brand-50 dark:bg-brand-800/50 flex items-center justify-center text-base font-bold text-brand-800 dark:text-brand-100 hover:bg-brand-100 active:scale-95 transition-all min-h-[36px] min-w-[36px]"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Remove */}
                   <button
                     type="button"
-                    onClick={() => updateQty(entry.productId, -1)}
-                    aria-label={t("decreaseQty", { name: entry.productName })}
-                    className="w-9 h-9 rounded-full bg-brand-50 dark:bg-brand-800/50 flex items-center justify-center text-base font-bold text-brand-800 dark:text-brand-100 hover:bg-brand-100 active:scale-95 transition-all min-h-[36px] min-w-[36px]"
+                    onClick={() => removeItem(entry.productId)}
+                    aria-label={t("removeItem", { name: entry.productName })}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors shrink-0 min-h-[36px] min-w-[36px]"
                   >
-                    −
-                  </button>
-                  <span className="w-7 text-center text-sm font-semibold tabular-nums select-none">
-                    {entry.quantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => updateQty(entry.productId, 1)}
-                    aria-label={t("increaseQty", { name: entry.productName })}
-                    className="w-9 h-9 rounded-full bg-brand-50 dark:bg-brand-800/50 flex items-center justify-center text-base font-bold text-brand-800 dark:text-brand-100 hover:bg-brand-100 active:scale-95 transition-all min-h-[36px] min-w-[36px]"
-                  >
-                    +
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
                   </button>
                 </div>
-
-                {/* Remove */}
-                <button
-                  type="button"
-                  onClick={() => removeItem(entry.productId)}
-                  aria-label={t("removeItem", { name: entry.productName })}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors shrink-0 min-h-[36px] min-w-[36px]"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
               </div>
             ))}
           </div>
@@ -373,19 +521,115 @@ export default function SellPage() {
             </div>
             <button
               type="button"
-              onClick={handleConfirm}
+              onClick={openInvoicePreview}
               disabled={isPending}
               className="ui-btn-primary-block py-4 gap-2"
             >
-              {confirmPending ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  {t("confirming")}
-                </>
-              ) : (
-                t("confirmSale")
-              )}
+              {t("viewInvoice")}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Invoice preview modal */}
+      {showInvoicePreview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => !confirmPending && setShowInvoicePreview(false)}
+        >
+          <div
+            className="ui-card w-[92vw] sm:w-[60vw] max-h-[90vh] overflow-y-auto p-6 flex flex-col gap-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div>
+              <h2 className="text-lg font-bold text-brand-900 dark:text-brand-50">
+                {invoiceInfo?.storeName ?? "…"}
+              </h2>
+              <p className="text-sm font-medium mt-1">{t("invoicePreviewTitle")}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                {t("invoicePreviewSubtitle")}
+              </p>
+            </div>
+
+            {/* Meta */}
+            <div className="text-xs text-[var(--text-muted)] flex flex-col gap-0.5">
+              <span>{new Date().toLocaleString()}</span>
+              {invoiceInfo && <span>{invoiceInfo.staffName}</span>}
+            </div>
+
+            {/* Line items */}
+            <div className="border border-[var(--border-color)] rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[var(--bg-elevated)] text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+                    <th className="text-left px-3 py-2 font-semibold">{t("product")}</th>
+                    <th className="text-right px-3 py-2 font-semibold">{t("quantity")}</th>
+                    <th className="text-right px-3 py-2 font-semibold">{t("unitPrice")}</th>
+                    <th className="text-right px-3 py-2 font-semibold">{t("total")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cart.map((entry) => (
+                    <tr key={entry.productId} className="border-t border-[var(--border-color)]">
+                      <td className="px-3 py-2">{entry.productName}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{entry.quantity}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        ${entry.unitPrice.toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums font-medium">
+                        ${(entry.unitPrice * entry.quantity).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals */}
+            <div className="flex flex-col gap-1.5 items-end text-sm">
+              <div className="flex justify-between w-48">
+                <span className="text-[var(--text-muted)]">{t("subtotal")}</span>
+                <span className="tabular-nums">${subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between w-48">
+                <span className="text-[var(--text-muted)]">
+                  {t("tax", { rate: (taxRate * 100).toFixed(0) })}
+                </span>
+                <span className="tabular-nums">${taxAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between w-48 pt-1.5 border-t border-[var(--border-color)] font-bold text-base">
+                <span>{t("total")}</span>
+                <span className="tabular-nums">${grandTotal.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowInvoicePreview(false)}
+                disabled={confirmPending}
+                className="ui-btn-secondary flex-1"
+              >
+                {t("cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={confirmPending}
+                className="ui-btn-primary flex-1 gap-2"
+              >
+                {confirmPending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    {t("generatingInvoice")}
+                  </>
+                ) : (
+                  t("generateInvoice")
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

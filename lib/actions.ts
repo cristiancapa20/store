@@ -71,6 +71,19 @@ export async function scanBarcode(
   };
 }
 
+export async function getInvoicePreviewInfo(): Promise<{
+  storeName: string;
+  taxRate: number;
+  staffName: string;
+}> {
+  const session = await auth();
+  return {
+    storeName: process.env.STORE_NAME ?? "Store",
+    taxRate: parseFloat(process.env.TAX_RATE ?? "0"),
+    staffName: session?.user?.name ?? "Staff",
+  };
+}
+
 export async function createSale(
   items: CartItem[]
 ): Promise<ActionResult<Sale>> {
@@ -221,15 +234,20 @@ export async function adjustStock(
   reason = "manual"
 ): Promise<ActionResult<{ stock: number }>> {
   const { locationId } = await getInventoryConfig();
-  return apiFetch<{ stock: number }>("/inventory-adjustments", {
-    method: "POST",
-    body: JSON.stringify({
-      location_id: locationId,
-      product_id: productId,
-      delta,
-      reason,
-    }),
-  });
+  const result = await apiFetch<{ newStock: number }>(
+    "/inventory-adjustments",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        location_id: locationId,
+        product_id: productId,
+        delta,
+        reason,
+      }),
+    }
+  );
+  if ("error" in result) return result;
+  return { stock: result.newStock };
 }
 
 export async function listSales(
