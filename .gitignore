@@ -27,6 +27,12 @@ public/workbox-*.js.map
 # SQLite database
 data/
 
+# Test artifacts
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
 # Misc
 .DS_Store
 *.pem
