@@ -195,16 +195,14 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-            {t("title")}
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <h1 className="ui-page-title">{t("title")}</h1>
+          <p className="text-sm text-brand-600 dark:text-brand-300 mt-0.5">
             {t("subtitle")}
           </p>
         </div>
         <Link
           href="/products/new"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-brand-600 text-white text-sm font-semibold shadow hover:bg-brand-700 transition-colors min-h-[48px] self-start shrink-0"
+          className="ui-btn-primary self-start shrink-0"
         >
           <svg
             className="w-4 h-4 shrink-0"
@@ -301,7 +299,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
             onClick={load}
             disabled={isPending}
             aria-label={tp("refreshLabel")}
-            className="flex items-center justify-center w-12 h-12 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-surface text-zinc-500 hover:text-brand-600 disabled:opacity-50 transition-colors shrink-0"
+            className="ui-btn-icon-circle"
           >
             <svg
               className={`w-5 h-5 ${isPending ? "animate-spin" : ""}`}
@@ -420,7 +418,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={safePage <= 1}
-            className="px-4 py-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-700 dark:text-zinc-300 disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-800 min-h-[48px] transition-colors"
+            className="ui-btn-secondary"
           >
             {t("previous")}
           </button>
@@ -430,7 +428,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={safePage >= totalPages}
-            className="px-4 py-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-700 dark:text-zinc-300 disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-800 min-h-[48px] transition-colors"
+            className="ui-btn-secondary"
           >
             {t("next")}
           </button>

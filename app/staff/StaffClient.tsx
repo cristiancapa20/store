@@ -110,7 +110,7 @@ export default function StaffClient({ staff, canAdd, plan, limit }: Props) {
               <button
                 onClick={() => handleDelete(member.id)}
                 disabled={deleting === member.id}
-                className="ui-btn-danger shrink-0 text-xs min-h-[36px] px-3"
+                className="ui-btn-danger shrink-0 text-xs px-3"
               >
                 {deleting === member.id ? "Eliminando…" : "Eliminar"}
               </button>

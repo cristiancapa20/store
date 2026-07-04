@@ -71,7 +71,9 @@
     "descriptionLabel": "Descripción",
     "descriptionPlaceholder": "Descripción opcional del producto",
     "adding": "Agregando…",
-    "submit": "Agregar Producto"
+    "submit": "Agregar Producto",
+    "accessDeniedTitle": "Acceso Denegado",
+    "accessDeniedBody": "Esta página está restringida a usuarios administradores."
   },
   "adjust": {
     "title": "Ajuste de Stock",

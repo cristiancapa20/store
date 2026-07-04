@@ -71,7 +71,9 @@
     "descriptionLabel": "Description",
     "descriptionPlaceholder": "Optional product description",
     "adding": "Adding…",
-    "submit": "Add Product"
+    "submit": "Add Product",
+    "accessDeniedTitle": "Access Denied",
+    "accessDeniedBody": "This page is restricted to admin users only."
   },
   "adjust": {
     "title": "Stock Adjustment",

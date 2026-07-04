@@ -132,7 +132,7 @@ export default function AdjustPage() {
           />
         </div>
         {searchResults.length > 0 && (
-          <div className="absolute left-0 right-0 top-full mt-2 bg-surface dark:bg-brand-900 rounded-3xl shadow-[0_16px_40px_rgba(3,15,34,0.14)] z-10 overflow-hidden">
+          <div className="absolute left-0 right-0 top-full mt-2 bg-surface dark:bg-brand-900 rounded-2xl shadow-[0_16px_40px_rgba(3,15,34,0.14)] z-10 overflow-hidden">
             {searchResults.map((p) => (
               <button
                 key={p.id}
@@ -151,11 +151,7 @@ export default function AdjustPage() {
       </div>
 
       {/* Scan error */}
-      {scanError && (
-        <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
-          {scanError}
-        </div>
-      )}
+      {scanError && <div className="ui-alert-error">{scanError}</div>}
 
       {/* Selected product panel */}
       {selectedProduct ? (
@@ -182,7 +178,7 @@ export default function AdjustPage() {
                 type="button"
                 onClick={() => setDelta((d) => d - 1)}
                 aria-label={t("decrease")}
-                className="flex items-center justify-center rounded-full bg-surface dark:bg-brand-900 text-xl font-bold text-brand-800 shadow-[0_6px_20px_rgba(3,15,34,0.08)] hover:bg-brand-50 min-h-[48px] min-w-[48px] w-12 h-12 transition-all"
+                className="ui-btn-icon-circle text-xl font-bold"
               >
                 −
               </button>
@@ -197,7 +193,7 @@ export default function AdjustPage() {
                 type="button"
                 onClick={() => setDelta((d) => d + 1)}
                 aria-label={t("increase")}
-                className="flex items-center justify-center rounded-full bg-surface dark:bg-brand-900 text-xl font-bold text-brand-800 shadow-[0_6px_20px_rgba(3,15,34,0.08)] hover:bg-brand-50 min-h-[48px] min-w-[48px] w-12 h-12 transition-all"
+                className="ui-btn-icon-circle text-xl font-bold"
               >
                 +
               </button>
@@ -233,11 +229,7 @@ export default function AdjustPage() {
           </div>
 
           {/* Adjust error */}
-          {adjustError && (
-            <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
-              {adjustError}
-            </div>
-          )}
+          {adjustError && <div className="ui-alert-error">{adjustError}</div>}
 
           {/* Success */}
           {newStock !== null && (
@@ -260,7 +252,7 @@ export default function AdjustPage() {
           <button
             type="button"
             onClick={resetSelection}
-            className="w-full rounded-full py-3 text-sm text-brand-700 dark:text-brand-200 min-h-[48px] hover:bg-brand-50/80 dark:hover:bg-brand-800/30 transition-colors"
+            className="ui-btn-text"
           >
             {t("selectAnother")}
           </button>

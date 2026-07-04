@@ -82,7 +82,7 @@ export default function AddProductForm() {
           <button
             type="button"
             onClick={() => setShowSkuScanner(false)}
-            className="w-full rounded-full py-3 text-sm text-brand-700 dark:text-brand-200 min-h-[48px] hover:bg-brand-50/80 dark:hover:bg-brand-800/30 transition-colors"
+            className="ui-btn-text"
           >
             {t("cancelScan")}
           </button>
@@ -125,7 +125,7 @@ export default function AddProductForm() {
                 type="button"
                 onClick={() => setShowSkuScanner(true)}
                 aria-label={t("scanSkuLabel")}
-                className="flex items-center justify-center rounded-full bg-surface dark:bg-brand-900 shadow-[0_6px_20px_rgba(3,15,34,0.08)] hover:bg-brand-50 min-h-[48px] min-w-[48px] w-12 h-12 transition-all shrink-0 text-brand-800"
+                className="ui-btn-icon-circle"
               >
                 <svg
                   className="w-5 h-5 text-zinc-600 dark:text-zinc-400"
@@ -201,9 +201,7 @@ export default function AddProductForm() {
 
           {/* API / form-level error */}
           {errors.form && (
-            <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
-              {errors.form}
-            </div>
+            <div className="ui-alert-error">{errors.form}</div>
           )}
 
           {/* Submit */}
