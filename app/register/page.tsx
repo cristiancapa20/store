@@ -3,6 +3,7 @@
 import { useActionState } from "react"
 import Link from "next/link"
 import { registerAction } from "./actions"
+import PasswordInput from "@/components/PasswordInput"
 
 export default function RegisterPage() {
   const [state, formAction, pending] = useActionState(registerAction, null)
@@ -100,13 +101,11 @@ export default function RegisterPage() {
             <label htmlFor="password" className="ui-label mb-1.5">
               Contraseña
             </label>
-            <input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               required
               autoComplete="new-password"
-              className="ui-input"
               placeholder="Mínimo 8 caracteres"
             />
           </div>
@@ -115,13 +114,11 @@ export default function RegisterPage() {
             <label htmlFor="confirmPassword" className="ui-label mb-1.5">
               Confirmar contraseña
             </label>
-            <input
+            <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
-              type="password"
               required
               autoComplete="new-password"
-              className="ui-input"
               placeholder="••••••••"
             />
           </div>

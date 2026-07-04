@@ -19,7 +19,9 @@
     "passwordPlaceholder": "••••••••",
     "signIn": "Iniciar sesión",
     "signingIn": "Iniciando sesión…",
-    "signOut": "Cerrar sesión"
+    "signOut": "Cerrar sesión",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña"
   },
   "sell": {
     "productNotFound": "Producto no encontrado",

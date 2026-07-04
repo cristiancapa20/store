@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { loginAction } from "./actions";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, null);
@@ -40,13 +41,11 @@ export default function LoginPage() {
             <label htmlFor="password" className="ui-label mb-1.5">
               {t("password")}
             </label>
-            <input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               required
               autoComplete="current-password"
-              className="ui-input"
               placeholder="••••••••"
             />
           </div>

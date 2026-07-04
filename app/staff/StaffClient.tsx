@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react"
 import { createStaff, deleteStaff } from "./actions"
+import PasswordInput from "@/components/PasswordInput"
 
 type StaffRow = { id: string; name: string; email: string }
 
@@ -70,7 +71,7 @@ export default function StaffClient({ staff, canAdd, plan, limit }: Props) {
             </div>
             <div>
               <label htmlFor="password" className="ui-label mb-1.5">Contraseña</label>
-              <input id="password" name="password" type="password" required className="ui-input" placeholder="Mínimo 8 caracteres" />
+              <PasswordInput id="password" name="password" required placeholder="Mínimo 8 caracteres" />
             </div>
           </div>
 
