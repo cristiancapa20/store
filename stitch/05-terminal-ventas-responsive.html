@@ -1,0 +1,441 @@
+<!DOCTYPE html><html class="light" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>Reliant POS - Terminal de Ventas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-container": "#2170e4",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "on-secondary-fixed-variant": "#004395",
+                    "on-secondary-fixed": "#001a42",
+                    "secondary": "#0058be",
+                    "surface-container": "#e5eeff",
+                    "on-error-container": "#93000a",
+                    "surface-dim": "#cbdbf5",
+                    "primary-container": "#131b2e",
+                    "tertiary-container": "#002113",
+                    "tertiary": "#000000",
+                    "outline-variant": "#c6c6cd",
+                    "on-background": "#0b1c30",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "on-surface": "#0b1c30",
+                    "surface-container-high": "#dce9ff",
+                    "on-secondary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#dae2fd",
+                    "inverse-on-surface": "#eaf1ff",
+                    "surface-bright": "#f8f9ff",
+                    "inverse-primary": "#bec6e0",
+                    "outline": "#76777d",
+                    "surface-tint": "#565e74",
+                    "on-surface-variant": "#45464d",
+                    "surface": "#f8f9ff",
+                    "tertiary-fixed": "#6ffbbe",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "inverse-surface": "#213145",
+                    "error-container": "#ffdad6",
+                    "surface-variant": "#d3e4fe",
+                    "secondary-fixed": "#d8e2ff",
+                    "on-primary-container": "#7c839b",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "background": "#f8f9ff",
+                    "on-tertiary-container": "#009668",
+                    "on-primary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "primary": "#000000",
+                    "primary-fixed-dim": "#bec6e0",
+                    "on-tertiary-fixed": "#002113",
+                    "on-secondary-container": "#fefcff",
+                    "surface-container-low": "#eff4ff",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "on-primary-fixed": "#131b2e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "8px",
+                    "lg": "8px",
+                    "xl": "12px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "gutter": "16px",
+                    "base": "4px",
+                    "xl": "32px",
+                    "margin-mobile": "16px",
+                    "md": "16px",
+                    "xs": "4px",
+                    "margin-desktop": "24px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "price-display": ["Inter"],
+                    "headline-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "display-lg": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "500"}],
+                    "price-display": ["32px", {"lineHeight": "1", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .scanner-beam { animation: scan 2s infinite ease-in-out; }
+        @keyframes scan {
+            0%, 100% { top: 0%; opacity: 0; }
+            50% { top: 100%; opacity: 1; }
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-background dark:bg-on-background text-on-background dark:text-inverse-on-surface min-h-screen overflow-x-hidden">
+<!-- SideNavBar: Hidden on mobile, visible on MD+ -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-surface-container dark:bg-on-secondary-fixed shadow-md hidden md:flex flex-col p-md z-40">
+<div class="mb-8 px-2">
+<span class="font-headline-lg text-headline-md font-bold text-primary dark:text-inverse-primary">Reliant POS</span>
+<p class="font-label-sm text-label-sm text-on-primary-container dark:text-on-primary-fixed-variant">Terminal #01</p>
+</div>
+<nav class="flex-grow flex flex-col gap-2">
+<a class="flex items-center gap-md bg-primary-container text-on-primary-container rounded-lg p-md active:scale-[0.98] transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-primary-fixed-dim rounded-lg p-md active:scale-[0.98] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-sm">Inventory</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-primary-fixed-dim rounded-lg p-md active:scale-[0.98] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="point_of_sale">point_of_sale</span>
+<span class="font-label-sm">Sales</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-primary-fixed-dim rounded-lg p-md active:scale-[0.98] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-sm">Customers</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-primary-fixed-dim rounded-lg p-md active:scale-[0.98] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-sm">Reports</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 border-t border-outline-variant">
+<button class="w-full bg-primary dark:bg-inverse-primary text-on-primary dark:text-primary py-3 rounded-xl font-label-md flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+            New Sale
+        </button>
+<div class="mt-4 flex items-center gap-3 px-2">
+<img alt="Store Manager Profile" class="w-10 h-10 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDY2ehMxdIX9mvsVjB3V25mMcCjVjhodMFnv7NXW7yid0se7dVjOrAtz3ByMAECzYt4TFlIEVQ3rhlBesLeD2ZFsKI60r7kMdfaaicIxzplo3hSVxSPBoA9hPzhqnem2r2E7RndSp262lUto5XMGoyKCPLFtaKXpJRbBoYvKpRREK37eT6iEYJGaHFS_fHySToB5Dhak5USPM2xWGsrzdmvOfNd3C0PsahbrEdJwxIpJN6zbHV2gUK-iPOfhdh6ZT0SrZa8hdVsjxU">
+<div class="overflow-hidden">
+<p class="font-label-md text-label-md truncate dark:text-inverse-on-surface">Marco Rossi</p>
+<button class="text-[10px] text-secondary dark:text-tertiary-fixed underline flex items-center gap-1" id="theme-toggle">
+<span class="material-symbols-outlined text-[12px]" data-icon="dark_mode">dark_mode</span>
+                    Toggle Theme
+                </button>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="sticky top-0 z-50 flex items-center justify-between px-md py-sm w-full bg-surface dark:bg-inverse-surface shadow-sm md:pl-[17rem]">
+<div class="flex items-center gap-4 w-full md:w-1/2">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant dark:text-outline-variant" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container dark:bg-on-background/20 border-none rounded-full font-body-md text-body-md focus:ring-2 focus:ring-secondary/20 dark:text-inverse-on-surface" placeholder="Search catalog..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-1 md:gap-2">
+<button class="hover:bg-surface-container-high dark:hover:bg-on-secondary-fixed-variant p-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-surface-container-high dark:hover:bg-on-secondary-fixed-variant p-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant" data-icon="help">help</span>
+</button>
+<button class="hover:bg-surface-container-high dark:hover:bg-on-secondary-fixed-variant p-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Content Shell -->
+<main class="md:ml-64 pb-24 md:pb-0 h-full md:h-[calc(100vh-64px)] grid grid-cols-1 md:grid-cols-12 overflow-y-auto md:overflow-hidden">
+<!-- Left Pane: Product Entry & Cart -->
+<section class="col-span-1 md:col-span-8 border-r border-outline-variant flex flex-col bg-surface dark:bg-background p-md md:p-lg gap-md md:gap-lg overflow-hidden">
+<!-- Scanning & Input Area -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-md md:gap-lg shrink-0">
+<!-- QR/Barcode Scanner Simulation -->
+<div class="relative bg-black rounded-xl aspect-[16/7] overflow-hidden flex flex-col items-center justify-center group cursor-pointer touch-manipulation">
+<div class="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&amp;fit=crop&amp;q=80&amp;w=800')] bg-cover bg-center"></div>
+<div class="z-10 text-white text-center p-4">
+<span class="material-symbols-outlined text-4xl mb-2" data-icon="qr_code_scanner">qr_code_scanner</span>
+<p class="font-label-md text-label-md">Point camera to scan</p>
+</div>
+<div class="scanner-beam absolute left-0 right-0 h-1 bg-secondary shadow-[0_0_15px_rgba(33,112,228,0.8)] z-20"></div>
+<!-- Corner Markers -->
+<div class="absolute top-4 left-4 w-6 h-6 border-t-4 border-l-4 border-white opacity-60"></div>
+<div class="absolute top-4 right-4 w-6 h-6 border-t-4 border-r-4 border-white opacity-60"></div>
+<div class="absolute bottom-4 left-4 w-6 h-6 border-b-4 border-l-4 border-white opacity-60"></div>
+<div class="absolute bottom-4 right-4 w-6 h-6 border-b-4 border-r-4 border-white opacity-60"></div>
+</div>
+<!-- Manual Entry -->
+<div class="bg-surface-container-lowest dark:bg-inverse-surface/10 p-md md:p-lg rounded-xl border border-outline-variant flex flex-col justify-center">
+<label class="font-label-md text-label-md text-on-surface-variant dark:text-outline-variant mb-2">Manual Code Entry</label>
+<div class="flex gap-2">
+<input class="flex-grow bg-surface dark:bg-on-background/20 border border-outline-variant rounded-lg px-4 py-3 font-body-md text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all dark:text-inverse-on-surface" inputmode="numeric" placeholder="EAN-13 or SKU..." type="text">
+<button class="bg-secondary text-on-secondary px-6 rounded-lg font-label-md text-label-md active:scale-95 transition-transform shrink-0">
+                        Add
+                    </button>
+</div>
+<p class="text-[10px] text-on-surface-variant dark:text-outline-variant mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="info">info</span>
+                    Touch keypad or press Enter to add
+                </p>
+</div>
+</div>
+<!-- Cart List -->
+<div class="flex-grow flex flex-col overflow-hidden bg-surface-container-lowest dark:bg-inverse-surface/5 rounded-xl border border-outline-variant">
+<div class="hidden md:grid grid-cols-12 px-6 py-4 border-b border-outline-variant bg-surface-container-low dark:bg-on-background/10">
+<span class="col-span-5 font-label-md text-label-md text-on-surface-variant dark:text-outline-variant uppercase tracking-wider">Product Name</span>
+<span class="col-span-2 text-center font-label-md text-label-md text-on-surface-variant dark:text-outline-variant uppercase tracking-wider">Qty</span>
+<span class="col-span-2 text-right font-label-md text-label-md text-on-surface-variant dark:text-outline-variant uppercase tracking-wider">Unit Price</span>
+<span class="col-span-3 text-right font-label-md text-label-md text-on-surface-variant dark:text-outline-variant uppercase tracking-wider">Subtotal</span>
+</div>
+<div class="flex-grow overflow-y-auto custom-scrollbar">
+<!-- Item 1 -->
+<div class="grid grid-cols-1 md:grid-cols-12 px-4 md:px-6 py-4 items-center hover:bg-surface-container dark:hover:bg-on-background/20 transition-colors group gap-4 md:gap-0">
+<div class="col-span-1 md:col-span-5 flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface dark:bg-inverse-surface/20 flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant" data-icon="image">image</span>
+</div>
+<div class="overflow-hidden">
+<p class="font-label-md text-label-md truncate">Ultra HD Wireless Headphones</p>
+<p class="text-xs text-on-surface-variant dark:text-outline-variant">SKU: HD-0092-B</p>
+</div>
+</div>
+<div class="col-span-1 md:col-span-2 flex items-center justify-between md:justify-center gap-3">
+<span class="md:hidden text-xs text-on-surface-variant uppercase">Qty:</span>
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center hover:bg-white dark:hover:bg-inverse-surface active:bg-surface-dim touch-manipulation">
+<span class="material-symbols-outlined text-sm" data-icon="remove">remove</span>
+</button>
+<span class="font-body-md text-body-md font-bold">1</span>
+<button class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center hover:bg-white dark:hover:bg-inverse-surface active:bg-surface-dim touch-manipulation">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+</button>
+</div>
+</div>
+<div class="hidden md:block col-span-2 text-right font-body-md text-body-md">$249.00</div>
+<div class="col-span-1 md:col-span-3 text-right flex items-center justify-between md:justify-end gap-4">
+<span class="md:hidden text-xs text-on-surface-variant uppercase">Subtotal:</span>
+<div class="flex items-center gap-4">
+<span class="font-label-md text-label-md text-primary dark:text-tertiary-fixed">$249.00</span>
+<button class="text-error p-1 hover:bg-error-container rounded transition-all md:opacity-0 md:group-hover:opacity-100 touch-manipulation">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="grid grid-cols-1 md:grid-cols-12 px-4 md:px-6 py-4 items-center hover:bg-surface-container dark:hover:bg-on-background/20 transition-colors group gap-4 md:gap-0 border-t border-outline-variant/30 md:border-none">
+<div class="col-span-1 md:col-span-5 flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface dark:bg-inverse-surface/20 flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant" data-icon="devices">devices</span>
+</div>
+<div class="overflow-hidden">
+<p class="font-label-md text-label-md truncate">Ergonomic Mechanical Keyboard</p>
+<p class="text-xs text-on-surface-variant dark:text-outline-variant">SKU: KB-MECH-W</p>
+</div>
+</div>
+<div class="col-span-1 md:col-span-2 flex items-center justify-between md:justify-center gap-3">
+<span class="md:hidden text-xs text-on-surface-variant uppercase">Qty:</span>
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center hover:bg-white dark:hover:bg-inverse-surface active:bg-surface-dim touch-manipulation">
+<span class="material-symbols-outlined text-sm" data-icon="remove">remove</span>
+</button>
+<span class="font-body-md text-body-md font-bold">2</span>
+<button class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center hover:bg-white dark:hover:bg-inverse-surface active:bg-surface-dim touch-manipulation">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+</button>
+</div>
+</div>
+<div class="hidden md:block col-span-2 text-right font-body-md text-body-md">$120.00</div>
+<div class="col-span-1 md:col-span-3 text-right flex items-center justify-between md:justify-end gap-4">
+<span class="md:hidden text-xs text-on-surface-variant uppercase">Subtotal:</span>
+<div class="flex items-center gap-4">
+<span class="font-label-md text-label-md text-primary dark:text-tertiary-fixed">$240.00</span>
+<button class="text-error p-1 hover:bg-error-container rounded transition-all md:opacity-0 md:group-hover:opacity-100 touch-manipulation">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="px-6 py-4 bg-surface-container-low dark:bg-on-background/10 border-t border-outline-variant flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant dark:text-outline-variant">3 items in cart</span>
+<button class="text-error font-label-md text-label-md flex items-center gap-2 hover:underline touch-manipulation">
+<span class="material-symbols-outlined" data-icon="delete_sweep">delete_sweep</span>
+                    Clear Cart
+                </button>
+</div>
+</div>
+</section>
+<!-- Right Pane: Checkout Summary -->
+<section class="col-span-1 md:col-span-4 bg-surface-container-lowest dark:bg-inverse-surface/5 p-md md:p-lg flex flex-col gap-lg shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">
+<div class="flex-grow flex flex-col gap-6 md:gap-xl">
+<!-- Customer Selection -->
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary dark:text-inverse-primary mb-4">Customer Info</h3>
+<div class="grid grid-cols-2 gap-2 bg-surface-container dark:bg-on-background/20 p-1 rounded-xl">
+<button class="bg-surface-container-lowest dark:bg-on-background/40 text-primary dark:text-inverse-on-surface shadow-sm py-3 rounded-lg font-label-md text-label-md transition-all touch-manipulation" id="btn-final-consumer">
+                        Consumidor Final
+                    </button>
+<button class="text-on-surface-variant dark:text-outline-variant py-3 rounded-lg font-label-md text-label-md hover:bg-surface-container-high transition-all touch-manipulation" id="btn-invoice">
+                        Factura
+                    </button>
+</div>
+<div class="mt-4 flex flex-col gap-3">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant dark:text-outline-variant text-sm" data-icon="person">person</span>
+<input class="w-full pl-9 pr-4 py-3 bg-surface dark:bg-on-background/20 border border-outline-variant rounded-lg font-body-md text-body-md focus:border-secondary outline-none dark:text-inverse-on-surface" placeholder="Anonymous Customer" type="text">
+</div>
+<button class="flex items-center justify-center gap-2 py-2 border border-dashed border-outline text-on-surface-variant dark:text-outline-variant rounded-lg text-sm hover:bg-surface-container transition-colors touch-manipulation">
+<span class="material-symbols-outlined text-sm" data-icon="add_circle">add_circle</span>
+                        Register New Customer
+                    </button>
+</div>
+</div>
+<!-- Payment Methods -->
+<div>
+<h3 class="font-label-md text-label-md text-on-surface-variant dark:text-outline-variant uppercase tracking-widest mb-4">Payment Method</h3>
+<div class="grid grid-cols-3 gap-2">
+<div class="flex flex-col items-center justify-center p-3 border-2 border-secondary bg-secondary/5 rounded-xl cursor-pointer touch-manipulation">
+<span class="material-symbols-outlined text-secondary mb-1" data-icon="payments">payments</span>
+<span class="text-[10px] font-bold text-secondary">CASH</span>
+</div>
+<div class="flex flex-col items-center justify-center p-3 border border-outline-variant rounded-xl hover:bg-surface-container dark:hover:bg-on-background/20 cursor-pointer transition-colors touch-manipulation">
+<span class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant mb-1" data-icon="credit_card">credit_card</span>
+<span class="text-[10px] font-bold text-on-surface-variant dark:text-outline-variant">CARD</span>
+</div>
+<div class="flex flex-col items-center justify-center p-3 border border-outline-variant rounded-xl hover:bg-surface-container dark:hover:bg-on-background/20 cursor-pointer transition-colors touch-manipulation">
+<span class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant mb-1" data-icon="qr_code_2">qr_code_2</span>
+<span class="text-[10px] font-bold text-on-surface-variant dark:text-outline-variant">WALLET</span>
+</div>
+</div>
+</div>
+<!-- Totals -->
+<div class="space-y-4 pt-4 border-t border-outline-variant">
+<div class="flex justify-between items-center text-on-surface-variant dark:text-outline-variant">
+<span class="font-body-md text-body-md">Subtotal</span>
+<span class="font-body-md text-body-md">$489.00</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant dark:text-outline-variant">
+<span class="font-body-md text-body-md">Tax (IVA 21%)</span>
+<span class="font-body-md text-body-md">$102.69</span>
+</div>
+<div class="flex justify-between items-end pt-4">
+<span class="font-headline-sm text-headline-sm text-primary dark:text-inverse-primary">Total</span>
+<div class="text-right">
+<p class="font-price-display text-2xl md:text-price-display text-primary dark:text-tertiary-fixed">$591.69</p>
+<p class="text-xs text-on-surface-variant dark:text-outline-variant font-medium">Currency: USD</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Checkout Button -->
+<div class="mt-4 md:mt-auto">
+<button class="w-full bg-[#10b981] dark:bg-on-tertiary-container text-white py-6 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-emerald-200 dark:shadow-none active:scale-95 transition-all group overflow-hidden relative touch-manipulation">
+<div class="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+<div class="flex items-center gap-3 z-10">
+<span class="material-symbols-outlined text-3xl" data-icon="shopping_cart_checkout">shopping_cart_checkout</span>
+<span class="font-headline-sm text-headline-sm font-black">Finalizar Venta</span>
+</div>
+<span class="font-label-sm text-label-sm opacity-80 z-10 uppercase">Process Payment (F12)</span>
+</button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar: Mobile Only -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe bg-surface dark:bg-inverse-surface border-t border-outline-variant md:hidden shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center text-on-secondary-fixed-variant dark:text-outline-variant active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span class="text-[10px] font-bold">Sales</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-fixed-variant dark:text-outline-variant active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span class="text-[10px] font-medium">Inventory</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-fixed-variant dark:text-outline-variant active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+<span class="text-[10px] font-medium">More</span>
+</a>
+</nav>
+<script>
+    // Theme Toggle Logic
+    const html = document.documentElement;
+    const themeBtn = document.getElementById('theme-toggle');
+    
+    themeBtn.addEventListener('click', () => {
+        if (html.classList.contains('dark')) {
+            html.classList.remove('dark');
+            html.classList.add('light');
+        } else {
+            html.classList.remove('light');
+            html.classList.add('dark');
+        }
+    });
+
+    // Customer Selector UI
+    const btnConsumer = document.getElementById('btn-final-consumer');
+    const btnInvoice = document.getElementById('btn-invoice');
+
+    function toggleSelector(active, inactive) {
+        active.classList.add('bg-surface-container-lowest', 'dark:bg-on-background/40', 'text-primary', 'dark:text-inverse-on-surface', 'shadow-sm');
+        active.classList.remove('text-on-surface-variant', 'dark:text-outline-variant', 'hover:bg-surface-container-high');
+        inactive.classList.remove('bg-surface-container-lowest', 'dark:bg-on-background/40', 'text-primary', 'dark:text-inverse-on-surface', 'shadow-sm');
+        inactive.classList.add('text-on-surface-variant', 'dark:text-outline-variant', 'hover:bg-surface-container-high');
+    }
+
+    btnConsumer.addEventListener('click', () => toggleSelector(btnConsumer, btnInvoice));
+    btnInvoice.addEventListener('click', () => toggleSelector(btnInvoice, btnConsumer));
+
+    // Scanner beam loop
+    setInterval(() => {
+        const scanner = document.querySelector('.scanner-beam');
+        if(scanner) {
+            scanner.style.animation = 'none';
+            scanner.offsetHeight; /* trigger reflow */
+            scanner.style.animation = null; 
+        }
+    }, 4000);
+</script>
+</body></html>
