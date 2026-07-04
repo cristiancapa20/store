@@ -1,7 +1,7 @@
 {
   "nav": {
     "sell": "Vender",
-    "products": "Productos",
+    "products": "Inventario",
     "addProduct": "Agregar",
     "adjustStock": "Ajustar",
     "history": "Historial",

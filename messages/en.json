@@ -1,7 +1,7 @@
 {
   "nav": {
     "sell": "Sell",
-    "products": "Products",
+    "products": "Inventory",
     "addProduct": "Add",
     "adjustStock": "Adjust",
     "history": "History",
