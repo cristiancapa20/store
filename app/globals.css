@@ -4,20 +4,20 @@
 @variant dark (&:where(.dark, .dark *));
 
 /* ─── Brand Palette ──────────────────────────────────────────────────────────
-   #4c6ef5 = brand-600  →  buttons / primary actions (electric blue)
+   #0A1931 = brand-600  →  buttons / primary actions (sidebar navy)
    ─────────────────────────────────────────────────────────────────────────── */
 @theme {
-  --color-brand-50:  #eef2ff;
-  --color-brand-100: #dce6ff;
-  --color-brand-200: #b9ccff;
-  --color-brand-300: #86a3ff;
-  --color-brand-400: #6080ff;
-  --color-brand-500: #4c6ef5;
-  --color-brand-600: #3d5de8;
-  --color-brand-700: #2f4bd0;
-  --color-brand-800: #1e3399;
-  --color-brand-900: #122069;
-  --color-brand-950: #0a1240;
+  --color-brand-50:  #eaf0fb;
+  --color-brand-100: #d5e2f6;
+  --color-brand-200: #aac4ee;
+  --color-brand-300: #739ee2;
+  --color-brand-400: #3472d5;
+  --color-brand-500: #2152a1;
+  --color-brand-600: #0A1931;
+  --color-brand-700: #081326;
+  --color-brand-800: #060e1c;
+  --color-brand-900: #040a13;
+  --color-brand-950: #02050b;
 
   --color-surface:       #ffffff;
   --color-surface-muted: #f4f6fd;
@@ -25,9 +25,10 @@
 
 /* ─── Semantic tokens — light mode ─────────────────────────────────────────── */
 :root {
-  --bg-base:      #f4f6fc;
+  --bg-base:      #ffffff;
   --bg-surface:   #ffffff;
-  --bg-sidebar:   #eef1fa;
+  --bg-sidebar:          #0A1931;
+  --bg-sidebar-elevated: #1B2A4A;
   --bg-elevated:  #e4e8f5;
   --border-color: #dde2f0;
   --text-primary: #0e1229;
@@ -38,7 +39,7 @@
 .dark {
   --bg-base:      #0c0e1a;
   --bg-surface:   #161928;
-  --bg-sidebar:   #111320;
+  --bg-sidebar:   #0A1931;
   --bg-elevated:  #1d2035;
   --border-color: #252a42;
   --text-primary: #e2e6f8;
@@ -55,7 +56,7 @@ body {
 }
 
 *:focus-visible:not(:where(.ui-search-field, .ui-search *, .ui-input)) {
-  outline: 2px solid #4c6ef566;
+  outline: 2px solid #3472d566;
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -120,7 +121,7 @@ body {
            px-4 sm:px-5 py-3
            shadow-[0_2px_8px_rgba(30,38,84,0.06)]
            focus:outline-none
-           focus:shadow-[0_4px_16px_rgba(74,92,186,0.14)]
+           focus:shadow-[0_4px_16px_rgba(10,25,49,0.14)]
            focus-visible:outline-none
            min-h-[48px] text-sm
            transition-[box-shadow,border-color] duration-150;
@@ -129,11 +130,11 @@ body {
   }
 
   .ui-input:focus {
-    border-color: #4c6ef5;
+    border-color: #2152a1;
   }
 
   .dark .ui-input:focus {
-    border-color: #6080ff;
+    border-color: #3472d5;
   }
 
   .ui-input-error {
@@ -148,14 +149,14 @@ body {
 
   select.ui-input {
     @apply cursor-pointer pr-11 appearance-none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234c6ef5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%232152a1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 1.125rem center;
     background-size: 1rem;
   }
 
   .dark select.ui-input {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236080ff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%233472d5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
   }
 
   /* Search bar */
@@ -170,12 +171,12 @@ body {
   }
 
   .ui-search:focus-within {
-    @apply shadow-[0_4px_16px_rgba(76,110,245,0.18)];
-    border-color: #4c6ef5;
+    @apply shadow-[0_4px_16px_rgba(33,82,161,0.18)];
+    border-color: #2152a1;
   }
 
   .dark .ui-search:focus-within {
-    border-color: #6080ff;
+    border-color: #3472d5;
   }
 
   .ui-search-field {
@@ -200,7 +201,7 @@ body {
            bg-brand-600 hover:bg-brand-700 active:bg-brand-800
            text-white font-semibold text-sm
            rounded-xl min-h-[48px] px-5
-           shadow-[0_2px_8px_rgba(74,92,186,0.30)]
+           shadow-[0_2px_8px_rgba(10,25,49,0.30)]
            transition-all duration-150 active:scale-[0.97]
            disabled:opacity-50 disabled:pointer-events-none;
   }
@@ -211,7 +212,7 @@ body {
            bg-brand-600 hover:bg-brand-700 active:bg-brand-800
            text-white font-semibold text-sm
            rounded-xl min-h-[48px] px-5
-           shadow-[0_2px_8px_rgba(74,92,186,0.30)]
+           shadow-[0_2px_8px_rgba(10,25,49,0.30)]
            transition-all duration-150 active:scale-[0.97]
            disabled:opacity-50 disabled:pointer-events-none;
   }
@@ -278,7 +279,7 @@ body {
     @apply flex-1 flex items-center justify-center gap-2
            py-2.5 px-3 text-sm font-semibold min-h-[44px]
            rounded-lg bg-brand-600 text-white
-           shadow-[0_2px_8px_rgba(74,92,186,0.25)]
+           shadow-[0_2px_8px_rgba(10,25,49,0.25)]
            transition-all duration-150;
   }
 
