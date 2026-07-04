@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import db from "@/lib/db";
+import { getInventoryConfig } from "@/lib/inventoryClient";
 
 type LocationInfo = {
   id: string;
@@ -10,14 +11,12 @@ type LocationInfo = {
 };
 
 async function fetchLocation(): Promise<LocationInfo | null> {
+  const { apiKey, locationId, apiBase } = await getInventoryConfig();
   try {
-    const res = await fetch(
-      `${process.env.INVENTORY_API_URL}/locations/${process.env.INVENTORY_LOCATION_ID}`,
-      {
-        headers: { Authorization: `Bearer ${process.env.INVENTORY_API_KEY}` },
-        next: { revalidate: 60 },
-      }
-    );
+    const res = await fetch(`${apiBase}/locations/${locationId}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      cache: "no-store",
+    });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -47,7 +46,7 @@ export default async function ProfilePage() {
       <div className="ui-card space-y-4">
         {/* Store icon + name */}
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-brand-600 flex items-center justify-center shrink-0 shadow-[0_4px_16px_rgba(74,92,186,0.30)]">
+          <div className="w-14 h-14 rounded-2xl bg-brand-600 flex items-center justify-center shrink-0 shadow-[0_4px_16px_rgba(10,25,49,0.30)]">
             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
