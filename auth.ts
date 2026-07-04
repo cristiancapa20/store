@@ -19,6 +19,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           .prepare(`
             SELECT u.id, u.name, u.email, u.password_hash, u.role,
                    u.organization_id,
+                   o.name AS organization_name,
                    o.inventory_api_key, o.inventory_location_id,
                    o.status, o.plan
             FROM users u
@@ -33,6 +34,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               password_hash: string
               role: string
               organization_id: string | null
+              organization_name: string | null
               inventory_api_key: string | null
               inventory_location_id: string | null
               status: string | null
@@ -62,6 +64,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: row.email,
           role: row.role,
           organizationId: row.organization_id,
+          organizationName: row.organization_name,
           inventoryApiKey: row.inventory_api_key,
           inventoryLocationId: row.inventory_location_id,
           organizationStatus: row.status,

@@ -10,6 +10,7 @@ declare module "next-auth" {
       inventoryLocationId?: string | null
       organizationStatus?: string | null
       organizationPlan?: string | null
+      organizationName?: string | null
     } & DefaultSession["user"]
   }
 
@@ -20,6 +21,7 @@ declare module "next-auth" {
     inventoryLocationId?: string | null
     organizationStatus?: string | null
     organizationPlan?: string | null
+    organizationName?: string | null
   }
 }
 
@@ -32,5 +34,6 @@ declare module "next-auth/jwt" {
     inventoryLocationId?: string | null
     organizationStatus?: string | null
     organizationPlan?: string | null
+    organizationName?: string | null
   }
 }

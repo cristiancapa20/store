@@ -106,9 +106,10 @@ function isActive(pathname: string, href: string) {
 type Props = {
   userRole?: string;
   organizationPlan?: string | null;
+  organizationName?: string | null;
 };
 
-export default function BottomNav({ userRole, organizationPlan }: Props) {
+export default function BottomNav({ userRole, organizationPlan, organizationName }: Props) {
   const pathname = usePathname();
   const t = useTranslations("nav");
 
@@ -118,10 +119,10 @@ export default function BottomNav({ userRole, organizationPlan }: Props) {
   const profileTab = visibleTabs.find(tab => tab.key === "profile")!;
 
   function navLinkClass(active: boolean) {
-    return `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all w-full ${
+    return `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white transition-all w-full ${
       active
-        ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-none"
-        : "text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
+        ? "bg-[var(--bg-sidebar-elevated)] shadow-none"
+        : "hover:bg-[var(--bg-sidebar-elevated)]"
     }`;
   }
 
@@ -130,8 +131,11 @@ export default function BottomNav({ userRole, organizationPlan }: Props) {
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-56 bg-[var(--bg-sidebar)] z-40 py-6 border-r border-[var(--border-color)]">
         {/* Brand */}
-        <div className="px-6 pb-4">
-          <span className="font-semibold text-brand-900 dark:text-brand-50 text-base tracking-tight">
+        <div className="flex items-center gap-2.5 px-6 pb-5">
+          <div className="w-9 h-9 rounded-xl bg-[var(--bg-sidebar-elevated)] flex items-center justify-center shrink-0 text-brand-50">
+            <StoreIcon />
+          </div>
+          <span className="font-bold text-brand-50 text-xl tracking-tight leading-tight">
             {t("appName")}
           </span>
         </div>
@@ -169,7 +173,7 @@ export default function BottomNav({ userRole, organizationPlan }: Props) {
                 aria-current={active ? "page" : undefined}
               >
                 {profileTab.icon}
-                <span>{t("profile")}</span>
+                <span className="truncate">{organizationName || t("profile")}</span>
               </Link>
             );
           })()}
@@ -188,7 +192,7 @@ export default function BottomNav({ userRole, organizationPlan }: Props) {
                   href={tab.href}
                   className={`flex flex-col items-center justify-center flex-1 min-h-[48px] py-1.5 gap-0.5 text-[9px] sm:text-[11px] font-medium transition-all rounded-full ${
                     active
-                      ? "bg-brand-600 text-white shadow-[0_6px_18px_rgba(74,92,186,0.35)]"
+                      ? "bg-brand-600 text-white shadow-[0_6px_18px_rgba(10,25,49,0.35)]"
                       : "text-brand-800/65 dark:text-brand-100/60"
                   }`}
                   aria-current={active ? "page" : undefined}
