@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import ReactPDF from "@react-pdf/renderer";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  renderToBuffer,
+} from "@react-pdf/renderer";
 import React from "react";
-import type { Sale } from "@/lib/types";
-
-const { Document, Page, Text, View, StyleSheet, renderToBuffer } = ReactPDF;
+import type { Sale, SaleItem } from "@/lib/types";
 
 const styles = StyleSheet.create({
   page: { padding: 48, fontFamily: "Helvetica", color: "#111827" },
@@ -143,8 +148,63 @@ function InvoiceDocument({ sale, storeName, taxRate }: InvoiceProps) {
   );
 }
 
-export async function GET(
-  _request: NextRequest,
+function parseSale(raw: string, saleId: string): Sale | null {
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof data !== "object" || data === null) return null;
+  const d = data as Record<string, unknown>;
+  if (d.id !== saleId) return null;
+  if (!Array.isArray(d.items)) return null;
+
+  const items: SaleItem[] = [];
+  for (const item of d.items) {
+    if (typeof item !== "object" || item === null) return null;
+    const i = item as Record<string, unknown>;
+    if (
+      typeof i.productId !== "string" ||
+      typeof i.productName !== "string" ||
+      typeof i.quantity !== "number" ||
+      typeof i.unitPrice !== "number" ||
+      typeof i.lineTotal !== "number"
+    ) {
+      return null;
+    }
+    items.push({
+      productId: i.productId,
+      productName: i.productName,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+      lineTotal: i.lineTotal,
+    });
+  }
+
+  if (
+    typeof d.id !== "string" ||
+    typeof d.createdAt !== "string" ||
+    typeof d.staffId !== "string" ||
+    typeof d.subtotal !== "number" ||
+    typeof d.total !== "number"
+  ) {
+    return null;
+  }
+
+  return {
+    id: d.id,
+    createdAt: d.createdAt,
+    staffId: d.staffId,
+    staffName: typeof d.staffName === "string" ? d.staffName : undefined,
+    items,
+    subtotal: d.subtotal,
+    total: d.total,
+  };
+}
+
+export async function POST(
+  request: NextRequest,
   context: { params: Promise<{ saleId: string }> }
 ) {
   const session = await auth();
@@ -154,24 +214,15 @@ export async function GET(
 
   const { saleId } = await context.params;
 
-  const apiUrl = process.env.INVENTORY_API_URL ?? "";
-  const apiKey = process.env.INVENTORY_API_KEY ?? "";
+  const formData = await request.formData();
+  const raw = formData.get("sale");
+  if (typeof raw !== "string") {
+    return new NextResponse("Missing sale data", { status: 400 });
+  }
 
-  let sale: Sale;
-  try {
-    const res = await fetch(
-      `${apiUrl}/sales/${encodeURIComponent(saleId)}`,
-      {
-        headers: { Authorization: `Bearer ${apiKey}` },
-      }
-    );
-    if (!res.ok) {
-      const status = res.status === 404 ? 404 : 502;
-      return new NextResponse("Sale not found", { status });
-    }
-    sale = (await res.json()) as Sale;
-  } catch {
-    return new NextResponse("Failed to fetch sale", { status: 502 });
+  const sale = parseSale(raw, saleId);
+  if (!sale) {
+    return new NextResponse("Invalid sale data", { status: 400 });
   }
 
   const storeName = process.env.STORE_NAME ?? "Store";

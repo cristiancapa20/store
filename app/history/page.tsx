@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useTransition, useEffect } from "react";
-import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { listSales, listStaff } from "@/lib/actions";
 import type { Sale, SaleFilters } from "@/lib/types";
@@ -324,24 +323,34 @@ export default function HistoryPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1">
-                            <Link
-                              href={`/api/invoices/${sale.id}`}
+                            <form
+                              action={`/api/invoices/${sale.id}`}
+                              method="POST"
                               target="_blank"
-                              rel="noopener noreferrer"
-                              title={t("viewSale")}
-                              className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-brand-600 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors"
                             >
-                              <IconEye />
-                            </Link>
-                            <Link
-                              href={`/api/invoices/${sale.id}`}
+                              <input type="hidden" name="sale" value={JSON.stringify(sale)} />
+                              <button
+                                type="submit"
+                                title={t("viewSale")}
+                                className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-brand-600 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors"
+                              >
+                                <IconEye />
+                              </button>
+                            </form>
+                            <form
+                              action={`/api/invoices/${sale.id}`}
+                              method="POST"
                               target="_blank"
-                              rel="noopener noreferrer"
-                              title={t("printInvoice")}
-                              className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-brand-600 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors"
                             >
-                              <IconPrint />
-                            </Link>
+                              <input type="hidden" name="sale" value={JSON.stringify(sale)} />
+                              <button
+                                type="submit"
+                                title={t("printInvoice")}
+                                className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-brand-600 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors"
+                              >
+                                <IconPrint />
+                              </button>
+                            </form>
                           </div>
                         </td>
                       </tr>
