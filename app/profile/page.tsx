@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import db from "@/lib/db";
-import { getInventoryConfig } from "@/lib/inventoryClient";
+import { apiFetch, getInventoryConfig } from "@/lib/inventoryClient";
 
 type LocationInfo = {
   id: string;
@@ -14,13 +14,13 @@ async function fetchLocation(): Promise<LocationInfo | null> {
   try {
     // Dentro del try: sin credencial de la organizacion getInventoryConfig lanza,
     // y aqui eso es "desconectado", no una pagina rota.
-    const { apiKey, locationId, apiBase } = await getInventoryConfig();
-    const res = await fetch(`${apiBase}/locations/${locationId}`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
+    const { locationId } = await getInventoryConfig();
+    // Via apiFetch para heredar el timeout: un servicio colgado dejaba esta
+    // pagina cargando hasta que la plataforma mataba la peticion.
+    const result = await apiFetch<LocationInfo>(`/locations/${locationId}`, {
       cache: "no-store",
     });
-    if (!res.ok) return null;
-    return res.json();
+    return "error" in result ? null : result;
   } catch {
     return null;
   }

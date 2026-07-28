@@ -4,15 +4,14 @@ import { useCallback } from "react";
 import { useTranslations } from "next-intl";
 import type { ActionError } from "./types";
 
-// Authorization refusals carry a code instead of a translated message, because
-// server actions have no locale context. The UI resolves the text.
+// Server actions have no locale context, so they carry a code instead of a
+// translated message and the UI resolves the text. `errors.<code>` must exist in
+// every locale for each member of ActionErrorCode; without a code (an
+// unclassified failure) the service's own string is the best available text.
 export function useActionErrorMessage() {
   const t = useTranslations("errors");
   return useCallback(
-    (result: ActionError) =>
-      result.code === "unauthorized" || result.code === "forbidden"
-        ? t(result.code)
-        : result.error,
+    (result: ActionError) => (result.code ? t(result.code) : result.error),
     [t]
   );
 }

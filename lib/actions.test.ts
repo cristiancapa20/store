@@ -270,6 +270,27 @@ describe("createSale", () => {
     expect(result).toEqual({ error: "Insufficient stock" });
   });
 
+  it("codes any 409 from /sales as insufficient stock, whatever the wording", async () => {
+    // POST /sales solo devuelve 409 por stock, y su mensaje lleva el UUID del
+    // producto: lo que llega a la UI tiene que ser el codigo, no esa cadena.
+    mockApiFetch.mockResolvedValue({
+      error: "Something new the service says",
+      status: 409,
+    });
+
+    const result = await createSale(items, "ticket-key-1");
+
+    expect(result).toMatchObject({ code: "insufficient_stock", status: 409 });
+  });
+
+  it("leaves other transport failures untouched", async () => {
+    mockApiFetch.mockResolvedValue({ error: "timed out", code: "timeout" });
+
+    const result = await createSale(items, "ticket-key-1");
+
+    expect(result).toEqual({ error: "timed out", code: "timeout" });
+  });
+
   it("computes subtotal from the cart and parses a string total", async () => {
     mockApiFetch.mockResolvedValue({
       id: "sale-1",

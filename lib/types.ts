@@ -56,9 +56,27 @@ export type InventoryPage = {
 
 // `code` lets the UI tell "the product does not exist" apart from a transport
 // or validation failure (e.g. a 422 from the service), and an authorization
-// refusal apart from either.
-export type ActionErrorCode = "not_found" | "unauthorized" | "forbidden";
+// refusal apart from either. `unauthorized`/`forbidden` are about *this* app's
+// session; `service_auth` is the inventory service rejecting the store's key.
+export type ActionErrorCode =
+  | "not_found"
+  | "unauthorized"
+  | "forbidden"
+  | "insufficient_stock"
+  | "conflict"
+  | "invalid_request"
+  | "service_auth"
+  | "service_error"
+  | "timeout"
+  | "network";
 
-export type ActionError = { error: string; code?: ActionErrorCode };
+// `status` is present only when the service actually answered. Its absence next
+// to a `timeout`/`network` code is what tells "nobody answered" apart from "the
+// service answered with an error".
+export type ActionError = {
+  error: string;
+  code?: ActionErrorCode;
+  status?: number;
+};
 
 export type ActionResult<T> = T | ActionError;

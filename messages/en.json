@@ -340,6 +340,14 @@
   },
   "errors": {
     "unauthorized": "Your session expired. Sign in again to continue.",
-    "forbidden": "You do not have permission to perform this action."
+    "forbidden": "You do not have permission to perform this action.",
+    "not_found": "We could not find that product in the inventory.",
+    "insufficient_stock": "Not enough stock to complete the sale. Check the quantities.",
+    "conflict": "The operation conflicts with the current inventory state. Try again.",
+    "invalid_request": "The inventory service rejected the data sent. Review it and try again.",
+    "service_auth": "The inventory service rejected this store's credential. Ask an administrator.",
+    "service_error": "The inventory service hit an error. Try again in a few seconds.",
+    "timeout": "The inventory service took too long to respond. Try again.",
+    "network": "Could not reach the inventory service. Check the connection."
   }
 }

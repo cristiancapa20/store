@@ -111,6 +111,9 @@ SUPER_ADMIN_EMAIL       # Used by npm run seed
 SUPER_ADMIN_PASSWORD    # Used by npm run seed
 ```
 
+Optional: `INVENTORY_TIMEOUT_MS` — milliseconds before an inventory request is
+aborted (default 8000). Per-call override: `apiFetch(path, { timeoutMs })`.
+
 **`INVENTORY_API_KEY` and `INVENTORY_LOCATION_ID` were removed.** They were a
 single global tenant credential: any request that could not resolve an
 organization fell back to them and read or wrote *that* store's inventory. Since

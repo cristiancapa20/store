@@ -82,6 +82,7 @@ cp .env.example .env.local
 |---|---|
 | `INVENTORY_API_URL` | Base URL of the Inventory Service including `/v1` (e.g. `http://localhost:3001/v1`) |
 | `INVENTORY_ADMIN_SECRET` | Admin token used to provision a new store (organization, API key, location) on register |
+| `INVENTORY_TIMEOUT_MS` | Optional. Milliseconds before an inventory request is aborted (default `8000`) |
 | `AUTH_SECRET` | Random secret for NextAuth session encryption |
 | `STORE_NAME` | Displayed on PDF invoices |
 | `TAX_RATE` | Decimal tax rate for invoices (e.g. `0.10` for 10%) |

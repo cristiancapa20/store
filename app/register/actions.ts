@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs"
 import { signIn } from "@/auth"
 import { AuthError } from "next-auth"
 import db from "@/lib/db"
+import { resolveInventoryTimeoutMs } from "@/lib/inventoryClient"
 
 type RegisterState = { error: string } | null
 
@@ -52,6 +53,11 @@ export async function registerAction(
 
   if (inventoryConfigured) {
     try {
+      // El aprovisionamiento son tres llamadas encadenadas: sin timeout, un
+      // servicio colgado deja el registro esperando hasta que la plataforma
+      // mata la peticion. Cada una aborta por su cuenta y cae en el catch.
+      const timeoutMs = resolveInventoryTimeoutMs()
+
       // 1. Create organization
       const orgRes = await fetch(`${apiBase}/v1/admin/organizations`, {
         method: "POST",
@@ -60,6 +66,7 @@ export async function registerAction(
           Authorization: `Bearer ${adminSecret}`,
         },
         body: JSON.stringify({ name: storeName }),
+        signal: AbortSignal.timeout(timeoutMs),
       })
       if (!orgRes.ok) {
         if (process.env.NODE_ENV === "production") {
@@ -80,6 +87,7 @@ export async function registerAction(
               Authorization: `Bearer ${adminSecret}`,
             },
             body: JSON.stringify({ name: `${storeName} - Main` }),
+            signal: AbortSignal.timeout(timeoutMs),
           }
         )
         if (!keyRes.ok) {
@@ -99,6 +107,7 @@ export async function registerAction(
               Authorization: `Bearer ${inventoryApiKey}`,
             },
             body: JSON.stringify({ name: `${storeName} - Principal` }),
+            signal: AbortSignal.timeout(timeoutMs),
           })
           if (!locRes.ok) {
             if (process.env.NODE_ENV === "production") {

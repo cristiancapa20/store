@@ -1,0 +1,130 @@
+# Iteration 7 Log
+
+## Metadata
+
+- **Task ID**: US-006
+- **Task Title**: Enviar Idempotency-Key al crear una venta
+- **Description**: Como cajero, quiero que un doble clic o un reintento no cobre dos veces ni descuente el stock dos veces. CONTEXTO: el servicio admite la cabecera Idempotency-Key y deduplica con un constraint de base ...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-28T22:30:05.721Z
+- **Ended At**: 2026-07-28T22:36:17.283Z
+- **Duration**: 6m 11s
+- **Input Tokens**: 217
+- **Output Tokens**: 26594
+- **Total Tokens**: 26811
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the progress file and the relevant code.
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/inventoryClient.ts[0m
+[94m[Bash][0m Read recent progress notes $ tail -100 .ralph-tui/progress.md
+[94m[Bash][0m Read actions.ts createSale $ sed -n '1,60p' lib/actions.ts && echo "-----" && grep -n "createSale" -A 70 lib/actions.ts | head -1...
+[94m[Bash][0m Find createSale usages $ grep -rn "createSale" --include=*.ts --include=*.tsx . | grep -v node_modules
+[94m[Bash][0m Find createSale usages $ grep -rn "createSale" --include="*.ts" --include="*.tsx" . 2>/dev/null | grep -v node_modules
+[94m[Bash][0m List repo $ ls && cat tasks/prd.json | head -40
+[94m[Bash][0m Read sell page head $ sed -n '1,60p' app/sell/page.tsx
+[94m[Bash][0m Read sell page checkout $ sed -n '150,290p' app/sell/page.tsx
+[94m[Bash][0m Read package + test config $ cat package.json && echo "=== vitest.config ===" && cat vitest.config.ts && echo "=== setup ===" && ...
+[94m[Bash][0m Check randomUUID usage and sibling repos $ ls ~/dev | head -30
+[94m[Bash][0m Read reference impls $ sed -n '30,90p' ~/dev/inventory-service/consumer-app/server.mjs 2>/dev/null
+[94m[Bash][0m Find service-side idempotency handling $ grep -rn "idempotency" -i ~/dev/inventory-service/src --include="*.ts" | head -30
+[94m[Bash][0m Find service sale route idempotency $ grep -rn "idempotency" -i --include="*.ts" src --exclude-dir=generated | grep -v "prisma/" | head -3...
+[94m[Bash][0m Read sell page middle $ wc -l app/sell/page.tsx && sed -n '60,150p' app/sell/page.tsx
+[94m[Bash][0m Find ticket lifecycle $ grep -n "makeTicket\|nextTicketNumber\|setTickets\|updateActiveCart" app/sell/page.tsx
+[94m[Bash][0m Read sales route $ sed -n '1,90p' ~/dev/inventory-service/src/app/v1/sales/route.ts
+[94m[Bash][0m Read actions tests $ sed -n '1,60p' lib/actions.test.ts && echo "=== 170-290 ===" && sed -n '170,290p' lib/actions.test.t...
+[94m[Bash][0m Read sell page render top $ sed -n '290,420p' app/sell/page.tsx
+[94m[Bash][0m Read sell page render cart $ sed -n '420,560p' app/sell/page.tsx
+[94m[Bash][0m Read sell page footer/modal $ sed -n '560,671p' app/sell/page.tsx
+[94m[Bash][0m Show sell messages $ console.log(JSON.stringify(m,null,1))"
+Now I have the full picture. Implementing:
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/idempotency.ts[0m "// Modulo plano (sin `server-only`): la clave se genera en el cliente, junto al
+// ticket, porque debe sobrevivir a los reintentos del mismo ticket. Generarla
+// en el servidor la ataria al clic y no ... (1129 chars)"
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.ts[0m edit: "      headers: {
+        "Content-Type": "applicat..." → "      // Las cabeceras del llamante van primero: p..."
+Now `createSale`:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "export async function createSale(
+  items: CartIte..." → "export async function createSale(
+  items: CartIte..."
+Now the sell page ticket wiring:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "type Ticket = {
+  id: number;
+  number: number;
+  ..." → "type Ticket = {
+  id: number;
+  number: number;
+  ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "function makeTicket(number: number): Ticket {
+  re..." → "function makeTicket(number: number): Ticket {
+  re..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "import { INVENTORY_MAX_LIMIT } from "@/lib/paginat..." → "import { newIdempotencyKey } from "@/lib/idempoten..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "    if (cart.length === 0) return;
+    const ticke..." → "    if (cart.length === 0) return;
+    const ticke..."
+[94m[Bash][0m Read authorization test block $ sed -n '600,650p' lib/actions.test.ts
+[94m[Bash][0m Update createSale call sites in tests $ s/createSale\(cart\)/createSale(cart, "ticket-key-1")/g' lib/actions.test.ts && grep -n "createSale(...
+Now add the header assertions to `lib/actions.test.ts`:
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "      })
+    );
+  });
+
+  it("refuses to register a..." → "      })
+    );
+  });
+
+  it("forwards the ticket k..."
+Now the `apiFetch` header-merge test and the idempotency key unit test:
+[94m[Bash][0m Read inventoryClient tests $ tail -40 lib/inventoryClient.test.ts
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.test.ts[0m edit: "import { getInventoryConfig } from "./inventoryCli..." → "import { apiFetch, getInventoryConfig } from "./in..."
+[94m[Bash][0m Append apiFetch header tests $ EOF echo done
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/idempotency.test.ts[0m "import { describe, it, expect, vi, afterEach } from "vitest";
+
+import { newIdempotencyKey } from "./idempotency";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}... (1257 chars)"
+[94m[Bash][0m Run unit tests $ npx vitest run lib/idempotency.test.ts lib/inventoryClient.test.ts lib/actions.test.ts 2>&1 | tail -...
+[94m[Bash][0m Check types and BarcodeInput $ sed -n '1,15p' components/BarcodeInput.tsx
+[94m[Write][0m [95m/Users/cristian/dev/store/app/sell/page.test.tsx[0m "// @vitest-environment jsdom
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from ... (4660 chars)"
+[94m[Bash][0m Run sell page component test $ npx vitest run app/sell/page.test.tsx 2>&1 | tail -50
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.test.tsx[0m edit: "  const search = await screen.findByPlaceholderTex..." → "  const search = await screen.findByPlaceholderTex..."
+[94m[Bash][0m Rerun sell page test $ npx vitest run app/sell/page.test.tsx 2>&1 | grep -E "✓|×|✗|FAIL|PASS|Tests|Test Files|Error|expecte...
+[94m[Bash][0m Verify test fails without per-ticket key $ cp /tmp/page.tsx.bak app/sell/page.tsx && grep -n "const idempotencyKey" app/sell/page.tsx
+[94m[Bash][0m Typecheck $ npm run typecheck 2>&1 | tail -20
+[94m[Bash][0m Run full test suite $ npm test 2>&1 | tail -20
+[94m[Bash][0m Lint $ npm run lint 2>&1 | tail -20
+[94m[Bash][0m Production build $ git status --short
+Build is clean. Now documenting in progress.md:
+[94m[Bash][0m Append US-006 progress notes $ una prueba de componente solo necesita el pragma `// @vitest-environment jsdom` por fichero. No hace...
+[94m[Bash][0m Fix service path reference $ head -8 .ralph-tui/progress.md
+[94m[Read][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "- **Importes como cadenas decimales**:" → "- **Idempotencia por ticket, no por clic**: `lib/i..."
+US-006 done. All acceptance criteria met.
+
+## What changed
+
+**`lib/idempotency.ts`** (new) — `newIdempotencyKey()`, a plain module (no `server-only`) so the client can call it. UUID v4 via `crypto.randomUUID()`, with a `getRandomValues`/`Math.random` fallback because `randomUUID` only exists in a secure context and a POS served over http on a LAN IP is exactly the deployment where a double charge matters.
+
+**`app/sell/page.tsx`** — `Ticket` gains `idempotencyKey`, generated in `makeTicket()`. `handleConfirm` reads it from the active ticket and passes it to `createSale`. The key is rotated **only** when the sale registers (alongside `cart: []` / `lastSaleId`); if the call fails, the key survives and the retry resends it. Each ticket tab has its own.
+
+**`lib/actions.ts`** — `createSale(items, idempotencyKey)`. The parameter is required, not optional, so `tsc` flags any caller that forgets it. Sent as `headers: { "Idempotency-Key": key }`. A blank key is dropped rather than forwarded: the service stores `""` verbatim and its unique `(location_id, idempotency_key)` would make every keyless sale in a store collide with the others.
+
+**`lib/inventoryClient.ts`** — `apiFetch` now merges caller headers *before* its own. Previously they spread last, so a caller could overwrite `Authorization`; now it can add but not replace.
+
+## Tests
+
+`app/sell/page.test.tsx` (new, jsdom + Testing Library — the repo's first component test) covers the AC directly: retry of the same ticket sends the same key, the key rotates after the sale registers, and each tab gets its own. I verified it the other way round — swapping `activeTicket.idempotencyKey` for `newIdempotencyKey()` inside `handleConfirm` fails two of the three. Plus `lib/idempotency.test.ts` (format, uniqueness, both fallback branches), two cases in `lib/actions.test.ts` (header forwarded, blank key omitted), and two in `lib/inventoryClient.test.ts` (header merge, credential not overridable).
+
+`npm run typecheck`, `npm run lint`, `npm test` (119 tests, 12 files) and `npm run build` all pass. No new user-visible strings, so no i18n change.
+
+One thing I did not do: verify against the running inventory service. The contract was confirmed by reading `inventory-service/src/app/v1/sales/route.ts:43` (`req.headers.get("idempotency-key")`) and `src/lib/inventory/sales.ts` (replay lookup inside the transaction, plus a unique-violation rescue). Learnings appended to `.ralph-tui/progress.md`, including two new entries in `## Codebase Patterns`. No commits made.
+
+<promise>COMPLETE</promise>

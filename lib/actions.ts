@@ -132,7 +132,13 @@ export async function createSale(
     }),
   });
 
-  if ("error" in result) return result;
+  if ("error" in result) {
+    // POST /sales solo responde 409 por stock insuficiente, asi que el codigo se
+    // fija aqui aunque el servicio cambie la redaccion del mensaje.
+    return result.status === 409
+      ? { ...result, code: "insufficient_stock" as const }
+      : result;
+  }
 
   const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const total = parseDecimal(result.total);

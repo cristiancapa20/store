@@ -129,6 +129,22 @@ describe("SellPage idempotency key", () => {
     expect(next).not.toBe(registered);
   });
 
+  it("shows the translated message for a 409, not the service string with the UUID", async () => {
+    const user = userEvent.setup();
+    mockCreateSale.mockResolvedValue({
+      error: "Insufficient stock for product 8f1c-2b7e-uuid",
+      code: "insufficient_stock",
+      status: 409,
+    });
+
+    renderPage();
+    await addProductToCart(user);
+    await confirmSale(user);
+
+    await screen.findByText(es.errors.insufficient_stock);
+    expect(screen.queryByText(/8f1c-2b7e-uuid/)).toBeNull();
+  });
+
   it("gives each ticket tab its own key", async () => {
     const user = userEvent.setup();
     mockCreateSale.mockResolvedValue({ error: "Network error" });

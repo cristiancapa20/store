@@ -3,10 +3,10 @@
   "sessionId": "273028bd-e3fb-402f-a72e-935b06d4fdf1",
   "status": "running",
   "startedAt": "2026-07-28T22:01:24.050Z",
-  "updatedAt": "2026-07-28T22:36:17.285Z",
-  "currentIteration": 6,
+  "updatedAt": "2026-07-28T22:43:40.594Z",
+  "currentIteration": 7,
   "maxIterations": 0,
-  "tasksCompleted": 6,
+  "tasksCompleted": 7,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -54,8 +54,8 @@
       {
         "id": "US-006",
         "title": "Enviar Idempotency-Key al crear una venta",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-007",
@@ -149,6 +149,16 @@
       "durationMs": 93272,
       "startedAt": "2026-07-28T22:28:30.662Z",
       "endedAt": "2026-07-28T22:30:03.934Z"
+    },
+    {
+      "iteration": 7,
+      "status": "completed",
+      "taskId": "US-006",
+      "taskTitle": "Enviar Idempotency-Key al crear una venta",
+      "taskCompleted": true,
+      "durationMs": 371562,
+      "startedAt": "2026-07-28T22:30:05.721Z",
+      "endedAt": "2026-07-28T22:36:17.283Z"
     }
   ],
   "skippedTaskIds": [],

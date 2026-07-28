@@ -340,6 +340,14 @@
   },
   "errors": {
     "unauthorized": "Tu sesión expiró. Inicia sesión de nuevo para continuar.",
-    "forbidden": "No tienes permisos para realizar esta acción."
+    "forbidden": "No tienes permisos para realizar esta acción.",
+    "not_found": "No encontramos ese producto en el inventario.",
+    "insufficient_stock": "No hay stock suficiente para completar la venta. Revisa las cantidades.",
+    "conflict": "La operación choca con el estado actual del inventario. Vuelve a intentarlo.",
+    "invalid_request": "El servicio de inventario rechazó los datos enviados. Revísalos e inténtalo de nuevo.",
+    "service_auth": "El servicio de inventario rechazó la credencial de la tienda. Avisa a un administrador.",
+    "service_error": "El servicio de inventario tuvo un error. Inténtalo de nuevo en unos segundos.",
+    "timeout": "El servicio de inventario tardó demasiado en responder. Inténtalo de nuevo.",
+    "network": "No se pudo contactar con el servicio de inventario. Revisa la conexión."
   }
 }
