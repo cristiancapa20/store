@@ -1,0 +1,138 @@
+# Iteration 3 Log
+
+## Metadata
+
+- **Task ID**: US-001
+- **Task Title**: Retirar la API key de inventario del objeto de sesion
+- **Description**: Como propietario de una tienda, quiero que mi credencial de inventario no sea legible desde el navegador, para que ningun empleado ni ningun script inyectado pueda operar sobre mi inventario por fuera...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-28T22:11:07.551Z
+- **Ended At**: 2026-07-28T22:15:04.575Z
+- **Duration**: 3m 57s
+- **Input Tokens**: 4002
+- **Output Tokens**: 14769
+- **Total Tokens**: 18771
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the current state of the code.
+[94m[Read][0m [95m/Users/cristian/dev/store/auth.config.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/types/next-auth.d.ts[0m
+Now let me find all usages of these session fields.
+[94m[Bash][0m Find all usages of inventory credential fields $ grep -rn "inventoryApiKey\|inventoryLocationId" --include="*.ts" --include="*.tsx" . | grep -v node_...
+[94m[Bash][0m Read progress file head $ cat .ralph-tui/progress.md 2>/dev/null | head -80
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/inventoryClient.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/auth.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/db.ts[0m
+[94m[Bash][0m List lib files and read proxy $ cat /Users/cristian/dev/store/proxy.ts 2>/dev/null || ls /Users/cristian/dev/store/*.ts
+[94m[Bash][0m Find inventoryClient usages $ grep -rn "inventoryClient\|getInventoryConfig" --include="*.ts" --include="*.tsx" /Users/cristian/de...
+[94m[Bash][0m Read test setup $ head -60 /Users/cristian/dev/store/lib/actions.test.ts
+[94m[Read][0m [95m/Users/cristian/dev/store/app/profile/page.tsx[0m
+[94m[Bash][0m Check vitest config $ ls *.test.ts **/*.test.ts 2>/dev/null | head -20
+Now making the changes. First, `auth.config.ts`:
+[94m[Edit][0m [95m/Users/cristian/dev/store/auth.config.ts[0m edit: "        session.user.organizationName = token.orga..." → "        session.user.organizationName = token.orga..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/types/next-auth.d.ts[0m edit: "      organizationId?: string | null
+      invento..." → "      organizationId?: string | null
+      organiz..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.ts[0m edit: "import { auth } from "@/auth"
+
+export type ActionE..." → "import { auth } from "@/auth"
+import db from "@/li..."
+Now a test covering both the resolution and the leak:
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/inventoryClient.test.ts[0m "import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("@/auth", () => ({ auth: vi.fn() }));
+vi.mock("@/lib/db", () => ({
+  default: { prepare: vi.fn() },
+}));
+
+import { auth } from "... (3046 chars)"
+Now a test that the session callback itself doesn't emit the credential (AC 5, verifiable without a running server):
+[94m[Write][0m [95m/Users/cristian/dev/store/auth.config.test.ts[0m "import { describe, it, expect } from "vitest";
+import type { JWT } from "next-auth/jwt";
+import type { Session, User } from "next-auth";
+import { authConfig } from "./auth.config";
+
+const jwtCallback ... (1730 chars)"
+[94m[Bash][0m Run typecheck $ npm run typecheck 2>&1 | tail -20
+[94m[Bash][0m Check mockAuth usage pattern $ grep -n "mockAuth" /Users/cristian/dev/store/lib/actions.test.ts | head -10
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.test.ts[0m edit: "  mockAuth.mockResolvedValue(user ? { user } : nul..." → "  mockAuth.mockResolvedValue((user ? { user } : nu..."
+[94m[Bash][0m Run typecheck and lint $ npm run typecheck 2>&1 | tail -20 && npm run lint 2>&1 | tail -20
+[94m[Bash][0m Run tests $ npm test 2>&1 | tail -30
+[94m[Bash][0m Run production build $ npm run build 2>&1 | tail -25
+[94m[Bash][0m Check DB and seed env $ grep -E "^(SEED_ADMIN|SUPER_ADMIN|NEXTAUTH_URL)" .env.local 2>/dev/null | sed 's/=.*PASSWORD.*/=***/...
+[94m[Bash][0m Inspect users and org keys $ "
+Every org in the local dev DB has a `null` inventory key, so a live check can't produce an `inv_live_` string either way. Instead I'll verify the stronger property — the fields are absent from the payload entirely.
+[94m[Bash][0m Start dev server in background $ npm run dev > /tmp/us001-dev.log 2>&1 & echo started
+[94m[ToolSearch][0m query: [93mselect:Monitor[0m
+[94m[Bash][0m Check dev server log and port $ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/login
+
+[91m[Error: Exit code 52
+
+> store-app@0.1.0 dev
+> node node_modules/next/dist/bin/next dev
+
+⚠ Port 3000 is in use by process 19139
+66361, using available port 3001 instead.
+▲ Next.js 16.2.7 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.1.5:3001
+- Environments: .env.local
+✓ Ready in 684ms
+⚠ Slow filesystem detected. The benchmark took 318ms. If /Users/cristian/dev/store/.next/dev is a network drive, consider moving it to a local folder.
+See more: https://nextjs.org/docs/app/guides/local-development
+=== exit ===
+000][0m
+[94m[Bash][0m Check what is listening on 3000/3001 $ curl -s -o /dev/null -w "3000=%{http_code}\n" http://localhost:3000/login
+
+[91m[Error: Exit code 52
+COMMAND     PID     USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+node      19139 cristian   17u  IPv6 0xe80fb8540f5a3946      0t0  TCP *:3000 (LISTEN)
+Cursor    66361 cristian   69u  IPv4 0xf2123dbcf6b7e205      0t0  TCP 127.0.0.1:3000 (LISTEN)
+Cursor    66361 cristian   70u  IPv6 0x6f76fd97da0e7632      0t0  TCP [::1]:3000 (LISTEN)
+--- 3001 ---
+COMMAND   PID     USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+node    93562 cristian   13u  IPv6 0x4c524e986eeb966f      0t0  TCP *:3001 (LISTEN)
+--- probe ---
+3000=000][0m
+[94m[Bash][0m Log in and fetch session JSON $ process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).csrfToken))") && \ echo "csr...
+Live session JSON confirms AC5 — no `inventoryApiKey`/`inventoryLocationId`, `organizationId` retained. Now verify the server-side credential resolution path doesn't throw:
+[94m[Bash][0m Render pages that call getInventoryConfig $ echo "(no output above = clean)"
+[94m[Bash][0m Stop dev server and clean temp files $ echo done
+Now documenting learnings in progress.md:
+[94m[Bash][0m Append US-001 entry to progress.md $ de ahí `lib/inventoryClient.test.ts`. - Al mockear `auth` de NextAuth v5 con `vi.mocked(...)`, `mock...
+Also adding the reusable pattern to the top section:
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "- **Errores de acción con código**:" → "- **Credenciales fuera de la sesión**: NextAuth v5..."
+[94m[Bash][0m Final quality gates $ npm run typecheck 2>&1 | tail -5 && npm run lint 2>&1 | tail -5 && npm test 2>&1 | tail -8 && git st...
+US-001 is complete. All acceptance criteria met.
+
+## What changed
+
+**`auth.config.ts`** — the `session` callback no longer copies `inventoryApiKey`/`inventoryLocationId`. The `jwt` callback still stores both in the token, which travels encrypted.
+
+**`types/next-auth.d.ts`** — both fields removed from `Session`, kept in `User` (feeds the `jwt` callback) and `JWT`. This is what made the change verifiable: `tsc` pinpointed the single remaining consumer.
+
+**`lib/inventoryClient.ts`** — that consumer was `getInventoryConfig()`, which read the credential straight off the session. It now resolves it server-side from the `organizations` table using the session's `organizationId`, preserving the existing env-var fallback for super_admins and orgs without a stored credential.
+
+## Verification
+
+Typecheck, lint, build, and 85 tests all pass (8 new). For AC 5 I ran the dev server, logged in, and hit the endpoint:
+
+```
+GET /api/auth/session
+{"user":{"name":"Admin","email":"admin@example.com","id":"616ac95f-…","role":"admin",
+  "organizationId":"bb07c46f-…","organizationName":"tiendita",
+  "organizationStatus":"active","organizationPlan":"basic"},"expires":"…"}
+```
+
+One caveat worth stating plainly: every organization in the local dev DB has a `null` `inventory_api_key`, so "no string starting with `inv_live_`" would have passed even before this change. What the output above actually proves is the stronger property — the fields are absent from the payload entirely. `auth.config.test.ts` covers the literal AC by running the real callbacks over a user carrying an `inv_live_` key and asserting it never reaches the serialized session.
+
+`/profile`, `/products`, and `/sell` all render 200 through the new resolution path. The inventory service wasn't running, so its API calls fail as they did before — not a regression.
+
+Two notes for the next iteration: no commits were made, per the workflow. And the dev server had to run on a non-default port — something in Cursor holds `127.0.0.1:3000`, which pushes `next dev` onto 3001, the port `INVENTORY_API_URL` expects. Worth passing `-p` explicitly when verifying against the real service.
+
+<promise>COMPLETE</promise>

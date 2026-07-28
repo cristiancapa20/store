@@ -89,7 +89,7 @@ For UI changes, also verify visually in the browser using the dev-browser skill.
 
 ## Conventions
 
-- **Never expose `INVENTORY_API_KEY` to the client.** All API calls go through server actions.
+- **Never expose the inventory API key to the client.** It is per-tenant, lives in `organizations`, and is only read by `lib/inventoryClient.ts` (which imports `server-only`). All API calls go through server actions.
 - **Tailwind only** — no inline styles, no CSS modules. Use `rounded-2xl` or higher for cards and buttons.
 - **Min 48px tap targets** on all interactive elements (buttons, links, steppers).
 - **No new SQLite tables** without a clear reason — the inventory service owns the data.
@@ -99,19 +99,26 @@ For UI changes, also verify visually in the browser using the dev-browser skill.
 
 ## Environment Variables
 
-Required in `.env.local`:
+Required in `.env.local` — see `.env.example` for the canonical list:
 
 ```
-INVENTORY_API_URL      # Must include /v1 suffix: http://localhost:3001/v1
-INVENTORY_API_KEY      # Bearer token — server-side only
-INVENTORY_LOCATION_ID  # UUID of the store location
-NEXTAUTH_SECRET        # NextAuth session secret
-NEXTAUTH_URL           # Full app URL
-STORE_NAME             # Shown on PDF invoices
-TAX_RATE               # Decimal (e.g. 0.10 for 10%)
-SEED_ADMIN_EMAIL       # Used by npm run seed
-SEED_ADMIN_PASSWORD    # Used by npm run seed
+INVENTORY_API_URL       # Must include /v1 suffix: http://localhost:3001/v1
+INVENTORY_ADMIN_SECRET  # Admin token — only used to provision a new store on register
+AUTH_SECRET             # NextAuth v5 session secret
+STORE_NAME              # Shown on PDF invoices
+TAX_RATE                # Decimal (e.g. 0.10 for 10%)
+SUPER_ADMIN_EMAIL       # Used by npm run seed
+SUPER_ADMIN_PASSWORD    # Used by npm run seed
 ```
+
+**`INVENTORY_API_KEY` and `INVENTORY_LOCATION_ID` were removed.** They were a
+single global tenant credential: any request that could not resolve an
+organization fell back to them and read or wrote *that* store's inventory. Since
+store registration stores a per-tenant key in `organizations`, and non-production
+registration tolerates a failed provisioning (leaving the key `NULL`), every dev
+signup used to end up reading the env store's inventory. `getInventoryConfig()`
+now resolves the credential from the session's `organizationId` only, and throws
+when there is none. Do not reintroduce an env-level fallback.
 
 ## Dev Setup
 
@@ -120,7 +127,7 @@ SEED_ADMIN_PASSWORD    # Used by npm run seed
 npm install
 
 # 2 — Configure env
-cp .env.local.example .env.local   # then fill in values
+cp .env.example .env.local   # then fill in values
 
 # 3 — Seed admin user (first time only)
 npm run seed

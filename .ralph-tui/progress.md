@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - **Límites de paginación del servicio**: `lib/pagination.ts` exporta `INVENTORY_MAX_LIMIT` (100, el `MAX_LIMIT` del servicio) y `clampInventoryLimit()`. Los componentes cliente importan la constante; `listInventory` (server action) además recorta el `limit` recibido, así ninguna ruta puede provocar un 422 por límite. Es un módulo plano (sin `"use server"` ni `auth`), por eso puede importarse desde `"use client"`.
 - **Importes como cadenas decimales**: el servicio serializa todo importe como cadena (`"350.00"`), nunca como número JSON. `lib/decimal.ts` exporta el tipo `ApiDecimal` (`string | number | null | undefined`) y `parseDecimal()`. Toda forma `Api*` de `lib/actions.ts` tipa sus importes como `ApiDecimal` y convierte **una sola vez en el borde** con `parseDecimal`; de ahí para dentro (`Product`, `Sale`, `SaleItem`) todo es `number`. Nunca propagar la cadena a la UI: `"350".toFixed()` lanza y `sum + "10.00"` concatena en silencio.
 - **Credenciales fuera de la sesión**: NextAuth v5 sirve el objeto de sesión **descifrado** en `GET /api/auth/session`, ruta excluida del matcher de `proxy.ts`. Todo lo que el callback `session` asigne es legible desde el navegador. Los secretos se quedan en el token JWT (cifrado) y el servidor los resuelve bajo demanda: la sesión solo lleva `organizationId`, y `getInventoryConfig()` (`lib/inventoryClient.ts`) lo usa para leer `inventory_api_key`/`inventory_location_id` de la tabla `organizations`. `types/next-auth.d.ts` declara los campos en `Session`, `User` y `JWT` por separado — quitarlos de `Session` y dejarlos en las otras dos hace que `tsc` señale cualquier consumidor que siguiera leyéndolos de la sesión.
+- **Sin respaldo global de tenant**: `getInventoryConfig()` (`lib/inventoryClient.ts`) **lanza** `InventoryConfigError` si falta `INVENTORY_API_URL`, si la sesión no resuelve `organizationId`, o si la organización no tiene `inventory_api_key` **y** `inventory_location_id`. No existen `INVENTORY_API_KEY` ni `INVENTORY_LOCATION_ID` en el entorno: eran una credencial única y cualquier petición sin organización terminaba operando sobre esa tienda. Solo `INVENTORY_API_URL` (URL base, no credencial) e `INVENTORY_ADMIN_SECRET` (aprovisionamiento en el registro) siguen en env. El módulo importa `server-only`, así que importarlo desde un `"use client"` rompe el build. Como la función lanza, toda llamada debe estar **dentro** del `try` que la cubre.
 - **Errores de acción con código**: `ActionError` es `{ error: string; code?: ActionErrorCode }`. `scanBarcode` marca `code: "not_found"` solo cuando el servicio responde `found:false`; cualquier otro fallo (422, red, auth) llega sin código. La UI debe ramificar por `result.code`, nunca por el texto del error.
 - **i18n**: toda cadena visible va en `messages/es.json` y `messages/en.json` con las mismas claves. Verificación rápida de paridad:
   `node -e "const es=require('./messages/es.json'),en=require('./messages/en.json');const f=(o,p='')=>Object.entries(o).flatMap(([k,v])=>typeof v==='object'&&v?f(v,p+k+'.'):[p+k]);const a=new Set(f(es)),b=new Set(f(en));console.log([...a].filter(k=>!b.has(k)),[...b].filter(k=>!a.has(k)))"`
@@ -103,5 +104,34 @@ sin `inventoryApiKey` ni `inventoryLocationId`. Matiz honesto: ninguna organizac
 - `lib/inventoryClient.ts` ya arrastraba `db` de forma transitiva vía `@/auth`, así que importarlo explícitamente no añade peso al bundle ni toca el edge runtime del middleware (`proxy.ts` solo importa `auth.config`, nunca `inventoryClient`).
 - `lib/actions.test.ts` mockea `./inventoryClient` entero, de modo que cambiar cómo se resuelve la credencial no afecta a esas 77 pruebas. El coste es que ninguna cubría la resolución; de ahí `lib/inventoryClient.test.ts`.
 - Al mockear `auth` de NextAuth v5 con `vi.mocked(...)`, `mockResolvedValue` choca con la sobrecarga de `NextMiddleware`: hace falta `as never`, tal como ya hacía `lib/actions.test.ts`.
+
+---
+
+## 2026-07-28 - US-002: Resolver la configuración de inventario desde el token, sin recurso al entorno
+
+**Implementado**
+
+- `lib/inventoryClient.ts`: `getInventoryConfig()` deja de tener respaldo por entorno. Ahora (1) exige `INVENTORY_API_URL` y lanza si falta, (2) resuelve `organizationId` con `auth()` y lanza `InventoryConfigError` si no hay sesión u organización, (3) exige que la fila de `organizations` traiga `inventory_api_key` **y** `inventory_location_id`, y lanza nombrando la organización si falta alguno. Devuelve `InventoryConfig` (tipo exportado) con los tres campos ya garantizados no vacíos.
+- `import "server-only"` en la cabecera del módulo (paquete `server-only` añadido a `dependencies`). Verificado en vivo: una `page.tsx` con `"use client"` que importa `getInventoryConfig` rompe `npm run build` con `'server-only' cannot be imported from a Client Component module`.
+- `app/profile/page.tsx`: la llamada a `getInventoryConfig()` se mueve **dentro** del `try` de `fetchLocation()`. Sin ese cambio, una organización sin credencial convertía el indicador «API: desconectado» en una página rota. Ahora falla cerrado y muestra «desconectado».
+- `vitest.config.ts`: alias `server-only` → `node_modules/server-only/empty.js`. `vitest.setup.ts`: se retiran las siembras de `INVENTORY_API_KEY` e `INVENTORY_LOCATION_ID`.
+- Nuevo `.env.example` (solo `INVENTORY_API_URL`, `INVENTORY_ADMIN_SECRET`, `AUTH_SECRET`, `STORE_NAME`, `TAX_RATE`, `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD`). `CLAUDE.md` y `README.md`: la instrucción de arranque pasa de `cp .env.local.example .env.local` (fichero inexistente) a `cp .env.example .env.local`, se actualizan las tablas de variables y se anota por qué se retiraron `INVENTORY_API_KEY` e `INVENTORY_LOCATION_ID`. De paso, `SEED_ADMIN_*` documentado no existía: `scripts/seed.ts` usa `SUPER_ADMIN_*`.
+- `lib/inventoryClient.test.ts`: las tres pruebas de respaldo por entorno se invierten. Ahora los env vars se siembran a propósito en `beforeEach` con valores centinela y cada caso sin organización resuelta asevera `rejects.toThrow()`; se añaden los casos de sesión nula, credencial parcial (clave sin ubicación) y `INVENTORY_API_URL` ausente.
+
+**Archivos**
+
+- Nuevos: `.env.example`
+- Modificados: `lib/inventoryClient.ts`, `lib/inventoryClient.test.ts`, `app/profile/page.tsx`, `vitest.config.ts`, `vitest.setup.ts`, `CLAUDE.md`, `README.md`, `package.json`, `package-lock.json`
+
+**Validación**: `npm run typecheck`, `npm run lint`, `npm test` (89 pruebas) y `npm run build` en verde.
+
+**Pendiente (fuera del alcance de esta historia)**: `app/register/actions.ts:53-120` sigue guardando la organización con `inventory_api_key = NULL` cuando el aprovisionamiento falla fuera de producción. Ya no es una fuga entre tiendas — ahora esas cuentas fallan al tocar inventario — pero el registro en desarrollo produce una tienda inservible sin decirlo. Merece historia propia.
+
+**Learnings**
+
+- `server-only` no venía instalado y **no** es una dependencia transitiva de Next 16; hay que añadirlo explícitamente. En Vitest (condición `node`, no `react-server`) su `index.js` lanza al importarse, así que cualquier módulo que lo importe rompe las pruebas hasta que se aliasa a `node_modules/server-only/empty.js` — el propio paquete publica ese módulo vacío, no hace falta escribir un stub.
+- Al quitar un respaldo, borrar la variable de entorno del `setup` de pruebas **debilita** la prueba: el caso pasaría igual si el respaldo siguiera ahí. Lo correcto es lo contrario — sembrar el env con un centinela y aseverar que aun así lanza.
+- Un `await` fuera del `try` es una bomba de relojería cuando la función pasa de devolver valores vacíos a lanzar. `app/profile/page.tsx` ya tenía el `try/catch` correcto; solo estaba una línea más abajo de donde hacía falta. Al convertir una función en lanzadora, revisar cada llamada por si el `catch` la cubre de verdad.
+- Ejecutar `npm run build` reescribe `next-env.d.ts` (`./.next/dev/types/…` → `./.next/types/…`) frente a lo que deja `next dev`. Es ruido en el diff: conviene `git checkout -- next-env.d.ts` después de compilar.
 
 ---

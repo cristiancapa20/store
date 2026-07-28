@@ -25,6 +25,7 @@ function mockOrgRow(row: unknown) {
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.INVENTORY_API_URL = "http://api.test/v1";
+  // Presentes a proposito: ninguna ruta debe volver a caer en ellas.
   process.env.INVENTORY_API_KEY = "inv_live_env_fallback";
   process.env.INVENTORY_LOCATION_ID = "env-loc";
 });
@@ -64,33 +65,63 @@ describe("getInventoryConfig", () => {
     expect(config.locationId).toBe("loc-1");
   });
 
-  it("falls back to env vars when the session has no organization", async () => {
-    mockSession({ id: "u1", role: "super_admin", organizationId: null });
+  it("throws when there is no session at all", async () => {
+    mockSession(null);
 
-    const config = await getInventoryConfig();
-
+    await expect(getInventoryConfig()).rejects.toThrow(/organizacion en la sesion/i);
     expect(mockPrepare).not.toHaveBeenCalled();
-    expect(config.apiKey).toBe("inv_live_env_fallback");
-    expect(config.locationId).toBe("env-loc");
   });
 
-  it("falls back to env vars when the organization has no credential stored", async () => {
+  it("throws instead of using env vars when the session has no organization", async () => {
+    mockSession({ id: "u1", role: "super_admin", organizationId: null });
+
+    await expect(getInventoryConfig()).rejects.toThrow(/organizacion en la sesion/i);
+    expect(mockPrepare).not.toHaveBeenCalled();
+  });
+
+  it("throws instead of using env vars when the organization has no credential stored", async () => {
     mockSession({ id: "u1", role: "admin", organizationId: "org-2" });
     mockOrgRow({ inventory_api_key: null, inventory_location_id: null });
 
-    const config = await getInventoryConfig();
-
-    expect(config.apiKey).toBe("inv_live_env_fallback");
-    expect(config.locationId).toBe("env-loc");
+    await expect(getInventoryConfig()).rejects.toThrow(/org-2/);
   });
 
-  it("falls back to env vars when the organization row is missing", async () => {
+  it("throws when the organization has a key but no location", async () => {
+    mockSession({ id: "u1", role: "admin", organizationId: "org-3" });
+    mockOrgRow({ inventory_api_key: "inv_live_org_three", inventory_location_id: null });
+
+    await expect(getInventoryConfig()).rejects.toThrow(/credencial de inventario/i);
+  });
+
+  it("throws instead of using env vars when the organization row is missing", async () => {
     mockSession({ id: "u1", role: "admin", organizationId: "org-ghost" });
     mockOrgRow(undefined);
 
-    const config = await getInventoryConfig();
+    await expect(getInventoryConfig()).rejects.toThrow(/org-ghost/);
+  });
 
-    expect(config.apiKey).toBe("inv_live_env_fallback");
-    expect(config.locationId).toBe("env-loc");
+  it("throws a clear error when INVENTORY_API_URL is missing", async () => {
+    delete process.env.INVENTORY_API_URL;
+    mockSession({ id: "u1", role: "staff", organizationId: "org-1" });
+    mockOrgRow({
+      inventory_api_key: "inv_live_org_one",
+      inventory_location_id: "loc-1",
+    });
+
+    await expect(getInventoryConfig()).rejects.toThrow(/INVENTORY_API_URL/);
+  });
+
+  it("never returns the env credential for any input", async () => {
+    const cases: Array<Record<string, unknown> | null> = [
+      null,
+      { id: "u1", role: "super_admin", organizationId: null },
+      { id: "u1", role: "admin", organizationId: "org-2" },
+    ];
+
+    for (const user of cases) {
+      mockSession(user);
+      mockOrgRow({ inventory_api_key: null, inventory_location_id: null });
+      await expect(getInventoryConfig()).rejects.toThrow();
+    }
   });
 });

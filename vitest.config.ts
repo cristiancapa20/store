@@ -15,6 +15,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      // Fuera del runtime react-server, `server-only` lanza al importarse; en
+      // pruebas se resuelve al modulo vacio que el propio paquete publica.
+      "server-only": path.resolve(__dirname, "node_modules/server-only/empty.js"),
     },
   },
 });

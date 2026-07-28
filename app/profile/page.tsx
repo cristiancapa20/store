@@ -11,8 +11,10 @@ type LocationInfo = {
 };
 
 async function fetchLocation(): Promise<LocationInfo | null> {
-  const { apiKey, locationId, apiBase } = await getInventoryConfig();
   try {
+    // Dentro del try: sin credencial de la organizacion getInventoryConfig lanza,
+    // y aqui eso es "desconectado", no una pagina rota.
+    const { apiKey, locationId, apiBase } = await getInventoryConfig();
     const res = await fetch(`${apiBase}/locations/${locationId}`, {
       headers: { Authorization: `Bearer ${apiKey}` },
       cache: "no-store",
