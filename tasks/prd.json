@@ -1,0 +1,259 @@
+{
+  "name": "Correccion del aislamiento entre tiendas y del flujo de venta",
+  "description": "Correccion de los defectos criticos y altos encontrados en la auditoria de seguridad de la aplicacion store: la API key de inventario de cada tienda se envia al navegador dentro de la sesion de NextAuth, los server actions no verifican autenticacion ni rol, las peticiones sin organizacion resuelta caen sobre el inventario configurado en el entorno, listStaff devuelve usuarios de todas las tiendas y el carrito lanza TypeError tras cada escaneo. CONTEXTO IMPORTANTE: el PRD del repositorio inventory-service ya esta completado, lo que aporta el endpoint GET /v1/sales/:saleId y hace que los listados devuelvan 422 en lugar de truncar en silencio. Ese segundo cambio ha ROTO esta aplicacion: pide limit 500 y 200 donde el maximo del servicio es 100, de modo que /sell, /adjust y /products no cargan productos. Por eso US-012 va la primera. LINEA BASE VERIFICADA: npm run typecheck, npm run lint y npm test pasan hoy sobre el arbol limpio, con 65 pruebas en 5 ficheros. ADVERTENCIA: varias pruebas existentes fijan el comportamiento vulnerable y fallaran al corregir el codigo; eso es esperado y correcto, deben actualizarse dentro de la misma historia y NUNCA eludirse relajando la asercion. El servicio de inventario debe estar corriendo para las verificaciones manuales; INVENTORY_API_URL apunta a http://localhost:3001/v1.",
+  "branchName": "ralph/store-security-hardening",
+  "userStories": [
+    {
+      "id": "US-012",
+      "title": "Dejar de solicitar limites por encima del maximo del servicio",
+      "description": "Como cajero, quiero que la pantalla de venta vuelva a cargar productos, porque hoy no carga ninguno. CONTEXTO: el servicio de inventario ahora declara MAX_LIMIT = 100 y valida con .max(MAX_LIMIT) en zod, de modo que un limit superior devuelve 422 en lugar de recortar en silencio como hacia antes. Esta aplicacion sigue pidiendo mas: app/sell/page.tsx:72 pide listInventory(1, 500), y app/adjust/page.tsx:57, app/products/InventoryDashboard.tsx:133 y app/products/ProductList.tsx:90 piden listInventory(1, 200). Los cuatro reciben hoy un 422, asi que el punto de venta, el ajuste de stock y el panel de inventario no muestran productos. Esta historia es el desbloqueo inmediato; la solucion correcta y completa, delegar la busqueda en el servicio y paginar de verdad, es US-010. NOTA: app/products/ProductList.tsx es codigo muerto, no lo referencia nadie; corregirlo igualmente o eliminarlo, pero dejar constancia de la decision.",
+      "acceptanceCriteria": [
+        "Ninguna llamada a listInventory solicita un limit superior a 100",
+        "La pantalla de venta, la de ajuste y el panel de inventario vuelven a mostrar productos contra el servicio real",
+        "Cuando el catalogo excede lo que devuelve una pagina, la interfaz lo indica al usuario en lugar de aparentar que el listado esta completo",
+        "Un 422 del servicio deja de presentarse al usuario como 'producto no encontrado'",
+        "Los textos nuevos existen en messages/es.json y messages/en.json",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Tratar los importes de la API como cadenas decimales",
+      "description": "Como cajero, quiero que el carrito no se rompa al escanear un producto. CONTEXTO: el servicio devuelve price como cadena, con item.price.toString(), pero lib/actions.ts:38 lo tipa como number | null y la linea 69 lo propaga sin convertir. Llega al carrito en app/sell/page.tsx:180 y se renderiza en la linea 460 con entry.unitPrice.toFixed(2). Como \"350\".toFixed no es una funcion, la vista del carrito lanza TypeError tras CUALQUIER escaneo con exito. La ruta de busqueda no falla porque listInventory si convierte con parseFloat en lib/actions.ts:152. El fallo no se detecta hoy porque las pruebas simulan apiFetch por completo y el fixture de escaneo usa price null.",
+      "acceptanceCriteria": [
+        "ApiScanResult tipa price como string | null, reflejando el contrato real del servicio",
+        "La conversion a numero ocurre una sola vez, en el borde, igual que ya hace listInventory",
+        "Se revisan ApiSaleResponse.total, unitPrice y lineTotal, que tambien llegan como cadenas",
+        "El fixture de escaneo de lib/actions.test.ts usa un precio real en formato cadena, por ejemplo '350.00', y no null",
+        "Existe una prueba que asevera que el price devuelto por scanBarcode es un number utilizable",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-001",
+      "title": "Retirar la API key de inventario del objeto de sesion",
+      "description": "Como propietario de una tienda, quiero que mi credencial de inventario no sea legible desde el navegador, para que ningun empleado ni ningun script inyectado pueda operar sobre mi inventario por fuera de la aplicacion. CONTEXTO: auth.config.ts:73 copia inventoryApiKey a session.user. NextAuth v5 sirve el objeto de sesion DESCIFRADO desde GET /api/auth/session, ruta excluida del matcher del middleware en proxy.ts:8. El JWT si viaja cifrado; el problema es exclusivamente el callback session. La credencial concede todas las operaciones /v1/* de la organizacion, asi que cualquier usuario logueado, incluido un staff, puede saltarse todos los limites de plan y checks de rol de esta aplicacion. types/next-auth.d.ts declara el campo en las tres interfaces: Session, User y JWT. Solo debe retirarse de Session; User alimenta el callback jwt y debe conservarlo.",
+      "acceptanceCriteria": [
+        "El callback session de auth.config.ts ya no asigna inventoryApiKey ni inventoryLocationId",
+        "El callback jwt los sigue almacenando en el token, que viaja cifrado",
+        "types/next-auth.d.ts elimina ambos campos de la interfaz Session, conservandolos en User y en JWT, de modo que el compilador senale cualquier uso restante",
+        "organizationId permanece en la sesion: es el identificador con el que el servidor resuelve la credencial",
+        "Una peticion autenticada a GET /api/auth/session devuelve un JSON sin ninguna cadena que empiece por inv_live_",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "Resolver la configuracion de inventario desde el token, sin recurso al entorno",
+      "description": "Como propietario de una tienda, quiero que una peticion sin organizacion resuelta falle, en lugar de operar en silencio sobre el inventario de otra tienda. CONTEXTO: lib/inventoryClient.ts:9-16 cae a process.env.INVENTORY_API_KEY y process.env.INVENTORY_LOCATION_ID cuando la sesion no los trae. Como el alta de tiendas fuera de produccion se traga los fallos de aprovisionamiento y guarda la organizacion con la clave a NULL en app/register/actions.ts:64-130, cada registro en desarrollo produce una tienda que lee el inventario de la tienda del entorno. Es una primitiva de fuga de datos entre tiendas. AVISO: el fichero .env.example NO existe en este repositorio, pese a que CLAUDE.md manda copiar un .env.local.example para arrancar, que tampoco existe.",
+      "acceptanceCriteria": [
+        "getInventoryConfig obtiene la credencial del token de sesion mediante auth() y no consulta process.env para la clave ni para la location",
+        "Si no hay sesion, o la sesion no tiene credencial de inventario, se lanza un error explicito en lugar de devolver cadenas vacias",
+        "Se conserva process.env.INVENTORY_API_URL, que es la URL base del servicio y no una credencial de tenant",
+        "Si falta INVENTORY_API_URL se falla con un mensaje claro, en vez de construir una URL relativa que revienta en el servidor",
+        "lib/inventoryClient.ts incluye import 'server-only' para que cualquier importacion desde un componente de cliente rompa la compilacion",
+        "Se crea .env.example documentando solo las variables que la aplicacion sigue necesitando: INVENTORY_API_URL, AUTH_SECRET, INVENTORY_ADMIN_SECRET, STORE_NAME, TAX_RATE y las de siembra del superadministrador",
+        "INVENTORY_API_KEY e INVENTORY_LOCATION_ID no aparecen en ese fichero, y se anota en CLAUDE.md que se retiraron y por que",
+        "Se corrige la instruccion de arranque de CLAUDE.md, que hoy manda copiar un .env.local.example inexistente",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Exigir sesion y rol en todos los server actions",
+      "description": "Como propietario de una tienda, quiero que las acciones del servidor comprueben quien llama, para que nadie las invoque sin sesion ni por encima de su rol. CONTEXTO: lib/actions.ts declara 'use server' en la linea 1 y ninguna de sus acciones exportadas comprueba la autorizacion; solo llaman a auth() para LEER identidad, en las lineas 79, 90 y 166. El middleware no protege esto: los server actions se despachan por identificador Next-Action y admiten POST contra cualquier ruta, incluidas / y /register, que auth.config.ts:14-25 deja pasar sin sesion. Combinado con US-002, una peticion anonima opera sobre inventario real. El patron correcto YA EXISTE en este repositorio, en app/staff/actions.ts:9-13, con un helper requireAdmin que hace auth() y lanza si el rol no es admin.",
+      "acceptanceCriteria": [
+        "Existen helpers requireSession() y requireAdmin() reutilizables, siguiendo el patron de app/staff/actions.ts:9-13",
+        "Toda accion exportada de lib/actions.ts invoca uno de los dos como primera sentencia: scanBarcode, createSale, listInventory, addProduct, adjustStock, listSales, listStaff y getInvoicePreviewInfo",
+        "addProduct y adjustStock exigen rol admin, en coherencia con el gate de interfaz de app/products/new/page.tsx:8 y con la marca adminOnly de components/BottomNav.tsx",
+        "Las acciones devuelven un error de autorizacion en lugar de lanzar excepciones no controladas hacia la interfaz",
+        "Se actualiza la prueba de lib/actions.test.ts que hoy asevera que createSale funciona SIN sesion, alrededor de la linea 168, para que ahora exija el rechazo",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Restringir listStaff a la organizacion que consulta",
+      "description": "Como propietario de una tienda, no quiero ver en mi filtro de historial los nombres de los empleados de otras tiendas. CONTEXTO: lib/actions.ts:18-20 ejecuta SELECT id, name FROM users ORDER BY name sin WHERE organization_id. Se usa desde el filtro de /history, asi que cada tienda ve los usuarios de toda la plataforma, incluido el superadministrador. La consulta correcta ya existe en app/staff/page.tsx:15, que si filtra por organizacion. AVISO: la prueba de lib/actions.test.ts:39-51 asevera hoy el SQL SIN filtro, es decir, fija el bug; hay que corregirla, no eludirla.",
+      "acceptanceCriteria": [
+        "La consulta filtra por el organizationId de la sesion",
+        "Si la sesion no tiene organizacion se devuelve una lista vacia, en lugar de todos los usuarios",
+        "La prueba de lib/actions.test.ts:39-51 se actualiza para exigir el filtro por organizacion",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Enviar Idempotency-Key al crear una venta",
+      "description": "Como cajero, quiero que un doble clic o un reintento no cobre dos veces ni descuente el stock dos veces. CONTEXTO: el servicio admite la cabecera Idempotency-Key y deduplica con un constraint de base de datos, pero lib/actions.ts:95-105 no la envia y lib/inventoryClient.ts:27-35 solo fija Content-Type y Authorization. En el repositorio del servicio hay dos implementaciones de referencia que si lo hacen bien: packages/inventory-ui/src/client.ts:28 y consumer-app/server.mjs:52.",
+      "acceptanceCriteria": [
+        "createSale acepta y reenvia una clave de idempotencia en la cabecera Idempotency-Key",
+        "La clave se genera POR TICKET y no por clic, de modo que un reintento del mismo ticket reutilice la misma clave",
+        "apiFetch permite pasar cabeceras adicionales sin sobrescribir las que ya fija",
+        "Existe una prueba que asevera que dos invocaciones consecutivas del mismo ticket envian la misma clave",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Anadir timeout y conservar el codigo de estado en el cliente HTTP",
+      "description": "Como cajero, quiero que un servicio caido de un error comprensible y rapido, y no una espera indefinida. CONTEXTO: lib/inventoryClient.ts:27 no usa AbortSignal.timeout, asi que un servicio colgado bloquea el server action hasta que la plataforma lo mata. Ademas la funcion descarta res.status en las lineas 35-42, por lo que la aplicacion no puede distinguir un 401 de un 409, un 422 o un 503, y expone al usuario cadenas crudas como 'fetch failed'. Esto tambien impide tratar bien el 422 que el servicio devuelve ahora cuando el limit excede el maximo.",
+      "acceptanceCriteria": [
+        "Toda peticion saliente lleva un timeout configurable, con un valor por defecto razonable para un punto de venta",
+        "El tipo ActionError incluye el codigo de estado HTTP cuando lo hay",
+        "Los fallos de red se distinguen de las respuestas de error del servicio",
+        "Un 409 por stock insuficiente se presenta con un mensaje traducido, no con la cadena en ingles que incluye el UUID del producto",
+        "Los mensajes nuevos existen en messages/es.json y messages/en.json",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Paginar y filtrar en el servidor el historial y el inventario",
+      "description": "Como propietario, quiero que los totales del historial reflejen todas mis ventas y no solo las veinte ultimas. CONTEXTO: app/history/page.tsx:141-148 llama a listSales(filters) sin limit, por lo que el servicio aplica su valor por defecto de 20; la pagina luego pagina en local sobre ese array y calcula facturas emitidas y ticket promedio a partir de el. El filtro por empleado se aplica DESPUES de paginar, en lib/actions.ts:310-312, mientras total sigue siendo el recuento sin filtrar. En paralelo, la pantalla de venta y el panel de inventario se descargan el catalogo para filtrarlo en memoria. ENFOQUE CORRECTO: no hace falta cambiar el servicio. GET /v1/locations/:id/inventory ya admite los filtros name, con coincidencia parcial e insensible a mayusculas, y barcode, hoy sin usar desde esta aplicacion. La busqueda debe delegarse en el servicio en lugar de descargar el catalogo. Esta historia completa lo que US-012 dejo como desbloqueo minimo. AVISO: la prueba lib/actions.test.ts:464 asevera hoy el filtrado posterior a la paginacion.",
+      "acceptanceCriteria": [
+        "El historial pasa page y limit explicitos y usa el total del servicio para su paginacion",
+        "El filtro por empleado se envia al servicio y deja de aplicarse tras la paginacion",
+        "Las metricas agregadas se calculan sobre el conjunto completo, no sobre una pagina",
+        "La busqueda de productos de la pantalla de venta usa el parametro name del servicio en lugar de filtrar en memoria un catalogo descargado",
+        "El panel de inventario pagina contra el servicio en vez de recortar en el cliente, de modo que su indicador de total y su tabla dejen de discrepar",
+        "Se actualiza la prueba lib/actions.test.ts:464",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-007",
+        "US-012"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Emitir la factura desde datos del servidor",
+      "description": "Como propietario, quiero que una factura no pueda contener importes fabricados por el cliente. CONTEXTO: app/api/invoices/[saleId]/route.tsx:206-233 valida la FORMA del cuerpo, no su autenticidad: importes, cantidades, totales, nombre del empleado e identificador de venta llegan desde el navegador, enviados por app/history/page.tsx:331, y no se comprueba que la venta pertenezca a la organizacion de quien la pide. Cualquier usuario autenticado de cualquier tienda puede acunar una factura con importes arbitrarios a nombre de la tienda. DEPENDENCIA YA SATISFECHA: el endpoint GET /v1/sales/:saleId ya existe en el servicio, anadido por su propio PRD. Devuelve 404, no 403, cuando la venta pertenece a otra organizacion, asi que el aislamiento lo garantiza el servicio y no hay que reimplementarlo aqui.",
+      "acceptanceCriteria": [
+        "La ruta obtiene la venta llamando a GET /v1/sales/:saleId del servicio, en el servidor",
+        "Se verifica que la venta pertenece a la organizacion de la sesion; si no, se responde 404",
+        "Los importes del PDF proceden exclusivamente de la respuesta del servicio",
+        "La ruta deja de aceptar el campo sale del cuerpo de la peticion",
+        "app/history/page.tsx deja de enviarlo",
+        "Existe al menos una prueba de esta ruta, que hoy no tiene ninguna: sin sesion da 401 y con venta de otra organizacion da 404",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-007"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Corregir el enlace de descarga de factura de la pantalla de venta",
+      "description": "Como cajero, quiero poder descargar la factura desde la pantalla de venta. CONTEXTO: app/sell/page.tsx:424 usa un enlace GET, pero la ruta app/api/invoices/[saleId]/route.tsx solo exporta POST, de modo que responde 405. El historial ya se corrigio para usar un formulario POST; la pantalla de venta se quedo atras. La prueba e2e comprueba que el enlace es VISIBLE pero nunca lo pulsa, lo que da una falsa sensacion de cobertura. NOTA: npm run test:e2e con Playwright NO forma parte de los quality gates, porque crea organizaciones reales en el servicio de inventario y las deja huerfanas en cada ejecucion; el criterio verificable de forma autonoma es el de Vitest.",
+      "acceptanceCriteria": [
+        "La pantalla de venta usa el mismo mecanismo que el historial para solicitar la factura",
+        "Es coherente con la interfaz que resulte de US-008",
+        "Existe una prueba de Vitest sobre la ruta que asevera que responde a POST y no a GET",
+        "Se actualiza la prueba e2e para que PULSE el control en lugar de limitarse a comprobar que es visible",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-008"
+      ]
+    },
+    {
+      "id": "US-011",
+      "title": "Revalidar el estado y el plan de la tienda en cada renovacion de sesion",
+      "description": "Como operador de la plataforma, quiero que suspender una tienda surta efecto, en lugar de esperar a que caduque su sesion. CONTEXTO: auth.config.ts:54-66 escribe organizationStatus y organizationPlan en el JWT una sola vez, al iniciar sesion, y nunca los revalida. No hay session.maxAge configurado, asi que rige el valor por defecto de 30 dias: app/superadmin/actions.ts:14-23 cambia una fila que ya nadie vuelve a leer y una tienda suspendida puede seguir vendiendo casi un mes. RESTRICCION: auth.config.ts debe permanecer libre de dependencias de Node para seguir siendo valido en el runtime de edge; el acceso a SQLite y a bcrypt vive en auth.ts. No introducir consultas a base de datos en auth.config.ts.",
+      "acceptanceCriteria": [
+        "El callback jwt vuelve a leer estado y plan de la organizacion en las renovaciones, no solo en el inicio de sesion",
+        "Una tienda suspendida deja de poder operar sin necesidad de cerrar sesion",
+        "Se establece un maxAge de sesion acorde a un punto de venta",
+        "auth.config.ts sigue sin importar bcrypt ni better-sqlite3, para no romper el runtime de edge",
+        "Existe una prueba del comportamiento de suspension",
+        "npm run typecheck passes",
+        "npm run lint passes",
+        "npm test passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-07-28T22:07:11.332Z"
+  }
+}

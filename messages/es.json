@@ -68,7 +68,10 @@
     "removeItem": "Eliminar {name} del carrito",
     "saleConfirmedToast": "¡Venta confirmada!",
     "searchPlaceholder": "Buscar producto por nombre o SKU…",
-    "noResults": "Sin resultados"
+    "noResults": "Sin resultados",
+    "scanFailed": "No se pudo consultar el producto: {error}",
+    "catalogTruncated": "Buscando entre los primeros {shown} de {total} productos. Escanea el código de barras para encontrar el resto.",
+    "catalogLoadFailed": "No se pudo cargar el catálogo para la búsqueda: {error}"
   },
   "products": {
     "title": "Productos",
@@ -78,8 +81,6 @@
     "adjustStock": "Ajustar Stock",
     "noMatch": "Ningún producto coincide con la búsqueda.",
     "noProducts": "Aún no hay productos.",
-    "outOfStock": "Sin stock",
-    "inStock": "{count} en stock",
     "addProduct": "Agregar producto"
   },
   "addProduct": {
@@ -127,7 +128,10 @@
     "apply": "Aplicar Ajuste",
     "selectAnother": "Seleccionar Otro Producto",
     "emptyHint": "Escanea un código o busca por nombre para seleccionar un producto",
-    "productNotFound": "Producto no encontrado: {error}",
+    "productNotFound": "Producto no encontrado",
+    "scanFailed": "No se pudo consultar el producto: {error}",
+    "searchFailed": "No se pudieron cargar los productos: {error}",
+    "searchTruncated": "Se busca solo entre los primeros {limit} productos. Escanea el código de barras si no aparece.",
     "stockLabel": "Stock:"
   },
   "history": {
@@ -280,7 +284,8 @@
     "stockStatusTitle": "Estado del Stock",
     "stockSufficient": "Suficiente",
     "stockLow": "Stock Bajo",
-    "stockOut": "Sin Stock"
+    "stockOut": "Sin Stock",
+    "partialCatalog": "Mostrando {shown} de {total} productos: el servicio devuelve como máximo una página. Los indicadores y la tabla solo reflejan los productos cargados."
   },
   "landing": {
     "login": "Iniciar sesión",

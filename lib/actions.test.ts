@@ -69,7 +69,7 @@ describe("scanBarcode", () => {
     expect(result).toEqual({ error: "Network error" });
   });
 
-  it("returns 'Product not found' when the API reports found:false", async () => {
+  it("tags a found:false response with the not_found code", async () => {
     mockApiFetch.mockResolvedValue({
       found: false,
       product: { id: "", name: "", barcode: null },
@@ -79,7 +79,16 @@ describe("scanBarcode", () => {
 
     const result = await scanBarcode("123");
 
-    expect(result).toEqual({ error: "Product not found" });
+    expect(result).toEqual({ error: "Product not found", code: "not_found" });
+  });
+
+  it("leaves an API failure uncoded so the UI does not call it 'not found'", async () => {
+    mockApiFetch.mockResolvedValue({ error: "HTTP 422" });
+
+    const result = await scanBarcode("123");
+
+    expect(result).toEqual({ error: "HTTP 422" });
+    expect(result).not.toHaveProperty("code");
   });
 
   it("maps a found product, falling back to the scanned barcode as sku", async () => {
@@ -269,6 +278,16 @@ describe("listInventory", () => {
 
     expect(mockApiFetch).toHaveBeenCalledWith(
       "/locations/loc-1/inventory?page=2&limit=10"
+    );
+  });
+
+  it("clamps a limit above the service maximum instead of triggering a 422", async () => {
+    mockApiFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 100 });
+
+    await listInventory(1, 500);
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/locations/loc-1/inventory?page=1&limit=100"
     );
   });
 

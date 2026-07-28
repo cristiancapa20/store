@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import db from "./db";
 import { apiFetch, getInventoryConfig } from "./inventoryClient";
+import { clampInventoryLimit } from "./pagination";
 import type {
   ActionResult,
   CartItem,
@@ -61,7 +62,7 @@ export async function scanBarcode(
     `/scan?barcode=${encodeURIComponent(barcode)}&location_id=${locationId}`
   );
   if ("error" in result) return result;
-  if (!result.found) return { error: "Product not found" };
+  if (!result.found) return { error: "Product not found", code: "not_found" };
   return {
     id: result.product.id,
     name: result.product.name,
@@ -140,7 +141,7 @@ export async function listInventory(
 
   const { locationId } = await getInventoryConfig();
   const result = await apiFetch<ApiResponse>(
-    `/locations/${locationId}/inventory?page=${page}&limit=${limit}`
+    `/locations/${locationId}/inventory?page=${page}&limit=${clampInventoryLimit(limit)}`
   );
   if ("error" in result) return result;
 

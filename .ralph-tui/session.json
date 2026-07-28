@@ -1,183 +1,95 @@
 {
   "version": 1,
-  "sessionId": "1ece79ff-3b9f-4373-99d2-f45194022a86",
+  "sessionId": "273028bd-e3fb-402f-a72e-935b06d4fdf1",
   "status": "running",
-  "startedAt": "2026-06-03T18:59:32.760Z",
-  "updatedAt": "2026-06-03T20:06:20.317Z",
-  "currentIteration": 10,
+  "startedAt": "2026-07-28T22:01:24.050Z",
+  "updatedAt": "2026-07-28T22:07:11.346Z",
+  "currentIteration": 0,
   "maxIterations": 0,
-  "tasksCompleted": 10,
+  "tasksCompleted": 0,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
-    "plugin": "beads",
-    "epicId": "store-bd8",
-    "totalTasks": 10,
+    "plugin": "json",
+    "executionScopes": [],
+    "prdPath": "./tasks/prd.json",
+    "totalTasks": 12,
     "tasks": [
       {
-        "id": "store-bd8.1",
-        "title": "US-001: Project scaffolding and PWA setup",
-        "status": "completed",
-        "completedInSession": true
+        "id": "US-012",
+        "title": "Dejar de solicitar limites por encima del maximo del servicio",
+        "status": "open",
+        "completedInSession": false
       },
       {
-        "id": "store-bd8.2",
-        "title": "US-002: Staff authentication (NextAuth + SQLite)",
-        "status": "completed",
-        "completedInSession": true
+        "id": "US-005",
+        "title": "Tratar los importes de la API como cadenas decimales",
+        "status": "open",
+        "completedInSession": false
       },
       {
-        "id": "store-bd8.3",
-        "title": "US-003: Inventory API proxy layer (server actions)",
-        "status": "completed",
-        "completedInSession": true
+        "id": "US-001",
+        "title": "Retirar la API key de inventario del objeto de sesion",
+        "status": "open",
+        "completedInSession": false
       },
       {
-        "id": "store-bd8.4",
-        "title": "US-004: Barcode input component (camera + physical scanner)",
-        "status": "completed",
-        "completedInSession": true
+        "id": "US-002",
+        "title": "Resolver la configuracion de inventario desde el token, sin recurso al entorno",
+        "status": "open",
+        "completedInSession": false
       },
       {
-        "id": "store-bd8.5",
-        "title": "US-005: Scan & sell — cart and checkout",
-        "status": "completed",
-        "completedInSession": true
+        "id": "US-003",
+        "title": "Exigir sesion y rol en todos los server actions",
+        "status": "open",
+        "completedInSession": false
       },
       {
-        "id": "store-bd8.6",
-        "title": "US-006: Product list with stock levels",
-        "status": "completed",
-        "completedInSession": true
+        "id": "US-004",
+        "title": "Restringir listStaff a la organizacion que consulta",
+        "status": "open",
+        "completedInSession": false
       },
       {
-        "id": "store-bd8.7",
-        "title": "US-007: Add product",
-        "status": "completed",
-        "completedInSession": true
+        "id": "US-006",
+        "title": "Enviar Idempotency-Key al crear una venta",
+        "status": "open",
+        "completedInSession": false
       },
       {
-        "id": "store-bd8.8",
-        "title": "US-008: Stock adjustment",
-        "status": "completed",
-        "completedInSession": true
+        "id": "US-007",
+        "title": "Anadir timeout y conservar el codigo de estado en el cliente HTTP",
+        "status": "open",
+        "completedInSession": false
       },
       {
-        "id": "store-bd8.9",
-        "title": "US-009: Sales history with filters",
-        "status": "completed",
-        "completedInSession": true
+        "id": "US-010",
+        "title": "Paginar y filtrar en el servidor el historial y el inventario",
+        "status": "open",
+        "completedInSession": false
       },
       {
-        "id": "store-bd8.10",
-        "title": "US-010: Invoice PDF generation",
-        "status": "completed",
-        "completedInSession": true
+        "id": "US-008",
+        "title": "Emitir la factura desde datos del servidor",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-009",
+        "title": "Corregir el enlace de descarga de factura de la pantalla de venta",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-011",
+        "title": "Revalidar el estado y el plan de la tienda en cada renovacion de sesion",
+        "status": "open",
+        "completedInSession": false
       }
     ]
   },
-  "iterations": [
-    {
-      "iteration": 1,
-      "status": "completed",
-      "taskId": "store-bd8.1",
-      "taskTitle": "US-001: Project scaffolding and PWA setup",
-      "taskCompleted": true,
-      "durationMs": 418074,
-      "startedAt": "2026-06-03T19:00:20.995Z",
-      "endedAt": "2026-06-03T19:07:19.069Z"
-    },
-    {
-      "iteration": 2,
-      "status": "completed",
-      "taskId": "store-bd8.4",
-      "taskTitle": "US-004: Barcode input component (camera + physical scanner)",
-      "taskCompleted": true,
-      "durationMs": 464634,
-      "startedAt": "2026-06-03T19:07:24.960Z",
-      "endedAt": "2026-06-03T19:15:09.594Z"
-    },
-    {
-      "iteration": 3,
-      "status": "completed",
-      "taskId": "store-bd8.3",
-      "taskTitle": "US-003: Inventory API proxy layer (server actions)",
-      "taskCompleted": true,
-      "durationMs": 78882,
-      "startedAt": "2026-06-03T19:15:15.221Z",
-      "endedAt": "2026-06-03T19:16:34.103Z"
-    },
-    {
-      "iteration": 4,
-      "status": "completed",
-      "taskId": "store-bd8.2",
-      "taskTitle": "US-002: Staff authentication (NextAuth + SQLite)",
-      "taskCompleted": true,
-      "durationMs": 598645,
-      "startedAt": "2026-06-03T19:16:39.222Z",
-      "endedAt": "2026-06-03T19:26:37.867Z"
-    },
-    {
-      "iteration": 5,
-      "status": "completed",
-      "taskId": "store-bd8.8",
-      "taskTitle": "US-008: Stock adjustment",
-      "taskCompleted": true,
-      "durationMs": 175018,
-      "startedAt": "2026-06-03T19:26:42.939Z",
-      "endedAt": "2026-06-03T19:29:37.957Z"
-    },
-    {
-      "iteration": 6,
-      "status": "completed",
-      "taskId": "store-bd8.7",
-      "taskTitle": "US-007: Add product",
-      "taskCompleted": true,
-      "durationMs": 226122,
-      "startedAt": "2026-06-03T19:29:42.909Z",
-      "endedAt": "2026-06-03T19:33:29.031Z"
-    },
-    {
-      "iteration": 7,
-      "status": "completed",
-      "taskId": "store-bd8.6",
-      "taskTitle": "US-006: Product list with stock levels",
-      "taskCompleted": true,
-      "durationMs": 187336,
-      "startedAt": "2026-06-03T19:33:34.630Z",
-      "endedAt": "2026-06-03T19:36:41.966Z"
-    },
-    {
-      "iteration": 8,
-      "status": "completed",
-      "taskId": "store-bd8.5",
-      "taskTitle": "US-005: Scan & sell — cart and checkout",
-      "taskCompleted": true,
-      "durationMs": 182356,
-      "startedAt": "2026-06-03T19:36:47.655Z",
-      "endedAt": "2026-06-03T19:39:50.011Z"
-    },
-    {
-      "iteration": 9,
-      "status": "completed",
-      "taskId": "store-bd8.10",
-      "taskTitle": "US-010: Invoice PDF generation",
-      "taskCompleted": true,
-      "durationMs": 1371191,
-      "startedAt": "2026-06-03T19:39:55.808Z",
-      "endedAt": "2026-06-03T20:02:46.999Z"
-    },
-    {
-      "iteration": 10,
-      "status": "completed",
-      "taskId": "store-bd8.9",
-      "taskTitle": "US-009: Sales history with filters",
-      "taskCompleted": true,
-      "durationMs": 206838,
-      "startedAt": "2026-06-03T20:02:52.028Z",
-      "endedAt": "2026-06-03T20:06:18.866Z"
-    }
-  ],
+  "iterations": [],
   "skippedTaskIds": [],
   "cwd": "/Users/cristian/dev/store",
   "activeTaskIds": [],

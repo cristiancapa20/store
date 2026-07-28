@@ -68,7 +68,10 @@
     "removeItem": "Remove {name} from cart",
     "saleConfirmedToast": "Sale confirmed!",
     "searchPlaceholder": "Search product by name or SKU…",
-    "noResults": "No results"
+    "noResults": "No results",
+    "scanFailed": "Could not look up the product: {error}",
+    "catalogTruncated": "Searching the first {shown} of {total} products. Scan the barcode to find the rest.",
+    "catalogLoadFailed": "Could not load the catalog for search: {error}"
   },
   "products": {
     "title": "Products",
@@ -78,8 +81,6 @@
     "adjustStock": "Adjust Stock",
     "noMatch": "No products match your search.",
     "noProducts": "No products yet.",
-    "outOfStock": "Out of stock",
-    "inStock": "{count} in stock",
     "addProduct": "Add product"
   },
   "addProduct": {
@@ -127,7 +128,10 @@
     "apply": "Apply Adjustment",
     "selectAnother": "Select Another Product",
     "emptyHint": "Scan a barcode or search by name to select a product",
-    "productNotFound": "Product not found: {error}",
+    "productNotFound": "Product not found",
+    "scanFailed": "Could not look up the product: {error}",
+    "searchFailed": "Could not load products: {error}",
+    "searchTruncated": "Only the first {limit} products are searched. Scan the barcode if the product is missing.",
     "stockLabel": "Stock:"
   },
   "history": {
@@ -280,7 +284,8 @@
     "stockStatusTitle": "Stock Status",
     "stockSufficient": "Sufficient",
     "stockLow": "Low Stock",
-    "stockOut": "Out of Stock"
+    "stockOut": "Out of Stock",
+    "partialCatalog": "Showing {shown} of {total} products: the service returns one page at most. The KPIs and the table only reflect the products loaded."
   },
   "landing": {
     "login": "Sign in",

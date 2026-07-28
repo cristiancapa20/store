@@ -1,14 +1,15 @@
 {
-  "id": "1ece79ff-3b9f-4373-99d2-f45194022a86",
+  "id": "273028bd-e3fb-402f-a72e-935b06d4fdf1",
   "status": "running",
-  "startedAt": "2026-06-03T18:59:27.607Z",
-  "updatedAt": "2026-06-03T20:06:20.324Z",
+  "startedAt": "2026-07-28T22:01:23.253Z",
+  "updatedAt": "2026-07-28T22:01:23.253Z",
   "agentPlugin": "claude",
-  "trackerPlugin": "beads",
-  "epicId": "store-bd8",
-  "currentIteration": 10,
+  "trackerPlugin": "json",
+  "executionScopes": [],
+  "prdPath": "./tasks/prd.json",
+  "currentIteration": 0,
   "maxIterations": 0,
   "totalTasks": 0,
-  "tasksCompleted": 10,
+  "tasksCompleted": 0,
   "cwd": "/Users/cristian/dev/store"
 }

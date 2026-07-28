@@ -4,6 +4,7 @@ import { useCallback, useState, useTransition, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import BarcodeInput from "@/components/BarcodeInput";
 import { scanBarcode, createSale, listInventory, getInvoicePreviewInfo } from "@/lib/actions";
+import { INVENTORY_MAX_LIMIT } from "@/lib/pagination";
 import type { CartItem, Product } from "@/lib/types";
 
 type InvoiceInfo = {
@@ -55,6 +56,8 @@ export default function SellPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [catalogTotal, setCatalogTotal] = useState(0);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [searchLoaded, setSearchLoaded] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -65,17 +68,25 @@ export default function SellPage() {
 
   const isPending = scanPending || confirmPending;
 
-  // Load product list once for search
+  // Load the first page of products for local search. The service caps a page at
+  // INVENTORY_MAX_LIMIT, so a larger catalog is only partially searchable here
+  // until search is delegated to the service (US-010).
   useEffect(() => {
     if (searchLoaded) return;
     startSearchLoad(async () => {
-      const result = await listInventory(1, 500);
-      if (!("error" in result)) {
-        setAllProducts(result.products);
-        setSearchLoaded(true);
+      const result = await listInventory(1, INVENTORY_MAX_LIMIT);
+      if ("error" in result) {
+        setCatalogError(result.error);
+        return;
       }
+      setAllProducts(result.products);
+      setCatalogTotal(result.total);
+      setCatalogError(null);
+      setSearchLoaded(true);
     });
   }, [searchLoaded]);
+
+  const catalogTruncated = catalogTotal > allProducts.length;
 
   const updateActiveCart = useCallback(
     (updater: (cart: CartEntry[]) => CartEntry[]) => {
@@ -167,7 +178,12 @@ export default function SellPage() {
       startScan(async () => {
         const result = await scanBarcode(barcode);
         if ("error" in result) {
-          showToast(t("productNotFound"), "error");
+          showToast(
+            result.code === "not_found"
+              ? t("productNotFound")
+              : t("scanFailed", { error: result.error }),
+            "error"
+          );
           return;
         }
         if (result.stock <= 0) {
@@ -347,6 +363,17 @@ export default function SellPage() {
               </button>
             ) : null}
           </div>
+
+          {/* Catalog status */}
+          {catalogError ? (
+            <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+              {t("catalogLoadFailed", { error: catalogError })}
+            </p>
+          ) : catalogTruncated ? (
+            <p className="mt-2 text-xs text-[var(--text-muted)]">
+              {t("catalogTruncated", { shown: allProducts.length, total: catalogTotal })}
+            </p>
+          ) : null}
 
           {/* Dropdown results */}
           {searchResults.length > 0 && (

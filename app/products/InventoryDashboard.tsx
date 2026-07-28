@@ -4,6 +4,7 @@ import { useState, useCallback, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { listInventory, listSales } from "@/lib/actions";
+import { INVENTORY_MAX_LIMIT } from "@/lib/pagination";
 import type { Product } from "@/lib/types";
 
 const PAGE_SIZE = 10;
@@ -130,7 +131,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
     startTransition(async () => {
       const today = new Date().toISOString().slice(0, 10);
       const [invResult, salesResult] = await Promise.all([
-        listInventory(1, 200),
+        listInventory(1, INVENTORY_MAX_LIMIT),
         listSales({ startDate: today, endDate: today, limit: 1 }),
       ]);
 
@@ -189,6 +190,9 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
   const lowStockCount = allProducts.filter((p) => p.stock <= 10).length;
 
   const showSkeleton = isPending && !hasFetched;
+  // The service returns at most INVENTORY_MAX_LIMIT rows per page, so the table,
+  // the KPIs and the stock breakdown only cover the products actually loaded.
+  const truncated = apiTotal > allProducts.length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -321,6 +325,16 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
       {/* Error */}
       {error && !isPending && (
         <div className="ui-alert-error">{error}</div>
+      )}
+
+      {/* Partial catalog notice */}
+      {!showSkeleton && !error && truncated && (
+        <div className="ui-alert-info">
+          {t("partialCatalog", {
+            shown: allProducts.length,
+            total: apiTotal,
+          })}
+        </div>
       )}
 
       {/* Table */}

@@ -54,6 +54,10 @@ export type InventoryPage = {
   limit: number;
 };
 
-export type ActionError = { error: string };
+// `code` lets the UI tell "the product does not exist" apart from a transport
+// or validation failure (e.g. a 422 from the service).
+export type ActionErrorCode = "not_found";
+
+export type ActionError = { error: string; code?: ActionErrorCode };
 
 export type ActionResult<T> = T | ActionError;
