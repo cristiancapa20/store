@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 import type { JWT } from "next-auth/jwt";
 import type { Session, User } from "next-auth";
@@ -54,5 +55,15 @@ describe("auth callbacks", () => {
     expect(session.user.organizationId).toBe("org-1");
     expect(session.user.role).toBe("staff");
     expect(session.user.organizationPlan).toBe("pro");
+  });
+
+  // proxy.ts monta este config en el runtime de edge: un import de bcrypt o de
+  // better-sqlite3 (directo o via @/lib/db) rompe el middleware entero, y el
+  // fallo solo aparece al arrancar, no en tsc.
+  it("stays free of Node-only dependencies so the edge middleware can load it", () => {
+    const source = readFileSync(new URL("./auth.config.ts", import.meta.url), "utf8");
+
+    expect(source).not.toMatch(/from\s+["'](bcryptjs|better-sqlite3|@\/lib\/db)["']/);
+    expect(source).not.toMatch(/\brequire\(/);
   });
 });

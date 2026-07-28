@@ -3,9 +3,16 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import db from "@/lib/db"
 import { authConfig } from "@/auth.config"
+import { withOrganizationRefresh } from "@/lib/sessionClaims"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  callbacks: {
+    ...authConfig.callbacks,
+    // El estado y el plan se releen aqui, no en auth.config.ts: el middleware
+    // carga ese fichero en el runtime de edge y no puede tocar SQLite.
+    jwt: withOrganizationRefresh(authConfig.callbacks!.jwt!),
+  },
   providers: [
     Credentials({
       credentials: {

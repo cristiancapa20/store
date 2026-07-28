@@ -4,6 +4,13 @@ export const authConfig: NextAuthConfig = {
   pages: {
     signIn: "/login",
   },
+  // Una caja no es un panel personal: el defecto de 30 dias deja la sesion
+  // abierta en un dispositivo compartido durante semanas. Doce horas cubren la
+  // jornada mas larga y obligan a reautenticarse al abrir la tienda.
+  session: {
+    strategy: "jwt",
+    maxAge: 60 * 60 * 12,
+  },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user

@@ -1,0 +1,206 @@
+# Iteration 11 Log
+
+## Metadata
+
+- **Task ID**: US-009
+- **Task Title**: Corregir el enlace de descarga de factura de la pantalla de venta
+- **Description**: Como cajero, quiero poder descargar la factura desde la pantalla de venta. CONTEXTO: app/sell/page.tsx:424 usa un enlace GET, pero la ruta app/api/invoices/[saleId]/route.tsx solo exporta POST, de mod...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-28T23:05:42.139Z
+- **Ended At**: 2026-07-28T23:08:25.106Z
+- **Duration**: 2m 42s
+- **Input Tokens**: 108
+- **Output Tokens**: 10759
+- **Total Tokens**: 10867
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the current state of the code.
+[94m[Bash][0m Read invoice route $ cat app/api/invoices/\[saleId\]/route.tsx
+[94m[Bash][0m Read sell page invoice section $ sed -n 380,460p app/sell/page.tsx
+[94m[Bash][0m Find invoice usages $ ls app/api/invoices/\[saleId\]/ && grep -rn "invoices/" --include=*.tsx --include=*.ts app component...
+[94m[Bash][0m Find invoice references $ grep -rn "invoices" app components e2e lib --include="*.ts" --include="*.tsx" | grep -v "route.tsx"
+[94m[Bash][0m Read route test $ cat "app/api/invoices/[saleId]/route.test.ts"
+[94m[Bash][0m Read sell + history invoice links $ sed -n 360,400p app/history/page.tsx
+[94m[Bash][0m Read e2e spec $ ls e2e
+
+[91m[Error: Exit code 1
+import { test, expect } from "@playwright/test";
+import Database from "better-sqlite3";
+import path from "path";
+
+/**
+ * Golden-path e2e: register a brand-new comercio (isolated by its own
+ * organization_id) and exercise the core flows against it in a single
+ * session. Each run uses a unique email/store name so it never touches
+ * pre-existing organizations (e.g. real dev data). A teardown step removes
+ * the local SQLite rows this test creates; it cannot un-provision the
+ * org/location it creates in the Inventory Service, since that service has
+ * no delete endpoint used here.
+ *
+ * This is one `test()` block (not several) because each Playwright test
+ * gets its own isolated browser context by default — splitting this into
+ * separate tests would drop the session cookie from registration and every
+ * later step would bounce to /login.
+ */
+
+const runId = Date.now();
+const email = `e2e-${runId}@example.com`;
+const storeName = `E2E Store ${runId}`;
+const password = "testpass123";
+const productName = `E2E Producto ${runId}`;
+const productSku = `E2E-${runId}`;
+const staffEmail = `e2e-staff-${runId}@example.com`;
+
+test("Golden path: comercio -> producto -> venta -> historial -> staff", async ({
+  page,
+}) => {
+  await test.step("registra un nuevo comercio y entra a /sell", async () => {
+    await page.goto("/register");
+    await page.locator("#storeName").fill(storeName);
+    await page.locator("#ownerName").fill("E2E Owner");
+    await page.locator("#email").fill(email);
+    await page.locator("#password").fill(password);
+    await page.locator("#confirmPassword").fill(password);
+    await page.getByRole("button", { name: "Crear cuenta gratis" }).click();
+    await expect(page).toHaveURL(/\/sell/, { timeout: 20_000 });
+  });
+
+  await test.step("agrega un producto nuevo y aparece en el inventario", async () => {
+    await page.goto("/products/new");
+    await page.getByPlaceholder("Nombre del producto").fill(productName);
+    await page.getByPlaceholder("SKU o código de barras").fill(productSku);
+    await page.locator('input[type="number"]').nth(0).fill("9.99");
+    await page.locator('input[type="number"]').nth(1).fill("20");
+    await page.getByRole("button", { name: "Agregar Producto" }).click();
+
+    await expect(page).toHaveURL(/\/products\?added=1/, { timeout: 20_000 });
+    // Both a desktop table row and a mobile card render the product name.
+    await expect(page.getByText(productName).first()).toBeVisible();
+  });
+
+  await test.step("ajusta el stock del producto", async () => {
+    await page.goto("/adjust");
+    await page
+      .getByPlaceholder("O buscar por nombre / SKU…")
+      .fill(productName);
+    await page.getByText(productName).first().click();
+
+    await page.getByRole("button", { name: "Aumentar" }).click();
+    await page.getByRole("button", { name: "Aumentar" }).click();
+    await page.getByRole("button", { name: "Aumentar" }).click();
+    await page.getByRole("button", { name: "Aplicar Ajuste" }).click();
+
+    await expect(page.getByText("Stock actualizado a 23")).toBeVisible({
+      timeout: 10_000,
+    });
+  });
+
+  await test.step("crea una venta del producto y descarga la factura", async () => {
+    await page.goto("/sell");
+    await page
+      .getByPlaceholder("Buscar producto por nombre o SKU…")
+      .fill(productName);
+    await page.getByText(productName).first().click();
+    await page.getByRole("button", { name: "Ver Factura" }).click();
+    await page.getByRole("button", { name: "Generar Factura" }).click();
+
+    await expect(page.getByText("¡Venta confirmada!")).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(
+      page.getByRole("link", { name: "Descargar Factura (PDF)" })
+    ).toBeVisible();
+  });
+
+  await test.step("la venta aparece en el historial", async () => {
+    // The history table lists invoices (id, date, total), not line items, so
+    // the product name never appears here — match on the invoice total
+    // instead. This org is freshly isolated, so it's the only sale so far.
+    await page.goto("/history");
+    await expect(page.getByText("Facturas Emitidas")).toBeVisible();
+    await expect(page.getByText("$9.99", { exact: true }).first()).toBeVisible({
+      timeout: 10_000,
+    });
+  });
+
+  await test.step("agrega y elimina un empleado", async () => {
+    await page.goto("/staff");
+    await page.getByRole("button", { name: "Agregar" }).click();
+    await page.locator("#name").fill("E2E Empleado");
+    await page.locator("#email").fill(staffEmail);
+    await page.locator("#password").fill("staffpass123");
+    await page.getByRole("button", { name: "Guardar empleado" }).click();
+
+    await expect(page.getByText(staffEmail)).toBeVisible({ timeout: 10_000 });
+
+    await page
+      .locator("div", { has: page.getByText(staffEmail) })
+      .getByRole("button", { name: "Eliminar" })
+      .click();
+    await expect(page.getByText(staffEmail)).not.toBeVisible({
+      timeout: 10_000,
+    });
+  });
+});
+
+test.afterAll(() => {
+  // Clean up the organization/users this run created so repeated e2e runs
+  // don't accumulate rows in the local dev database. This does not remove
+  // the corresponding organization/location provisioned in the Inventory
+  // Service (no delete endpoint is used here) — those remain as orphans.
+  const dbPath = path.join(process.cwd(), "data", "store.db");
+  const db = new Database(dbPath);
+  try {
+    const org = db
+      .prepare("SELECT id FROM organizations WHERE email = ?")
+      .get(email) as { id: string } | undefined;
+    if (org) {
+      db.prepare("DELETE FROM users WHERE organization_id = ?").run(org.id);
+      db.prepare("DELETE FROM organizations WHERE id = ?").run(org.id);
+    }
+  } finally {
+    db.close();
+  }
+});
+(eval):1: == not found][0m
+[94m[Bash][0m Read sell page test $ grep -n "lastSaleId\|downloadInvoicePdf\|saleConfirmed" app/sell/page.test.tsx
+[94m[Bash][0m Read sale confirmation test $ sed -n 140,200p app/sell/page.test.tsx
+Now I'll add the route method-contract test:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/api/invoices/[saleId]/route.test.ts[0m edit: "import { renderToBuffer } from "@react-pdf/rendere..." → "import { renderToBuffer } from "@react-pdf/rendere..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/api/invoices/[saleId]/route.test.ts[0m edit: "describe("GET /api/invoices/[saleId]", () => {
+  i..." → "describe("GET /api/invoices/[saleId]", () => {
+  /..."
+Now a Vitest assertion that the sell screen's control is the same GET link mechanism the history uses:
+[94m[Read][0m [95m/Users/cristian/dev/store/app/sell/page.test.tsx[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.test.tsx[0m edit: "    const [ticketOne, ticketTwo] = keysSentToCreat..." → "    const [ticketOne, ticketTwo] = keysSentToCreat..."
+Now the e2e step — actually click the control instead of only asserting visibility:
+[94m[Edit][0m [95m/Users/cristian/dev/store/e2e/comercio-flow.spec.ts[0m edit: "    await expect(page.getByText("¡Venta confirmada..." → "    await expect(page.getByText("¡Venta confirmada..."
+[94m[Bash][0m Typecheck $ npm run typecheck 2>&1 | tail -20
+[94m[Bash][0m Run affected tests $ npx vitest run app/api/invoices app/sell 2>&1 | tail -40
+[94m[Bash][0m Lint $ npm run lint 2>&1 | tail -20
+[94m[Bash][0m Full test suite $ npm test 2>&1 | tail -25
+[94m[Bash][0m Check e2e is typechecked $ npx tsc --noEmit e2e/comercio-flow.spec.ts 2>&1 | grep -i "waitForEvent\|comercio" | head
+The e2e file is inside `tsconfig.json`'s `**/*.ts`, so the passing typecheck already validated the Playwright call signature. Now documenting:
+[94m[Bash][0m Read tail of progress $ tail -30 .ralph-tui/progress.md
+[94m[Bash][0m Append progress entry $ lo único que este puede garantizar es qué exporta. - Playwright: para un enlace con `target="_blank"...
+[94m[Bash][0m Locate pattern entry $ grep -n "Factura desde el servidor" .ralph-tui/progress.md | head
+[94m[Read][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "- **i18n**: toda cadena visible va en `messages/es..." → "- **El verbo de un route handler es un contrato co..."
+US-009 done. One thing worth flagging up front:
+
+**The production bug was already fixed by US-008, in the opposite direction to what this story specified.** The story asked `/sell` to migrate to POST "like the history already did"; US-008 did the inverse — it made the route export only `GET` (idempotent read, no body) and converted the history's two `<form method="POST">` into links. That incidentally fixed `app/sell/page.tsx`, whose `<a href>` had been hitting a 405, without touching it. I treated the criterion *"coherent with the interface resulting from US-008"* as governing over the literal *"responds to POST and not GET"*, so the test pins the contract in the real direction: **GET yes, POST no**. No changes were needed in `app/sell/page.tsx` or `app/history/page.tsx` — both already use the same mechanism.
+
+What I added:
+
+- **`app/api/invoices/[saleId]/route.test.ts`** — asserts the module's verb contract: `typeof route.GET === "function"` and `expect(route).not.toHaveProperty("POST")`. Next answers 405 for any verb without an exported handler, so this is exactly the assertion that would have gone red under the original bug. It has to be tested against the *module*, not a response — the 405 comes from Next's router, not the file.
+- **`app/sell/page.test.tsx`** — new `describe` that runs the sale through to "¡Venta confirmada!" and checks the control is a `role="link"` with `href === "/api/invoices/sale-1"`. This is the Vitest coverage for "uses the same mechanism as the history": turning it into a `<button>`/`<form>` breaks `getByRole("link")`.
+- **`e2e/comercio-flow.spec.ts`** — the step now **clicks** the link instead of asserting visibility, and awaits the `/api/invoices/` response, asserting `200` and `content-type: application/pdf`. A 405 fails it. Since the link is `target="_blank"`, the request comes from the new tab, so it listens on `page.context()`, not `page` (`BrowserContext` doesn't emit `download`, only `Page` does).
+
+**Validation:** `npm run typecheck`, `npm run lint`, and `npm test` (165 tests, 13 files) all pass. `tsconfig.json` includes `**/*.ts`, so typecheck did cover the new Playwright call signature. I did **not** run `npm run test:e2e` — it creates real organizations in the inventory service and orphans them, and the story states it isn't a quality gate; the e2e change is verified only by typecheck. No i18n changes; no visual check since there were no UI changes.
+
+<promise>COMPLETE</promise>
