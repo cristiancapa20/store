@@ -370,34 +370,26 @@ export default function HistoryPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1">
-                            <form
-                              action={`/api/invoices/${sale.id}`}
-                              method="POST"
+                            {/* La factura se pide por id: los importes los pone el
+                                servicio, no esta pantalla. */}
+                            <a
+                              href={`/api/invoices/${sale.id}`}
                               target="_blank"
+                              rel="noopener noreferrer"
+                              title={t("viewSale")}
+                              className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-brand-600 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors"
                             >
-                              <input type="hidden" name="sale" value={JSON.stringify(sale)} />
-                              <button
-                                type="submit"
-                                title={t("viewSale")}
-                                className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-brand-600 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors"
-                              >
-                                <IconEye />
-                              </button>
-                            </form>
-                            <form
-                              action={`/api/invoices/${sale.id}`}
-                              method="POST"
+                              <IconEye />
+                            </a>
+                            <a
+                              href={`/api/invoices/${sale.id}`}
                               target="_blank"
+                              rel="noopener noreferrer"
+                              title={t("printInvoice")}
+                              className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-brand-600 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors"
                             >
-                              <input type="hidden" name="sale" value={JSON.stringify(sale)} />
-                              <button
-                                type="submit"
-                                title={t("printInvoice")}
-                                className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-brand-600 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors"
-                              >
-                                <IconPrint />
-                              </button>
-                            </form>
+                              <IconPrint />
+                            </a>
                           </div>
                         </td>
                       </tr>

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { Sale } from "./types";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("./db", () => ({
@@ -22,6 +23,7 @@ import {
   getSalesSummary,
   listStaff,
   getInvoicePreviewInfo,
+  getSale,
 } from "./actions";
 
 const mockAuth = vi.mocked(auth);
@@ -825,6 +827,81 @@ describe("getSalesSummary", () => {
   });
 });
 
+describe("getSale", () => {
+  const serviceSale = {
+    id: "sale-1",
+    locationId: "loc-1",
+    status: "completed",
+    actorRef: "staff-1",
+    createdAt: "2026-07-20T10:00:00.000Z",
+    total: "350.00",
+    items: [
+      { productId: "p1", quantity: 2, unitPrice: "100.00", lineTotal: "200.00" },
+      { productId: "p2", quantity: 1, unitPrice: "150.00", lineTotal: "150.00" },
+    ],
+  };
+
+  beforeEach(() => {
+    mockPrepare.mockReturnValue({
+      all: vi.fn().mockReturnValue([{ id: "staff-1", name: "Bob" }]),
+    } as never);
+  });
+
+  it("reads the sale by id and turns every decimal string into a number", async () => {
+    mockApiFetch.mockImplementation(async (path: string) =>
+      path === "/sales/sale-1" ? serviceSale : { id: path, name: "Café" }
+    );
+
+    const result = await getSale("sale-1");
+
+    expect(mockApiFetch).toHaveBeenCalledWith("/sales/sale-1");
+    expect(result).toMatchObject({
+      id: "sale-1",
+      staffId: "staff-1",
+      staffName: "Bob",
+      subtotal: 350,
+      total: 350,
+    });
+    expect((result as Sale).items[0]).toMatchObject({
+      unitPrice: 100,
+      lineTotal: 200,
+      productName: "Café",
+    });
+  });
+
+  // El servicio contesta 404 —no 403— para una venta de otra organizacion, asi
+  // que el aislamiento llega hasta aqui como `not_found` y se propaga tal cual.
+  it("propagates the service 404 for a sale of another organization", async () => {
+    mockApiFetch.mockResolvedValue({
+      error: "Sale not found",
+      code: "not_found",
+      status: 404,
+    });
+
+    const result = await getSale("sale-1");
+
+    expect(result).toMatchObject({ code: "not_found", status: 404 });
+    // Una venta que no es de esta tienda no dispara ninguna busqueda mas.
+    expect(mockApiFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to the product id when the name lookup fails", async () => {
+    mockApiFetch.mockImplementation(async (path: string) =>
+      path === "/sales/sale-1"
+        ? serviceSale
+        : { error: "Product not found", code: "not_found", status: 404 }
+    );
+
+    const result = await getSale("sale-1");
+
+    expect((result as Sale).items.map((i) => i.productName)).toEqual([
+      "p1",
+      "p2",
+    ]);
+    expect((result as Sale).total).toBe(350);
+  });
+});
+
 // Server actions are dispatched by Next-Action id over POST to any route, so
 // the middleware never gates them: each action has to check the caller itself.
 describe("authorization", () => {
@@ -841,6 +918,7 @@ describe("authorization", () => {
     getSalesSummary: () => getSalesSummary(),
     listStaff: () => listStaff(),
     getInvoicePreviewInfo: () => getInvoicePreviewInfo(),
+    getSale: () => getSale("sale-1"),
   };
 
   beforeEach(() => {

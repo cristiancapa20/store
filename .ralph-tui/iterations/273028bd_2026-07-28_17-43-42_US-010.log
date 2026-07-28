@@ -1,0 +1,167 @@
+# Iteration 9 Log
+
+## Metadata
+
+- **Task ID**: US-010
+- **Task Title**: Paginar y filtrar en el servidor el historial y el inventario
+- **Description**: Como propietario, quiero que los totales del historial reflejen todas mis ventas y no solo las veinte ultimas. CONTEXTO: app/history/page.tsx:141-148 llama a listSales(filters) sin limit, por lo que e...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-28T22:43:42.408Z
+- **Ended At**: 2026-07-28T22:59:35.410Z
+- **Duration**: 15m 53s
+- **Input Tokens**: 23869
+- **Output Tokens**: 71500
+- **Total Tokens**: 95369
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the current state of the code.
+[94m[Bash][0m Read recent progress notes $ tail -80 .ralph-tui/progress.md
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/types.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/pagination.ts[0m
+[94m[Bash][0m Find listInventory usages $ grep -rn "listInventory" --include=*.ts --include=*.tsx . | grep -v node_modules
+[94m[Bash][0m List app dirs and read test $ ls app && ls components && sed -n '440,520p' lib/actions.test.ts
+[94m[Bash][0m Find listInventory usages $ grep -rn "listInventory" --include="*.ts" --include="*.tsx" . | grep -v node_modules
+[94m[Bash][0m Read listSales tests $ grep -n "describe(\"listSales\"" -A 200 lib/actions.test.ts | head -240
+[94m[Bash][0m Look for inventory service repo $ ls ../inventory-service 2>/dev/null | head
+[94m[Read][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m
+[94m[Bash][0m Read inventory service sales route $ cd /Users/cristian/dev/inventory-service && find src/app/v1 -name "*.ts" | head -40 && echo "---SALE...
+[94m[Bash][0m Read listSales in service $ cd /Users/cristian/dev/inventory-service && grep -n "listSales" -A 60 src/lib/inventory/sales.ts | h...
+[94m[Bash][0m Read inventory route $ cd /Users/cristian/dev/inventory-service && cat src/app/v1/locations/\[locationId\]/inventory/route....
+[94m[Bash][0m Read sales report endpoint $ cd /Users/cristian/dev/inventory-service && cat src/app/v1/reports/sales/route.ts && echo "=== lib =...
+[94m[Bash][0m Read getSalesReport $ cd /Users/cristian/dev/inventory-service && sed -n 1,110p src/lib/inventory/reports.ts
+[94m[Bash][0m Read listLocationInventory $ cd /Users/cristian/dev/inventory-service && grep -n "listLocationInventory" -A 80 src/lib/inventory/...
+[94m[Bash][0m Check i18n keys $ grep -n "searchPlaceholder\|partialCatalog\|filterAll\|filterOk\|showing" messages/es.json messages/...
+[94m[Read][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m
+[94m[Bash][0m Grep sell page search usage $ grep -n "catalogTruncated\|catalogError\|searchResults\|searchPending\|searchLoaded\|catalogTotal\|a...
+[94m[Bash][0m Read adjust page $ grep -n "allProducts\|filtered\|search" app/adjust/page.tsx
+[94m[Bash][0m Read inventory-value report and alerts $ cd /Users/cristian/dev/inventory-service && cat src/app/v1/reports/inventory-value/route.ts && sed -...
+[94m[Read][0m [95m/Users/cristian/dev/store/app/sell/page.test.tsx[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m
+[94m[Bash][0m Dump relevant message sections $ print(json.dumps(d[k],ensure_ascii=False,indent=1)) "
+Now I have the full picture. Let me start with the server actions.
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/pagination.ts[0m edit: "// The Inventory Service validates `limit` with `...." → "// The Inventory Service validates `limit` with `...."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/types.ts[0m edit: "export type InventoryPage = {
+  products: Product[..." → "export type InventoryPage = {
+  products: Product[..."
+Now the server actions:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "import { clampInventoryLimit } from "./pagination"..." → "import { clampInventoryLimit, INVENTORY_MAX_LIMIT ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "export async function listInventory(
+  page = 1,
+ ..." → "export async function listInventory(
+  page = 1,
+ ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "export async function listSales(
+  filters: SaleFi..." → "type ApiSale = {
+  id: string;
+  locationId: strin..."
+Now the history page:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "import { useState, useCallback, useTransition, use..." → "import { useState, useCallback, useTransition, use..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "  const [allSales, setAllSales] = useState<Sale[]>..." → "  const [sales, setSales] = useState<Sale[]>([]);
+..."
+Now the JSX in the history page:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "          <button
+            type="button"
+      ..." → "          <button
+            type="button"
+      ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "      {/* Metric cards */}
+      <div className="g..." → "      {/* Metric cards */}
+      <div className="g..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "          {t("partialStaffHistory", { scanned: PAG..." → "          {t("partialStaffHistory", { scanned: tot..."
+Now the table body and footer references to `paginatedSales`/`allSales`:
+[94m[Bash][0m Find remaining references $ grep -n "paginatedSales\|allSales" app/history/page.tsx
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "                  {paginatedSales.length === 0 ? (" → "                  {sales.length === 0 ? ("
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "                    paginatedSales.map((sale) => (" → "                    sales.map((sale) => ("
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "            {allSales.length > 0 && (" → "            {total > 0 && ("
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "                  {t("showing", { from: fromIndex,..." → "                  {t("showing", { from: fromIndex,..."
+Now the sell page — delegate search to the service:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "import { newIdempotencyKey } from "@/lib/idempoten..." → "import { newIdempotencyKey } from "@/lib/idempoten..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "  // Search state
+  const [searchQuery, setSearchQ..." → "  // Search state
+  const [searchQuery, setSearchQ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "              onChange={(e) => handleSearchChange(..." → "              onChange={(e) => setSearchQuery(e.ta..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "          {/* Catalog status */}
+          {catalo..." → "          {/* Search status */}
+          {searchE..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "          {searchQuery.trim().length >= 2 && searc..." → "          {searchQuery.trim().length >= 2 && searc..."
+Now the adjust page:
+[94m[Read][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m
+[94m[Bash][0m Rewrite adjust page search $ sed -n '155,172p' app/adjust/page.tsx
+[94m[Read][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "        {searchError ? (
+          <p className="m..." → "        {searchError && (
+          <p className="..."
+Now the inventory dashboard:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m edit: "const PAGE_SIZE = 10;
+
+type StockFilter = "all" | ..." → "const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 2..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m edit: "  const [allProducts, setAllProducts] = useState<P..." → "  // Two reads with different jobs: `statsProducts..."
+[94m[Bash][0m Find remaining references $ grep -n "allProducts\|handleSearch\|handleFilter\|filtered\." app/products/InventoryDashboard.tsx
+[94m[Bash][0m Replace remaining dashboard references $ ''') open(p,'w').write(s) EOF grep -n "allProducts\|handleSearch\|handleFilter\|filtered\." app/prod...
+[94m[Read][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m edit: "            shown: allProducts.length," → "            shown: statsProducts.length,"
+Now the i18n messages:
+[94m[Bash][0m Update i18n messages and verify parity $ console.log([...a].filter(k=>!b.has(k)),[...b].filter(k=>!a.has(k)))"
+[94m[Bash][0m Check message diff size and typecheck $ git diff --stat messages/ && npm run typecheck 2>&1 | tail -30
+[94m[Read][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "    setSearchError(null);
+    setSearchTruncated(f..." → "    setSearchError(null);
+  }, []);"
+[94m[Bash][0m Typecheck and lint $ npm run typecheck 2>&1 | tail -20 && npm run lint 2>&1 | tail -30
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "  useEffect(() => {
+    const term = searchQuery.t..." → "  useEffect(() => {
+    let cancelled = false;
+   ..."
+[94m[Bash][0m Wire sell search handler $ }}') open(p,'w').write(s) PY grep -n "handleSearchChange\|setSearchQuery" app/sell/page.tsx
+Now the history page filter handlers:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "  // A change of filters has to restart at page 1;..." → "  // A change of filters restarts at page 1; a cha..."
+[94m[Bash][0m Wire filter handlers, typecheck and lint $ python3 - <<'PY' p='app/history/page.tsx' s=open(p).read() s=s.replace('onChange={(e) => setStartDat...
+Typecheck and lint are clean. Now the tests:
+[94m[Bash][0m Run test suite $ npm test 2>&1 | tail -60
+[94m[Bash][0m Read test setup $ sed -n '335,400p' lib/actions.test.ts
+Now let me update and extend the tests:
+[94m[Bash][0m Add listInventory search tests $ describe("addProduct", () => {''') open(p,'w').write(s) PY grep -n "getSalesSummary\|name=agu" lib/a...
+[94m[Bash][0m Rewrite listSales tests and add summary tests $ ''' s = s[:start] + new + s[end:] s = s.replace('''    listSales: () => listSales(),     listStaff: ...
+Let me add component tests for the delegated search:
+[94m[Bash][0m Add sell page search tests $ ''') open(p,'w').write(s) PY npm test 2>&1 | tail -40
+[94m[Bash][0m Fix discriminating search test $ ''') open(p,'w').write(s) PY npm test -- app/sell 2>&1 | tail -20
+Let me verify the new tests actually fail against the old behavior:
+[94m[Bash][0m Reverse-check the staff filter tests $ cp /tmp/actions.bak lib/actions.ts
+[94m[Bash][0m Reverse-check the sell search tests $ cp /tmp/sell.bak app/sell/page.tsx && npm test 2>&1 | tail -6
+[94m[Bash][0m Production build $ npm run build 2>&1 | tail -30
+[94m[Read][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m
+[94m[Bash][0m Split dashboard error state and reword message $ ''') open(p,'w').write(s) PY grep -n "setError\|const error" app/products/InventoryDashboard.tsx
+[94m[Bash][0m Full quality gate run $ console.log('parity',[...a].filter(k=>!b.has(k)),[...b].filter(k=>!a.has(k)))"
+[94m[Bash][0m Check running services $ echo " <- store app"
+Neither service is running, so no visual check. Let me do a final review of the server-action changes:
+[94m[Bash][0m Review actions diff $ git diff lib/actions.ts | head -260
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "  const [range, todayReport] = await Promise.all([..." → "  // Every metric describes the *filtered* set, so..."
+[94m[Bash][0m Add range test and rerun gates $ it("propagates a report error", async () => {''') open(p,'w').write(s) PY npm run typecheck 2>&1 | t...
+Now let me document the learnings:
+[94m[Bash][0m Append progress notes $ el debounce se salva porque el `setState` está dentro del `setTimeout`. La rama de salida temprana h...
+[94m[Bash][0m Final status and gates $ git status --short && npm run typecheck 2>&1 | tail -3 && npm run lint 2>&1 | tail -3 && npm test 2>...
+US-010 is implemented. All quality gates pass: `typecheck`, `lint`, `npm test` (154 tests, 12 files), and `npm run build`.
+
+**What changed**
+
+- **`listSales`** now returns `SalesPage` (`{sales, total, page, limit, truncated}`) and always sends explicit `page`/`limit` (default 20, clamped to the service's 100). The history page paginates on the service's `total` instead of slicing a 20-row array.
+- **Staff filter before pagination.** `scanSalesByStaff()` walks the range in 100-row pages (capped at 10), filters, then slices — so the page is full and `total` is the filtered count.
+- **New `getSalesSummary(filters, today)`** computes the aggregate metrics from `GET /v1/reports/sales`, which aggregates in the database, so "invoices issued" and "average ticket" no longer come from one page. `today` is the caller's local day and is only queried when it falls inside the filtered range.
+- **Search delegated to the service** via `listInventory(page, limit, search)` → the `name` parameter. Sell and adjust screens now query the service (250 ms debounce) instead of downloading the catalog; the inventory table paginates against the service so its indicator and table agree.
+- Also fixed while in there: `listSales`' staff-name lookup read `users` without an `organization_id` filter, against the invariant US-004 established.
+
+**One AC I could not meet as written.** AC2 asks that the staff filter "be sent to the service". `GET /v1/sales` accepts only `startDate`, `endDate`, `page`, `limit` — its zod schema strips unknown keys, so a `staffId` param would be silently ignored rather than rejected, leaving the bug invisible. Since the story says not to change the service, I implemented the half that fixes the actual defect (filter before paginating) and surfaced the bounded-scan ceiling through `truncated` plus a UI notice rather than presenting a partial count as complete. Adding `staffId` to the service's schema would be ~3 lines and would remove the scan entirely — worth filing if you want it.
+
+The old test asserting post-pagination filtering was replaced with one asserting the opposite, and every new test was verified in reverse: reintroducing the old filtering fails three `listSales` cases, and restoring in-memory search fails two sell-page cases. No visual check — neither the inventory service (3001) nor the app (3000) was running in this session.
+
+<promise>COMPLETE</promise>

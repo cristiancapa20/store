@@ -1,5 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { NextResponse } from "next/server";
 import {
   Document,
   Page,
@@ -9,7 +8,8 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import React from "react";
-import type { Sale, SaleItem } from "@/lib/types";
+import { getSale } from "@/lib/actions";
+import type { ActionErrorCode, Sale } from "@/lib/types";
 
 const styles = StyleSheet.create({
   page: { padding: 48, fontFamily: "Helvetica", color: "#111827" },
@@ -148,81 +148,28 @@ function InvoiceDocument({ sale, storeName, taxRate }: InvoiceProps) {
   );
 }
 
-function parseSale(raw: string, saleId: string): Sale | null {
-  let data: unknown;
-  try {
-    data = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-  if (typeof data !== "object" || data === null) return null;
-  const d = data as Record<string, unknown>;
-  if (d.id !== saleId) return null;
-  if (!Array.isArray(d.items)) return null;
+// A sale that belongs to another organization is a 404, never a 403: the service
+// answers 404 for it, and turning that into a 403 here would confirm the id
+// exists. Anything else the service says is a gateway failure, not the caller's.
+const STATUS_BY_CODE: Partial<Record<ActionErrorCode, number>> = {
+  unauthorized: 401,
+  forbidden: 403,
+  not_found: 404,
+};
 
-  const items: SaleItem[] = [];
-  for (const item of d.items) {
-    if (typeof item !== "object" || item === null) return null;
-    const i = item as Record<string, unknown>;
-    if (
-      typeof i.productId !== "string" ||
-      typeof i.productName !== "string" ||
-      typeof i.quantity !== "number" ||
-      typeof i.unitPrice !== "number" ||
-      typeof i.lineTotal !== "number"
-    ) {
-      return null;
-    }
-    items.push({
-      productId: i.productId,
-      productName: i.productName,
-      quantity: i.quantity,
-      unitPrice: i.unitPrice,
-      lineTotal: i.lineTotal,
-    });
-  }
-
-  if (
-    typeof d.id !== "string" ||
-    typeof d.createdAt !== "string" ||
-    typeof d.staffId !== "string" ||
-    typeof d.subtotal !== "number" ||
-    typeof d.total !== "number"
-  ) {
-    return null;
-  }
-
-  return {
-    id: d.id,
-    createdAt: d.createdAt,
-    staffId: d.staffId,
-    staffName: typeof d.staffName === "string" ? d.staffName : undefined,
-    items,
-    subtotal: d.subtotal,
-    total: d.total,
-  };
-}
-
-export async function POST(
-  request: NextRequest,
+export async function GET(
+  _request: Request,
   context: { params: Promise<{ saleId: string }> }
 ) {
-  const session = await auth();
-  if (!session) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-
   const { saleId } = await context.params;
 
-  const formData = await request.formData();
-  const raw = formData.get("sale");
-  if (typeof raw !== "string") {
-    return new NextResponse("Missing sale data", { status: 400 });
-  }
-
-  const sale = parseSale(raw, saleId);
-  if (!sale) {
-    return new NextResponse("Invalid sale data", { status: 400 });
+  // The amounts come from the service and only from the service: the invoice is
+  // the store's word about what it charged, so nothing on it may originate in
+  // the browser that asked for it.
+  const sale = await getSale(saleId);
+  if ("error" in sale) {
+    const status = (sale.code && STATUS_BY_CODE[sale.code]) ?? 502;
+    return new NextResponse(sale.error, { status });
   }
 
   const storeName = process.env.STORE_NAME ?? "Store";
@@ -235,7 +182,9 @@ export async function POST(
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="invoice-${saleId}.pdf"`,
+      // El nombre sale del id que devolvio el servicio, no del de la URL: ese
+      // llega sin validar y acabaria dentro de una cabecera.
+      "Content-Disposition": `attachment; filename="invoice-${sale.id}.pdf"`,
     },
   });
 }

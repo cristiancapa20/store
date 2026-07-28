@@ -449,6 +449,77 @@ export async function listSales(
   };
 }
 
+// `GET /v1/sales/:id` answers in the same shape `createSale` does, which is *not*
+// the shape `/sales` lists: amounts are decimal strings and the items carry no
+// product name (only the list endpoint joins the catalog).
+type ApiSaleDetail = {
+  id: string;
+  locationId: string;
+  status: string;
+  actorRef: string | null;
+  createdAt: string;
+  total: ApiDecimal;
+  items: Array<{
+    productId: string | null;
+    quantity: number;
+    unitPrice: ApiDecimal;
+    lineTotal: ApiDecimal;
+  }>;
+};
+
+type ApiProduct = { id: string; name: string };
+
+// A name is cosmetic, an amount is not: a lookup that fails falls back to the id
+// instead of failing the whole read.
+async function productNames(ids: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(ids)];
+  const results = await Promise.all(
+    unique.map((id) => apiFetch<ApiProduct>(`/products/${encodeURIComponent(id)}`))
+  );
+  const names = new Map<string, string>();
+  results.forEach((result, i) => {
+    if (!("error" in result)) names.set(unique[i], result.name);
+  });
+  return names;
+}
+
+// The tenant check *is* the request: the credential resolved by
+// `getInventoryConfig()` belongs to the session's organization, and the service
+// scopes the lookup by it, answering 404 — not 403 — for a sale of another store.
+// So a foreign sale arrives here as `code: "not_found"` and there is nothing left
+// to re-verify locally.
+export async function getSale(saleId: string): Promise<ActionResult<Sale>> {
+  const gate = await requireSession();
+  if ("error" in gate) return gate;
+
+  const sale = await apiFetch<ApiSaleDetail>(
+    `/sales/${encodeURIComponent(saleId)}`
+  );
+  if ("error" in sale) return sale;
+
+  const names = await productNames(
+    sale.items.map((i) => i.productId).filter((id): id is string => !!id)
+  );
+  const staffMap = staffNames(gate.user.organizationId);
+  const staffId = sale.actorRef ?? "";
+
+  return {
+    id: sale.id,
+    createdAt: sale.createdAt,
+    staffId,
+    staffName: staffMap.get(staffId) ?? sale.actorRef ?? "Unknown",
+    items: sale.items.map((i) => ({
+      productId: i.productId ?? "",
+      productName: names.get(i.productId ?? "") ?? i.productId ?? "",
+      quantity: i.quantity,
+      unitPrice: parseDecimal(i.unitPrice),
+      lineTotal: parseDecimal(i.lineTotal),
+    })),
+    subtotal: sale.items.reduce((sum, i) => sum + parseDecimal(i.lineTotal), 0),
+    total: parseDecimal(sale.total),
+  };
+}
+
 // `today` is the caller's *local* calendar day (YYYY-MM-DD): the server has no
 // way to know the till's timezone, and the day boundary is what the cashier sees.
 export async function getSalesSummary(
