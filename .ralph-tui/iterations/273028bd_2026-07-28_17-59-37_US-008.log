@@ -1,0 +1,108 @@
+# Iteration 10 Log
+
+## Metadata
+
+- **Task ID**: US-008
+- **Task Title**: Emitir la factura desde datos del servidor
+- **Description**: Como propietario, quiero que una factura no pueda contener importes fabricados por el cliente. CONTEXTO: app/api/invoices/[saleId]/route.tsx:206-233 valida la FORMA del cuerpo, no su autenticidad: imp...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-28T22:59:37.172Z
+- **Ended At**: 2026-07-28T23:05:40.366Z
+- **Duration**: 6m 3s
+- **Input Tokens**: 219
+- **Output Tokens**: 24519
+- **Total Tokens**: 24738
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the current state of the code.
+[94m[Read][0m [95m/Users/cristian/dev/store/app/api/invoices/[saleId]/route.tsx[0m
+[94m[Bash][0m Read tail of progress.md $ tail -80 .ralph-tui/progress.md
+[94m[Bash][0m $ grep -n "Sale\b\|SaleItem\|interface Sale" lib/types.ts
+[94m[Bash][0m $ grep -n "getInvoicePreviewInfo\|export async function\|ApiSale\|function mapSale\|toSale" lib/action...
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+[94m[Bash][0m $ find /Users/cristian/dev -maxdepth 3 -type d -name "sales" -path "*v1*" 2>/dev/null | head
+[94m[Read][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m
+[94m[Bash][0m $ grep -rn "api/invoices" /Users/cristian/dev/store --include="*.tsx" --include="*.ts" | grep -v node_...
+[94m[Read][0m [95m/Users/cristian/dev/inventory-service/src/app/v1/sales/[id]/route.ts[0m
+[94m[Bash][0m $ sed -n 455,500p /Users/cristian/dev/store/app/sell/page.tsx
+[94m[Bash][0m $ cd /Users/cristian/dev/inventory-service && grep -n "export async function getSale" -A 60 src/lib/in...
+[94m[Bash][0m $ grep -n "interface SaleResult" -A 20 src/lib/inventory/sales.ts
+[94m[Bash][0m $ cd /Users/cristian/dev/inventory-service && grep -n "productName" -r src/lib/inventory/sales.ts src/...
+[94m[Bash][0m $ cd /Users/cristian/dev/inventory-service && sed -n 275,378p src/lib/inventory/sales.ts
+[94m[Bash][0m $ cd /Users/cristian/dev/inventory-service && find src/app/v1 -name "route.ts" | sort
+[94m[Bash][0m $ cd /Users/cristian/dev/inventory-service && sed -n 1,60p src/app/v1/products/[productId]/route.ts
+
+[91m[Error: Exit code 1
+(eval):1: no matches found: src/app/v1/products/[productId]/route.ts][0m
+[94m[Bash][0m $ cd /Users/cristian/dev/inventory-service && cat "src/app/v1/products/[productId]/route.ts"
+[94m[Bash][0m $ ls /Users/cristian/dev/store/lib/*.test.ts /Users/cristian/dev/store/app/**/*.test.tsx 2>/dev/null
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/types.ts[0m
+[94m[Bash][0m $ cd /Users/cristian/dev/inventory-service && grep -n "export async function getProduct" -A 25 src/lib...
+[94m[Bash][0m $ cd /Users/cristian/dev/inventory-service && grep -n "const SELECT" -A 15 src/lib/inventory/products....
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+Now I'll add the `getSale` action.
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "// `today` is the caller's *local* calendar day (Y..." → "// `GET /v1/sales/:id` answers in the same shape `..."
+Now the route handler:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/api/invoices/[saleId]/route.tsx[0m edit: "import { NextRequest, NextResponse } from "next/se..." → "import { NextResponse } from "next/server";
+import..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/api/invoices/[saleId]/route.tsx[0m edit: "function parseSale(raw: string, saleId: string): S..." → "// A sale that belongs to another organization is ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "                            <form
+                ..." → "                            {/* La factura se pide..."
+[94m[Bash][0m $ grep -rn "getInvoicePreviewInfo" --include="*.tsx" --include="*.ts" . | grep -v node_modules
+Now the route test:
+[94m[Write][0m [95m/Users/cristian/dev/store/app/api/invoices/[saleId]/route.test.ts[0m "import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { Sale } from "@/lib/types";
+
+vi.mock("@/auth", () => ({ auth: vi.fn() }));
+vi.mock("@/lib/db", () => ({ default: { prepare: ... (5258 chars)"
+[94m[Bash][0m $ npx vitest run "app/api/invoices" 2>&1 | tail -40
+[94m[Bash][0m $ npm run typecheck 2>&1 | tail -20 && npm run lint 2>&1 | tail -20
+[94m[Bash][0m $ npm test 2>&1 | tail -25
+[94m[Bash][0m $ sed -n 820,900p lib/actions.test.ts
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "    listStaff: () => listStaff(),
+    getInvoicePr..." → "    listStaff: () => listStaff(),
+    getInvoicePr..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "  listStaff,
+  getInvoicePreviewInfo,
+} from "./ac..." → "  listStaff,
+  getInvoicePreviewInfo,
+  getSale,
+}..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "// Server actions are dispatched by Next-Action id..." → "describe("getSale", () => {
+  const serviceSale = ..."
+[94m[Bash][0m $ grep -n "^import type\|from \"./types\"" lib/actions.test.ts | head
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "import { describe, it, expect, vi, beforeEach } fr..." → "import { describe, it, expect, vi, beforeEach } fr..."
+[94m[Bash][0m $ npm test 2>&1 | tail -30
+[94m[Bash][0m $ cp /tmp/route.bak "app/api/invoices/[saleId]/route.tsx"
+[94m[Bash][0m $ cp /tmp/actions.bak lib/actions.ts
+[94m[Bash][0m $ npm run typecheck 2>&1 | tail -5 && npm run lint 2>&1 | tail -5 && npm test 2>&1 | tail -6
+[94m[Bash][0m $ npm run build 2>&1 | tail -25
+[94m[Read][0m [95m/Users/cristian/dev/store/app/api/invoices/[saleId]/route.tsx[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/api/invoices/[saleId]/route.tsx[0m edit: "      "Content-Disposition": `attachment; filename..." → "      // El nombre sale del id que devolvio el ser..."
+[94m[Bash][0m $ npm run typecheck 2>&1 | tail -3 && npm run lint 2>&1 | tail -3 && npm test 2>&1 | tail -5
+Now I'll document the work in progress.md.
+[94m[Bash][0m $ hace falta su propio `ApiSaleDetail`. - Que la ruta solo exportara `POST` escondía un fallo de otro ...
+[94m[Bash][0m $ ya no recibe ningún cuerpo) y traduce `ActionErrorCode` → status con `STATUS_BY_CODE`, `?? 502`. Par...
+Done. US-008 is implemented.
+
+**What changed**
+
+`lib/actions.ts` — new `getSale(saleId): Promise<ActionResult<Sale>>`. It calls `GET /v1/sales/:saleId` with the session organization's credential, so the tenancy check *is* the request: the service answers 404 (not 403) for a foreign sale and the action propagates it as `code: "not_found"`. That endpoint answers in `createSale`'s shape — decimal strings, `actorRef`, and items **without** `productName` (only the list endpoint joins the catalog) — so it needs its own `ApiSaleDetail`, and names are resolved separately via `GET /v1/products/:id`, falling back to the product id when a lookup fails (a name is cosmetic, an amount is not).
+
+`app/api/invoices/[saleId]/route.tsx` — `parseSale()` is gone along with the ~60 lines that accepted amounts, quantities, totals and staff name from the browser. The handler is now `GET` (idempotent read, nothing left to send) and maps the action's code to a status: 401 / 403 / 404, else 502.
+
+`app/history/page.tsx` — the two POST forms carrying `JSON.stringify(sale)` are now plain `<a href={/api/invoices/${sale.id}}>` links. This also fixes `app/sell/page.tsx:473`, which already linked the route over GET against a handler that only exported POST — the post-sale "download invoice" button was returning 405.
+
+**Tests** — new `app/api/invoices/[saleId]/route.test.ts` (401 without a session, without even asking the service; 404 for another org's sale; PDF built from the service response; a forged `sale` in the body ignored; 502 when the service fails) plus a `getSale` block in `lib/actions.test.ts`.
+
+One deliberate deviation from the letter of the ACs: the route also stopped accepting POST entirely rather than just ignoring the `sale` field, since the GET form is what the sell page already assumed.
+
+**Validation** — `npm run typecheck`, `npm run lint`, `npm test` (163 tests, 13 files) and `npm run build` all pass. The new tests were verified in reverse: flipping `not_found: 404` to `400` fails the foreign-sale case, and replacing the computed `subtotal` with `0` fails both tests that assert amounts come from the service. No visual check — neither the inventory service (3001) nor the app (3000) was running. No new strings, so i18n is unchanged.
+
+<promise>COMPLETE</promise>

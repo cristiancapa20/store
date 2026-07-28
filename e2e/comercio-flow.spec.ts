@@ -81,9 +81,20 @@ test("Golden path: comercio -> producto -> venta -> historial -> staff", async (
     await expect(page.getByText("¡Venta confirmada!")).toBeVisible({
       timeout: 10_000,
     });
-    await expect(
-      page.getByRole("link", { name: "Descargar Factura (PDF)" })
-    ).toBeVisible();
+
+    // Pulsar, no solo comprobar que se ve: el enlace estuvo apuntando a una
+    // ruta que solo exportaba POST y respondia 405, y una asercion de
+    // visibilidad no lo habria notado. El control abre en una pestana nueva,
+    // asi que la respuesta se espera en el contexto, no en esta pagina.
+    const [invoiceResponse] = await Promise.all([
+      page.context().waitForEvent("response", {
+        predicate: (response) => response.url().includes("/api/invoices/"),
+        timeout: 20_000,
+      }),
+      page.getByRole("link", { name: "Descargar Factura (PDF)" }).click(),
+    ]);
+    expect(invoiceResponse.status()).toBe(200);
+    expect(invoiceResponse.headers()["content-type"]).toBe("application/pdf");
   });
 
   await test.step("la venta aparece en el historial", async () => {

@@ -211,3 +211,30 @@ describe("SellPage idempotency key", () => {
     expect(ticketTwo).not.toBe(ticketOne);
   });
 });
+
+describe("SellPage invoice download", () => {
+  it("asks for the invoice by id with the same GET link the history uses", async () => {
+    const user = userEvent.setup();
+    mockCreateSale.mockResolvedValue({
+      id: "sale-1",
+      createdAt: "2026-01-01T00:00:00Z",
+      staffId: "u1",
+      staffName: "Ana",
+      items: [],
+      subtotal: 350,
+      total: 385,
+    });
+
+    renderPage();
+    await addProductToCart(user);
+    await confirmSale(user);
+    await screen.findByText(es.sell.saleConfirmed);
+
+    // Un enlace, no un formulario: la ruta solo exporta GET y el importe lo
+    // pone el servicio a partir del id, asi que aqui no viaja nada mas.
+    const link = await screen.findByRole<HTMLAnchorElement>("link", {
+      name: es.sell.downloadInvoicePdf,
+    });
+    expect(link.getAttribute("href")).toBe("/api/invoices/sale-1");
+  });
+});

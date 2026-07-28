@@ -3,10 +3,10 @@
   "sessionId": "273028bd-e3fb-402f-a72e-935b06d4fdf1",
   "status": "running",
   "startedAt": "2026-07-28T22:01:24.050Z",
-  "updatedAt": "2026-07-28T23:05:40.373Z",
-  "currentIteration": 9,
+  "updatedAt": "2026-07-28T23:08:25.108Z",
+  "currentIteration": 10,
   "maxIterations": 0,
-  "tasksCompleted": 9,
+  "tasksCompleted": 10,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -72,8 +72,8 @@
       {
         "id": "US-008",
         "title": "Emitir la factura desde datos del servidor",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-009",
@@ -179,6 +179,16 @@
       "durationMs": 953002,
       "startedAt": "2026-07-28T22:43:42.408Z",
       "endedAt": "2026-07-28T22:59:35.410Z"
+    },
+    {
+      "iteration": 10,
+      "status": "completed",
+      "taskId": "US-008",
+      "taskTitle": "Emitir la factura desde datos del servidor",
+      "taskCompleted": true,
+      "durationMs": 363194,
+      "startedAt": "2026-07-28T22:59:37.172Z",
+      "endedAt": "2026-07-28T23:05:40.366Z"
     }
   ],
   "skippedTaskIds": [],

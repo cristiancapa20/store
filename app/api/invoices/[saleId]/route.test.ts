@@ -22,6 +22,7 @@ import { auth } from "@/auth";
 import db from "@/lib/db";
 import { apiFetch } from "@/lib/inventoryClient";
 import { renderToBuffer } from "@react-pdf/renderer";
+import * as route from "./route";
 import { GET } from "./route";
 
 const mockAuth = vi.mocked(auth);
@@ -85,6 +86,15 @@ beforeEach(() => {
 });
 
 describe("GET /api/invoices/[saleId]", () => {
+  // La pantalla de venta y el historial piden la factura con un enlace, es
+  // decir con GET. Next responde 405 a todo verbo sin handler exportado, asi
+  // que renombrar este export (o anadir un POST y migrar la UI a el a medias)
+  // devuelve la pantalla al 405 que corrigio esta historia.
+  it("exports GET and no POST, so the link in the UI is the supported verb", () => {
+    expect(typeof route.GET).toBe("function");
+    expect(route).not.toHaveProperty("POST");
+  });
+
   it("answers 401 without a session and never asks the service for the sale", async () => {
     mockAuth.mockResolvedValue(null as never);
 
