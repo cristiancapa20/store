@@ -44,7 +44,7 @@ beforeEach(() => {
     products: [product],
     total: 1,
     page: 1,
-    limit: 100,
+    limit: 8,
   });
   mockGetInvoicePreviewInfo.mockResolvedValue({
     storeName: "Tiendita",
@@ -72,6 +72,53 @@ async function confirmSale(user: ReturnType<typeof userEvent.setup>) {
     await screen.findByRole("button", { name: es.sell.generateInvoice })
   );
 }
+
+describe("SellPage product search", () => {
+  it("sends the typed term to the service instead of downloading the catalog", async () => {
+    const user = userEvent.setup();
+
+    renderPage();
+    const search = await screen.findByPlaceholderText(es.sell.searchPlaceholder);
+    await user.type(search, "Agu");
+
+    await waitFor(() =>
+      expect(mockListInventory).toHaveBeenCalledWith(1, 8, "Agu")
+    );
+    // El catalogo completo ya no se descarga: no hay una peticion de una pagina
+    // entera para filtrarla en memoria.
+    expect(mockListInventory).not.toHaveBeenCalledWith(1, 100);
+    expect(mockListInventory).not.toHaveBeenCalledWith(1, 100, undefined);
+  });
+
+  it("shows what the service returned, without re-filtering it locally", async () => {
+    const user = userEvent.setup();
+    // Ni el nombre ni el SKU contienen el termino escrito: si la pantalla
+    // siguiera filtrando en memoria, esta fila desapareceria.
+    mockListInventory.mockResolvedValue({
+      products: [{ ...product, name: "Botella de agua" }],
+      total: 1,
+      page: 1,
+      limit: 8,
+    });
+
+    renderPage();
+    const search = await screen.findByPlaceholderText(es.sell.searchPlaceholder);
+    await user.type(search, "zzz");
+
+    expect(await screen.findByText("Botella de agua")).toBeTruthy();
+  });
+
+  it("does not query the service for a single character", async () => {
+    const user = userEvent.setup();
+
+    renderPage();
+    const search = await screen.findByPlaceholderText(es.sell.searchPlaceholder);
+    await user.type(search, "a");
+
+    await waitFor(() => expect(screen.queryByText(product.name)).toBeNull());
+    expect(mockListInventory).not.toHaveBeenCalled();
+  });
+});
 
 describe("SellPage idempotency key", () => {
   it("reuses the same key when the same ticket is confirmed twice", async () => {

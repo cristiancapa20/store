@@ -9,6 +9,7 @@ import { useActionErrorMessage } from "@/lib/useActionErrorMessage";
 import type { Product } from "@/lib/types";
 
 const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 250;
 
 type StockFilter = "all" | "ok" | "low" | "out";
 
@@ -119,82 +120,101 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
   const tp = useTranslations("products");
   const actionErrorMessage = useActionErrorMessage();
 
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  // Two reads with different jobs: `statsProducts` feeds the KPIs and the
+  // breakdown panels (a whole-catalog question the service has no endpoint for,
+  // so it stays capped at one page), while `pageProducts` is the table and comes
+  // straight from the service, page by page and already filtered by name.
+  const [statsProducts, setStatsProducts] = useState<Product[]>([]);
+  const [pageProducts, setPageProducts] = useState<Product[]>([]);
   const [apiTotal, setApiTotal] = useState(0);
+  const [pageTotal, setPageTotal] = useState(0);
   const [todaySales, setTodaySales] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
-  const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+  // Two readers, two error slots: a stats reload that succeeds must not clear
+  // the message the table read left behind, nor the other way round.
+  const [statsError, setStatsError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const load = useCallback(() => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
     startTransition(async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const [invResult, salesResult] = await Promise.all([
+      const [statsResult, salesResult] = await Promise.all([
         listInventory(1, INVENTORY_MAX_LIMIT),
         listSales({ startDate: today, endDate: today, limit: 1 }),
       ]);
 
-      if ("error" in invResult) {
-        setError(actionErrorMessage(invResult));
+      if ("error" in statsResult) {
+        setStatsError(actionErrorMessage(statsResult));
       } else {
-        setAllProducts(invResult.products);
-        setApiTotal(invResult.total);
-        setError(null);
+        setStatsProducts(statsResult.products);
+        setApiTotal(statsResult.total);
+        setStatsError(null);
       }
 
       if (!("error" in salesResult)) {
         setTodaySales(salesResult.total);
       }
-
-      setHasFetched(true);
     });
-  }, [actionErrorMessage]);
+  }, [actionErrorMessage, reloadToken]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    startTransition(async () => {
+      const result = await listInventory(page, PAGE_SIZE, debouncedSearch);
+      if ("error" in result) {
+        setPageError(actionErrorMessage(result));
+        setPageProducts([]);
+        setPageTotal(0);
+      } else {
+        setPageError(null);
+        setPageProducts(result.products);
+        setPageTotal(result.total);
+      }
+      setHasFetched(true);
+    });
+  }, [actionErrorMessage, page, debouncedSearch, reloadToken]);
 
-  const handleSearch = (v: string) => {
-    setSearch(v);
-    setPage(1);
-  };
-  const handleFilter = (v: StockFilter) => {
-    setStockFilter(v);
-    setPage(1);
-  };
+  const load = useCallback(() => setReloadToken((n) => n + 1), []);
 
-  const filtered = allProducts.filter((p) => {
-    const q = search.toLowerCase();
-    const matchQ =
-      p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
-    const matchF =
+  // The service has no stock predicate, so this one still narrows the page on
+  // screen — hence the separate indicator below, which does not pretend the
+  // count covers the catalog.
+  const paginated = pageProducts.filter(
+    (p) =>
       stockFilter === "all" ||
       (stockFilter === "ok" && p.stock > 10) ||
       (stockFilter === "low" && p.stock > 0 && p.stock <= 10) ||
-      (stockFilter === "out" && p.stock === 0);
-    return matchQ && matchF;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const paginated = filtered.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE
+      (stockFilter === "out" && p.stock === 0)
   );
 
-  const inventoryValue = allProducts.reduce(
+  const totalPages = Math.max(1, Math.ceil(pageTotal / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+
+  const inventoryValue = statsProducts.reduce(
     (s, p) => s + p.price * p.stock,
     0
   );
-  const lowStockCount = allProducts.filter((p) => p.stock <= 10).length;
+  const lowStockCount = statsProducts.filter((p) => p.stock <= 10).length;
 
+  const error = pageError ?? statsError;
   const showSkeleton = isPending && !hasFetched;
-  // The service returns at most INVENTORY_MAX_LIMIT rows per page, so the table,
-  // the KPIs and the stock breakdown only cover the products actually loaded.
-  const truncated = apiTotal > allProducts.length;
+  // The KPI panels read a single page of the catalog: the service returns at most
+  // INVENTORY_MAX_LIMIT rows and has no aggregate endpoint for stock. The table
+  // below is not affected — it pages against the service.
+  const truncated = apiTotal > statsProducts.length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -286,14 +306,14 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
             type="search"
             placeholder={tp("searchPlaceholder")}
             value={search}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="ui-search-field"
           />
         </div>
         <div className="flex items-center gap-2">
           <select
             value={stockFilter}
-            onChange={(e) => handleFilter(e.target.value as StockFilter)}
+            onChange={(e) => setStockFilter(e.target.value as StockFilter)}
             className="ui-input w-full sm:w-auto"
           >
             <option value="all">{t("filterAll")}</option>
@@ -333,7 +353,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
       {!showSkeleton && !error && truncated && (
         <div className="ui-alert-info">
           {t("partialCatalog", {
-            shown: allProducts.length,
+            shown: statsProducts.length,
             total: apiTotal,
           })}
         </div>
@@ -347,11 +367,20 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
             style={{ borderBottom: "1px solid var(--border-color)" }}
           >
             <p className="text-xs text-zinc-400 dark:text-zinc-500">
-              {t("showing", {
-                from: filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1,
-                to: Math.min(safePage * PAGE_SIZE, filtered.length),
-                total: filtered.length,
-              })}
+              {stockFilter === "all"
+                ? t("showing", {
+                    from: pageTotal === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1,
+                    to: Math.min(
+                      (safePage - 1) * PAGE_SIZE + pageProducts.length,
+                      pageTotal
+                    ),
+                    total: pageTotal,
+                  })
+                : t("showingStockFiltered", {
+                    shown: paginated.length,
+                    page: safePage,
+                    total: pageTotal,
+                  })}
             </p>
           </div>
         )}
@@ -458,7 +487,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
           <h2 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-3 text-sm">
             {t("recentTitle")}
           </h2>
-          {!showSkeleton && allProducts.length === 0 && (
+          {!showSkeleton && statsProducts.length === 0 && (
             <p className="text-sm text-zinc-400">{tp("noProducts")}</p>
           )}
           {showSkeleton &&
@@ -476,7 +505,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
               </div>
             ))}
           {!showSkeleton &&
-            [...allProducts].slice(-3).reverse().map((p) => (
+            [...statsProducts].slice(-3).reverse().map((p) => (
               <div
                 key={p.id}
                 className="flex items-center justify-between py-2.5 border-b border-zinc-50 dark:border-zinc-800/50 last:border-0"
@@ -519,12 +548,12 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
             {t("stockStatusTitle")}
           </h2>
           {(() => {
-            const tot = allProducts.length || 1;
-            const ok = allProducts.filter((p) => p.stock > 10).length;
-            const low = allProducts.filter(
+            const tot = statsProducts.length || 1;
+            const ok = statsProducts.filter((p) => p.stock > 10).length;
+            const low = statsProducts.filter(
               (p) => p.stock > 0 && p.stock <= 10
             ).length;
-            const out = allProducts.filter((p) => p.stock === 0).length;
+            const out = statsProducts.filter((p) => p.stock === 0).length;
             const rows = [
               {
                 label: t("stockSufficient"),

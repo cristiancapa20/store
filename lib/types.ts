@@ -54,6 +54,25 @@ export type InventoryPage = {
   limit: number;
 };
 
+// `truncated` is only ever true on the staff-filtered path: the service cannot
+// filter `/sales` by actor, so the action has to walk the pages itself and stops
+// at a bounded number of them. The UI has to say so instead of presenting a
+// partial count as the whole truth.
+export type SalesPage = {
+  sales: Sale[];
+  total: number;
+  page: number;
+  limit: number;
+  truncated: boolean;
+};
+
+export type SalesSummary = {
+  count: number;
+  revenue: number;
+  todayRevenue: number;
+  truncated: boolean;
+};
+
 // `code` lets the UI tell "the product does not exist" apart from a transport
 // or validation failure (e.g. a 422 from the service), and an authorization
 // refusal apart from either. `unauthorized`/`forbidden` are about *this* app's

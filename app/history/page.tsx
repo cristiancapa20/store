@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useCallback, useTransition, useEffect } from "react";
+import { useState, useCallback, useTransition, useEffect, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { listSales, listStaff } from "@/lib/actions";
-import type { Sale, SaleFilters } from "@/lib/types";
+import { getSalesSummary, listSales, listStaff } from "@/lib/actions";
+import { INVENTORY_MAX_LIMIT } from "@/lib/pagination";
+import type { Sale, SaleFilters, SalesSummary } from "@/lib/types";
 
 const PAGE_SIZE = 10;
+// The CSV is meant to be the whole result set, not the page on screen, so the
+// export walks the service pages. The ceiling keeps a full-history export from
+// turning into hundreds of round trips.
+const EXPORT_MAX_PAGES = 10;
 
 type StaffUser = { id: string; name: string };
 
@@ -123,14 +128,30 @@ export default function HistoryPage() {
   const [staffId, setStaffId] = useState("");
   const [page, setPage] = useState(1);
 
-  const [allSales, setAllSales] = useState<Sale[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [total, setTotal] = useState(0);
+  const [truncated, setTruncated] = useState(false);
+  const [summary, setSummary] = useState<SalesSummary | null>(null);
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
   const [hasFetched, setHasFetched] = useState(false);
   const [staffPending, startStaffTransition] = useTransition();
   const [salesPending, startSalesTransition] = useTransition();
+  const [exportPending, startExportTransition] = useTransition();
 
   const isPending = staffPending || salesPending;
   const showSkeleton = isPending && !hasFetched;
+
+  const filters = useMemo<SaleFilters>(() => {
+    const next: SaleFilters = {};
+    if (startDate) next.startDate = startDate;
+    if (endDate) next.endDate = endDate;
+    if (staffId) next.staffId = staffId;
+    return next;
+  }, [startDate, endDate, staffId]);
+
+  // The metric cards cover the whole filtered set, so "today" has to be the
+  // till's local day, not the server's.
+  const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local
 
   const fetchStaff = useCallback(() => {
     startStaffTransition(async () => {
@@ -139,43 +160,63 @@ export default function HistoryPage() {
     });
   }, []);
 
+  // A change of filters restarts at page 1; a change of page must not reset it,
+  // so the reset lives in the filter setters and not in the fetch effect.
+  const changeFilter = useCallback(
+    (apply: () => void) => {
+      apply();
+      setPage(1);
+    },
+    []
+  );
+
   const fetchSales = useCallback(() => {
-    const filters: SaleFilters = {};
-    if (startDate) filters.startDate = startDate;
-    if (endDate) filters.endDate = endDate;
-    if (staffId) filters.staffId = staffId;
     startSalesTransition(async () => {
-      const result = await listSales(filters);
-      if ("error" in result) {
-        setAllSales([]);
+      const [pageResult, summaryResult] = await Promise.all([
+        listSales({ ...filters, page, limit: PAGE_SIZE }),
+        getSalesSummary(filters, todayStr),
+      ]);
+
+      if ("error" in pageResult) {
+        setSales([]);
+        setTotal(0);
+        setTruncated(false);
       } else {
-        setAllSales(result.sales);
-        setPage(1);
+        setSales(pageResult.sales);
+        setTotal(pageResult.total);
+        setTruncated(pageResult.truncated);
       }
+
+      setSummary("error" in summaryResult ? null : summaryResult);
       setHasFetched(true);
     });
-  }, [startDate, endDate, staffId]);
+  }, [filters, page, todayStr]);
 
   useEffect(() => { fetchStaff(); }, [fetchStaff]);
   useEffect(() => { fetchSales(); }, [fetchSales]);
 
-  // Metrics
-  const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local
-  const todaySales = allSales.filter((s) => {
-    const d = new Date(s.createdAt);
-    return d.toLocaleDateString("en-CA") === todayStr;
-  });
-  const todayTotal = todaySales.reduce((sum, s) => sum + s.total, 0);
-  const avgTicket =
-    allSales.length > 0
-      ? allSales.reduce((sum, s) => sum + s.total, 0) / allSales.length
-      : 0;
+  const handleExport = useCallback(() => {
+    startExportTransition(async () => {
+      const rows: Sale[] = [];
+      for (let p = 1; p <= EXPORT_MAX_PAGES; p++) {
+        const result = await listSales({ ...filters, page: p, limit: INVENTORY_MAX_LIMIT });
+        if ("error" in result) break;
+        rows.push(...result.sales);
+        if (rows.length >= result.total) break;
+      }
+      if (rows.length > 0) exportToCSV(rows, locale);
+    });
+  }, [filters, locale]);
 
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(allSales.length / PAGE_SIZE));
-  const paginatedSales = allSales.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const fromIndex = allSales.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const toIndex = Math.min(page * PAGE_SIZE, allSales.length);
+  // Metrics
+  const todayTotal = summary?.todayRevenue ?? 0;
+  const avgTicket =
+    summary && summary.count > 0 ? summary.revenue / summary.count : 0;
+
+  // Pagination — the service owns `total`, so the footer and the page agree.
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const fromIndex = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const toIndex = Math.min((page - 1) * PAGE_SIZE + sales.length, total);
   const pageNumbers = buildPageNumbers(page, totalPages);
 
   const formatDate = (iso: string) => {
@@ -206,12 +247,12 @@ export default function HistoryPage() {
           </button>
           <button
             type="button"
-            onClick={() => exportToCSV(allSales, locale)}
-            disabled={allSales.length === 0}
+            onClick={handleExport}
+            disabled={total === 0 || exportPending}
             className="ui-btn-secondary text-xs px-3 gap-1.5"
           >
             <IconExport />
-            {t("export")}
+            {exportPending ? t("exporting") : t("export")}
           </button>
         </div>
       </div>
@@ -225,7 +266,7 @@ export default function HistoryPage() {
               <input
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => changeFilter(() => setStartDate(e.target.value))}
                 className="ui-input"
               />
             </div>
@@ -234,7 +275,7 @@ export default function HistoryPage() {
               <input
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => changeFilter(() => setEndDate(e.target.value))}
                 className="ui-input"
               />
             </div>
@@ -243,7 +284,7 @@ export default function HistoryPage() {
             <label className="ui-label-muted">{t("staffFilter")}</label>
             <select
               value={staffId}
-              onChange={(e) => setStaffId(e.target.value)}
+              onChange={(e) => changeFilter(() => setStaffId(e.target.value))}
               className="ui-input"
             >
               <option value="">{t("allStaff")}</option>
@@ -258,10 +299,16 @@ export default function HistoryPage() {
       {/* Metric cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard label={t("todayTotal")} value={`$${todayTotal.toFixed(2)}`} />
-        <MetricCard label={t("invoicesIssued")} value={String(allSales.length)} />
+        <MetricCard label={t("invoicesIssued")} value={String(total)} />
         <MetricCard label={t("pendingCount")} value="0" />
         <MetricCard label={t("avgTicket")} value={`$${avgTicket.toFixed(2)}`} />
       </div>
+
+      {truncated && (
+        <div className="ui-alert-info">
+          {t("partialStaffHistory", { scanned: total })}
+        </div>
+      )}
 
       {/* Table card */}
       <div className="ui-card overflow-hidden p-0">
@@ -291,14 +338,14 @@ export default function HistoryPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-100/60 dark:divide-brand-700/30">
-                  {paginatedSales.length === 0 ? (
+                  {sales.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-14 text-center text-sm text-zinc-400">
                         {hasFetched ? t("noSales") : t("loading")}
                       </td>
                     </tr>
                   ) : (
-                    paginatedSales.map((sale) => (
+                    sales.map((sale) => (
                       <tr
                         key={sale.id}
                         className="hover:bg-brand-50/40 dark:hover:bg-brand-800/20 transition-colors"
@@ -361,10 +408,10 @@ export default function HistoryPage() {
             </div>
 
             {/* Pagination footer */}
-            {allSales.length > 0 && (
+            {total > 0 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-brand-100 dark:border-brand-700/40 flex-wrap gap-2">
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {t("showing", { from: fromIndex, to: toIndex, total: allSales.length })}
+                  {t("showing", { from: fromIndex, to: toIndex, total })}
                 </p>
                 <div className="flex items-center gap-1">
                   <button

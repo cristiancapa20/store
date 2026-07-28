@@ -67,16 +67,15 @@
     "increaseQty": "Aumentar cantidad de {name}",
     "removeItem": "Eliminar {name} del carrito",
     "saleConfirmedToast": "¡Venta confirmada!",
-    "searchPlaceholder": "Buscar producto por nombre o SKU…",
+    "searchPlaceholder": "Buscar producto por nombre…",
     "noResults": "Sin resultados",
     "scanFailed": "No se pudo consultar el producto: {error}",
-    "catalogTruncated": "Buscando entre los primeros {shown} de {total} productos. Escanea el código de barras para encontrar el resto.",
-    "catalogLoadFailed": "No se pudo cargar el catálogo para la búsqueda: {error}"
+    "searchFailed": "No se pudo buscar productos: {error}"
   },
   "products": {
     "title": "Productos",
     "addedSuccess": "Producto agregado exitosamente.",
-    "searchPlaceholder": "Buscar por nombre o SKU…",
+    "searchPlaceholder": "Buscar por nombre…",
     "refreshLabel": "Actualizar inventario",
     "adjustStock": "Ajustar Stock",
     "noMatch": "Ningún producto coincide con la búsqueda.",
@@ -109,7 +108,7 @@
   },
   "adjust": {
     "title": "Ajuste de Stock",
-    "searchPlaceholder": "O buscar por nombre / SKU…",
+    "searchPlaceholder": "O buscar por nombre…",
     "currentStock": "Stock Actual",
     "adjustment": "Ajuste",
     "decrease": "Disminuir",
@@ -131,7 +130,6 @@
     "productNotFound": "Producto no encontrado",
     "scanFailed": "No se pudo consultar el producto: {error}",
     "searchFailed": "No se pudieron cargar los productos: {error}",
-    "searchTruncated": "Se busca solo entre los primeros {limit} productos. Escanea el código de barras si no aparece.",
     "stockLabel": "Stock:"
   },
   "history": {
@@ -161,7 +159,9 @@
     "consumerFinal": "Consumidor Final",
     "showing": "Mostrando {from}–{to} de {total} resultados",
     "viewSale": "Ver factura",
-    "printInvoice": "Imprimir / Descargar factura"
+    "printInvoice": "Imprimir / Descargar factura",
+    "exporting": "Exportando…",
+    "partialStaffHistory": "El servicio no filtra por empleado, así que el filtro se aplica sobre las ventas más recientes del rango, no sobre todas: coinciden {scanned} entre las revisadas. Acota las fechas para un recuento exacto."
   },
   "barcode": {
     "cameraMode": "Cámara",
@@ -285,7 +285,8 @@
     "stockSufficient": "Suficiente",
     "stockLow": "Stock Bajo",
     "stockOut": "Sin Stock",
-    "partialCatalog": "Mostrando {shown} de {total} productos: el servicio devuelve como máximo una página. Los indicadores y la tabla solo reflejan los productos cargados."
+    "partialCatalog": "Los indicadores y los paneles resumen {shown} de {total} productos: el servicio no expone un agregado de stock y devuelve como máximo una página. La tabla sí pagina completa.",
+    "showingStockFiltered": "{shown} productos de la página {page} cumplen el filtro de stock ({total} en total)"
   },
   "landing": {
     "login": "Iniciar sesión",

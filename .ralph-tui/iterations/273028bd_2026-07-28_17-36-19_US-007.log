@@ -1,0 +1,152 @@
+# Iteration 8 Log
+
+## Metadata
+
+- **Task ID**: US-007
+- **Task Title**: Anadir timeout y conservar el codigo de estado en el cliente HTTP
+- **Description**: Como cajero, quiero que un servicio caido de un error comprensible y rapido, y no una espera indefinida. CONTEXTO: lib/inventoryClient.ts:27 no usa AbortSignal.timeout, asi que un servicio colgado blo...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-28T22:36:19.064Z
+- **Ended At**: 2026-07-28T22:43:40.592Z
+- **Duration**: 7m 21s
+- **Input Tokens**: 266
+- **Output Tokens**: 32581
+- **Total Tokens**: 32847
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the existing code and progress notes.
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/inventoryClient.ts[0m
+[94m[Bash][0m Read progress notes and lib listing $ tail -n 120 .ralph-tui/progress.md && ls lib/
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/types.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/useActionErrorMessage.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/inventoryClient.test.ts[0m
+[94m[Bash][0m Inspect errors i18n namespace $ console.log(JSON.stringify(en.errors,null,2))"
+[94m[Bash][0m Locate inventory service source $ ls /Users/cristian/dev/inventory-service/src/lib/inventory/ 2>/dev/null
+[94m[Bash][0m Inspect service error shapes $ cd /Users/cristian/dev/inventory-service && cat src/lib/inventory/errors.ts && grep -rn "409\|insuff...
+[94m[Bash][0m Read sales route error mapping $ cd /Users/cristian/dev/inventory-service && sed -n 1,100p src/app/v1/sales/route.ts && echo "=== Con...
+[94m[Bash][0m Find UI consumers of error codes $ grep -rn "not_found\|code ===\|useActionErrorMessage" app/ components/ --include=*.tsx --include=*.t...
+[94m[Bash][0m Find UI consumers of error codes $ grep -rn "not_found\|useActionErrorMessage" app components --include='*.tsx' --include='*.ts' | grep...
+[94m[Read][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m
+[94m[Bash][0m Find raw fetch call sites $ grep -rn "fetch(" app lib components --include='*.ts' --include='*.tsx' | grep -v test | grep -v "ap...
+[94m[Read][0m [95m/Users/cristian/dev/store/app/register/actions.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/profile/page.tsx[0m
+Now I'll implement. Starting with the types and the HTTP client:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/types.ts[0m edit: "// `code` lets the UI tell "the product does not e..." → "// `code` lets the UI tell "the product does not e..."
+[94m[Bash][0m Find inventoryClient importers $ grep -rn "from \"@/lib/inventoryClient\"\|from \"./inventoryClient\"\|from \"../inventoryClient\"" a...
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.ts[0m edit: "import "server-only"
+import { auth } from "@/auth"..." → "import "server-only"
+import { auth } from "@/auth"..."
+Now the `apiFetch` rewrite:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.ts[0m edit: "export async function apiFetch<T>(
+  path: string,..." → "// Un TPV no puede quedarse esperando indefinidame..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "  if ("error" in result) return result;
+
+  const s..." → "  if ("error" in result) {
+    // POST /sales solo..."
+Now the client-side message resolution and translations:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/useActionErrorMessage.ts[0m edit: "// Authorization refusals carry a code instead of ..." → "// Server actions have no locale context, so they ..."
+[94m[Bash][0m Show errors block context in message files $ grep -n '"errors"' -A 6 messages/es.json messages/en.json
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/es.json[0m edit: "    "unauthorized": "Tu sesión expiró. Inicia sesi..." → "    "unauthorized": "Tu sesión expiró. Inicia sesi..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/en.json[0m edit: "    "unauthorized": "Your session expired. Sign in..." → "    "unauthorized": "Your session expired. Sign in..."
+Now the two remaining raw fetch call sites (profile page, registration provisioning):
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/profile/page.tsx[0m edit: "import { getInventoryConfig } from "@/lib/inventor..." → "import { apiFetch, getInventoryConfig } from "@/li..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/profile/page.tsx[0m edit: "    // Dentro del try: sin credencial de la organi..." → "    // Dentro del try: sin credencial de la organi..."
+[94m[Read][0m [95m/Users/cristian/dev/store/app/register/actions.ts[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/register/actions.ts[0m edit: "import db from "@/lib/db"" → "import db from "@/lib/db"
+import { resolveInventor..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/register/actions.ts[0m edit: "  if (inventoryConfigured) {
+    try {
+      // 1...." → "  if (inventoryConfigured) {
+    try {
+      // El..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/register/actions.ts[0m edit: "            body: JSON.stringify({ name: `${storeN..." → "            body: JSON.stringify({ name: `${storeN..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/register/actions.ts[0m edit: "            body: JSON.stringify({ name: `${storeN..." → "            body: JSON.stringify({ name: `${storeN..."
+Now documenting the new env var and running the gates:
+[94m[Bash][0m Check env docs $ cat .env.example && grep -n "INVENTORY_API_URL" README.md CLAUDE.md
+[94m[Edit][0m [95m/Users/cristian/dev/store/.env.example[0m edit: "INVENTORY_ADMIN_SECRET=
+" → "INVENTORY_ADMIN_SECRET=
+
+# Opcional. Milisegundos ..."
+[94m[Bash][0m Read env doc sections $ sed -n 160,178p README.md
+
+[91m[Error: Exit code 1
+## Environment Variables
+
+Required in `.env.local` — see `.env.example` for the canonical list:
+
+```
+INVENTORY_API_URL       # Must include /v1 suffix: http://localhost:3001/v1
+INVENTORY_ADMIN_SECRET  # Admin token — only used to provision a new store on register
+AUTH_SECRET             # NextAuth v5 session secret
+STORE_NAME              # Shown on PDF invoices
+TAX_RATE                # Decimal (e.g. 0.10 for 10%)
+SUPER_ADMIN_EMAIL       # Used by npm run seed
+SUPER_ADMIN_PASSWORD    # Used by npm run seed
+```
+
+**`INVENTORY_API_KEY` and `INVENTORY_LOCATION_ID` were removed.** They were a
+single global tenant credential: any request that could not resolve an
+organization fell back to them and read or wrote *that* store's inventory. Since
+store registration stores a per-tenant key in `organizations`, and non-production
+registration tolerates a failed provisioning (leaving the key `NULL`), every dev
+signup used to end up reading the env store's inventory. `getInventoryConfig()`
+now resolves the credential from the session's `organizationId` only, and throws
+(eval):1: === not found][0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/CLAUDE.md[0m edit: "SUPER_ADMIN_PASSWORD    # Used by npm run seed
+```" → "SUPER_ADMIN_PASSWORD    # Used by npm run seed
+```..."
+[94m[Bash][0m Locate README env table rows $ grep -n "INVENTORY_ADMIN_SECRET" README.md
+[94m[Edit][0m [95m/Users/cristian/dev/store/README.md[0m edit: "| `INVENTORY_ADMIN_SECRET` | Admin token used to p..." → "| `INVENTORY_ADMIN_SECRET` | Admin token used to p..."
+Now tests for the new client behaviour:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.test.ts[0m edit: "import { apiFetch, getInventoryConfig } from "./in..." → "import {
+  apiFetch,
+  getInventoryConfig,
+  resol..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.test.ts[0m edit: "  process.env.INVENTORY_API_KEY = "inv_live_env_fa..." → "  process.env.INVENTORY_API_KEY = "inv_live_env_fa..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.test.ts[0m edit: "    expect(headersOf(fetchMock)).toEqual({
+      "..." → "    expect(headersOf(fetchMock)).toEqual({
+      "..."
+[94m[Bash][0m Run inventoryClient tests $ npx vitest run lib/inventoryClient.test.ts 2>&1 | tail -40
+[94m[Bash][0m Inspect actions test setup $ sed -n 1,60p lib/actions.test.ts && grep -n "createSale" lib/actions.test.ts | head -30
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "  it("propagates an API error", async () => {
+    ..." → "  it("propagates an API error", async () => {
+    ..."
+[94m[Read][0m [95m/Users/cristian/dev/store/app/sell/page.test.tsx[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.test.tsx[0m edit: "  it("gives each ticket tab its own key", async ()..." → "  it("shows the translated message for a 409, not ..."
+[94m[Bash][0m Run full test suite $ npm test 2>&1 | tail -35
+[94m[Bash][0m Mutation-check the new UI test $ cp /tmp/hook.bak lib/useActionErrorMessage.ts
+[94m[Bash][0m Typecheck, lint, i18n parity $ console.log('missing:',[...a].filter(k=>!b.has(k)),[...b].filter(k=>!a.has(k)))"
+[94m[Bash][0m Production build $ git status --short
+One refinement — a malformed 200 body shouldn't be reported as a network failure:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.ts[0m edit: "    if (!res.ok) return errorFromResponse(res)
+   ..." → "    if (!res.ok) return errorFromResponse(res)
+   ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.test.ts[0m edit: "  it("marks a network failure with a code and no s..." → "  it("does not call a malformed 200 body a network..."
+[94m[Bash][0m Re-run gates $ npm test 2>&1 | tail -8 && npm run typecheck 2>&1 | tail -3 && npm run lint 2>&1 | tail -3
+Now the progress log:
+[94m[Bash][0m Append progress entry $ con un `mockRejectedValue` la prueba pasaría aunque no se pasara ningún signal. - Un `AbortSignal` p...
+[94m[Bash][0m Inspect top of progress.md $ head -6 .ralph-tui/progress.md
+[94m[Read][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "- **Errores de acción con código**: `ActionError` ..." → "- **Errores de acción con código y status**: `Acti..."
+US-007 is implemented and all gates pass.
+
+**What changed**
+
+- `lib/inventoryClient.ts` — `apiFetch` now accepts `InventoryRequestInit = RequestInit & { timeoutMs? }` and builds `AbortSignal.timeout(resolveInventoryTimeoutMs(timeoutMs))`, combining it with a caller-supplied signal via `AbortSignal.any`. The timeout resolves override → `INVENTORY_TIMEOUT_MS` → 8000 ms default, rejecting non-finite or `<= 0` values (an unparsable env var resolving to `0` would abort every request instantly). Error responses now carry `status` plus a code: 401/403 → `service_auth`, 404 → `not_found`, 409 → `insufficient_stock`/`conflict`, 422 → `invalid_request`, 5xx → `service_error`; transport failures get `timeout`/`network` **without** a status, which is the signal that nobody answered. A malformed 200 body keeps its status as `service_error` rather than being miscounted as a network failure.
+- The module dropped its private `ActionError`/`ActionResult` copies (they lacked `code`, which is why classification was invisible to the UI) and imports them from `lib/types.ts`.
+- `createSale` forces `insufficient_stock` on any 409 — `POST /v1/sales` only returns 409 for stock (`inventory-service/src/app/v1/sales/route.ts:71`), so the code doesn't depend on the service's wording.
+- `useActionErrorMessage` now translates any code, so the service's `Insufficient stock for product <uuid>` never reaches the screen. Eight new keys in both `messages/es.json` and `messages/en.json`.
+- The other two raw-`fetch` sites are bounded too: `app/profile/page.tsx` goes through `apiFetch`, and the three provisioning calls in `app/register/actions.ts` get their own timeout signal.
+- Docs: `INVENTORY_TIMEOUT_MS` in `.env.example`, `README.md`, `CLAUDE.md`.
+
+**Validation** — `npm run typecheck`, `npm run lint`, `npm test` (139 tests, 12 files) and `npm run build` all green; es/en key parity verified. The timeout test drives a real `AbortSignal.timeout` against a fetch stub that only rejects on abort, and the UI test was mutation-checked (reverting the hook to `result.error` makes it fail). Not verified against a running inventory service — the status mapping was read from `inventory-service/src/app/v1/**` and `src/lib/inventory/errors.ts`. No commits made.
+
+<promise>COMPLETE</promise>

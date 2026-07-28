@@ -67,16 +67,15 @@
     "increaseQty": "Increase quantity of {name}",
     "removeItem": "Remove {name} from cart",
     "saleConfirmedToast": "Sale confirmed!",
-    "searchPlaceholder": "Search product by name or SKU…",
+    "searchPlaceholder": "Search product by name…",
     "noResults": "No results",
     "scanFailed": "Could not look up the product: {error}",
-    "catalogTruncated": "Searching the first {shown} of {total} products. Scan the barcode to find the rest.",
-    "catalogLoadFailed": "Could not load the catalog for search: {error}"
+    "searchFailed": "Product search failed: {error}"
   },
   "products": {
     "title": "Products",
     "addedSuccess": "Product added successfully.",
-    "searchPlaceholder": "Search by name or SKU…",
+    "searchPlaceholder": "Search by name…",
     "refreshLabel": "Refresh inventory",
     "adjustStock": "Adjust Stock",
     "noMatch": "No products match your search.",
@@ -109,7 +108,7 @@
   },
   "adjust": {
     "title": "Stock Adjustment",
-    "searchPlaceholder": "Or search by name / SKU…",
+    "searchPlaceholder": "Or search by name…",
     "currentStock": "Current Stock",
     "adjustment": "Adjustment",
     "decrease": "Decrease",
@@ -131,7 +130,6 @@
     "productNotFound": "Product not found",
     "scanFailed": "Could not look up the product: {error}",
     "searchFailed": "Could not load products: {error}",
-    "searchTruncated": "Only the first {limit} products are searched. Scan the barcode if the product is missing.",
     "stockLabel": "Stock:"
   },
   "history": {
@@ -161,7 +159,9 @@
     "consumerFinal": "Final Consumer",
     "showing": "Showing {from}–{to} of {total} results",
     "viewSale": "View invoice",
-    "printInvoice": "Print / Download invoice"
+    "printInvoice": "Print / Download invoice",
+    "exporting": "Exporting…",
+    "partialStaffHistory": "The service cannot filter by staff, so the filter runs over the most recent sales in the range rather than all of them: {scanned} match among those scanned. Narrow the dates for an exact count."
   },
   "barcode": {
     "cameraMode": "Camera",
@@ -285,7 +285,8 @@
     "stockSufficient": "Sufficient",
     "stockLow": "Low Stock",
     "stockOut": "Out of Stock",
-    "partialCatalog": "Showing {shown} of {total} products: the service returns one page at most. The KPIs and the table only reflect the products loaded."
+    "partialCatalog": "The KPIs and summary panels cover {shown} of {total} products: the service has no stock aggregate and returns one page at most. The table itself pages through everything.",
+    "showingStockFiltered": "{shown} products on page {page} match the stock filter ({total} in total)"
   },
   "landing": {
     "login": "Sign in",

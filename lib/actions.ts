@@ -4,7 +4,7 @@ import { requireAdmin, requireSession } from "./authz";
 import db from "./db";
 import { parseDecimal, type ApiDecimal } from "./decimal";
 import { apiFetch, getInventoryConfig } from "./inventoryClient";
-import { clampInventoryLimit } from "./pagination";
+import { clampInventoryLimit, INVENTORY_MAX_LIMIT } from "./pagination";
 import type {
   ActionResult,
   CartItem,
@@ -13,6 +13,8 @@ import type {
   Product,
   Sale,
   SaleFilters,
+  SalesPage,
+  SalesSummary,
 } from "./types";
 
 export async function listStaff(): Promise<
@@ -162,7 +164,8 @@ export async function createSale(
 
 export async function listInventory(
   page = 1,
-  limit = 50
+  limit = 50,
+  search?: string
 ): Promise<ActionResult<InventoryPage>> {
   const gate = await requireSession();
   if ("error" in gate) return gate;
@@ -175,8 +178,19 @@ export async function listInventory(
   };
 
   const { locationId } = await getInventoryConfig();
+
+  const params = new URLSearchParams({
+    page: String(Math.max(1, Math.trunc(page))),
+    limit: String(clampInventoryLimit(limit)),
+  });
+  // `name` matches partially and case-insensitively on the service side, so the
+  // catalog no longer has to be downloaded to be searched. `barcode` is an exact
+  // match there, which is what the scanner path (`scanBarcode`) already covers.
+  const name = search?.trim();
+  if (name) params.set("name", name);
+
   const result = await apiFetch<ApiResponse>(
-    `/locations/${locationId}/inventory?page=${page}&limit=${clampInventoryLimit(limit)}`
+    `/locations/${locationId}/inventory?${params.toString()}`
   );
   if ("error" in result) return result;
 
@@ -291,51 +305,64 @@ export async function adjustStock(
   return { stock: result.newStock };
 }
 
-export async function listSales(
-  filters: SaleFilters = {}
-): Promise<ActionResult<{ sales: Sale[]; total: number }>> {
-  const gate = await requireSession();
-  if ("error" in gate) return gate;
+type ApiSale = {
+  id: string;
+  locationId: string;
+  staffId: string | null;
+  createdAt: string;
+  total: ApiDecimal;
+  items: Array<{
+    productId: string | null;
+    productName: string | null;
+    quantity: number;
+    unitPrice: ApiDecimal;
+    lineTotal: ApiDecimal;
+  }>;
+};
 
-  type ApiSale = {
-    id: string;
-    locationId: string;
-    staffId: string | null;
-    createdAt: string;
-    total: ApiDecimal;
-    items: Array<{
-      productId: string | null;
-      productName: string | null;
-      quantity: number;
-      unitPrice: ApiDecimal;
-      lineTotal: ApiDecimal;
-    }>;
-  };
-  type ApiResponse = {
-    data: ApiSale[];
-    total: number;
-    page: number;
-    limit: number;
-  };
+type ApiSalesResponse = {
+  data: ApiSale[];
+  total: number;
+  page: number;
+  limit: number;
+};
 
+type ApiSalesReport = { totalCount: number; totalRevenue: ApiDecimal };
+
+const DEFAULT_SALES_LIMIT = 20;
+
+// `GET /v1/sales` only accepts startDate, endDate, page and limit: its zod schema
+// drops any other key without complaining, so an actor filter cannot be pushed
+// down. Filtering *after* paginating is what made page 1 show three rows out of a
+// reported forty, so the staff-filtered path walks the range and filters before
+// slicing. The walk is bounded and the caller is told when it hit the ceiling.
+const SALES_SCAN_MAX_PAGES = 10;
+
+function salesQuery(filters: SaleFilters, page: number, limit: number): string {
   const params = new URLSearchParams();
   if (filters.startDate) params.set("startDate", filters.startDate);
   if (filters.endDate) params.set("endDate", `${filters.endDate}T23:59:59Z`);
-  if (filters.page != null) params.set("page", String(filters.page));
-  if (filters.limit != null) params.set("limit", String(filters.limit));
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+  return params.toString();
+}
 
-  const result = await apiFetch<ApiResponse>(`/sales?${params.toString()}`);
-  if ("error" in result) return result;
+// `users` is multi-tenant: a SELECT without the organization exposes every
+// store's staff, plus the superadmin, who belongs to none.
+function staffNames(organizationId: string | null | undefined): Map<string, string> {
+  if (!organizationId) return new Map();
+  try {
+    const rows = db
+      .prepare("SELECT id, name FROM users WHERE organization_id = ?")
+      .all(organizationId) as { id: string; name: string }[];
+    return new Map(rows.map((u) => [u.id, u.name]));
+  } catch {
+    return new Map();
+  }
+}
 
-  const staffMap = new Map(
-    (
-      db
-        .prepare("SELECT id, name FROM users")
-        .all() as { id: string; name: string }[]
-    ).map((u) => [u.id, u.name])
-  );
-
-  let sales: Sale[] = result.data.map((s) => ({
+function toSale(s: ApiSale, staffMap: Map<string, string>): Sale {
+  return {
     id: s.id,
     createdAt: s.createdAt,
     staffId: s.staffId ?? "",
@@ -349,11 +376,142 @@ export async function listSales(
     })),
     subtotal: s.items.reduce((sum, i) => sum + parseDecimal(i.lineTotal), 0),
     total: parseDecimal(s.total),
-  }));
+  };
+}
 
-  if (filters.staffId) {
-    sales = sales.filter((s) => s.staffId === filters.staffId);
+async function scanSalesByStaff(
+  filters: SaleFilters,
+  staffId: string
+): Promise<ActionResult<{ rows: ApiSale[]; truncated: boolean }>> {
+  const first = await apiFetch<ApiSalesResponse>(
+    `/sales?${salesQuery(filters, 1, INVENTORY_MAX_LIMIT)}`
+  );
+  if ("error" in first) return first;
+
+  const pages = Math.ceil(first.total / INVENTORY_MAX_LIMIT);
+  const scanned = Math.min(pages, SALES_SCAN_MAX_PAGES);
+
+  const rows = [...first.data];
+  const rest = await Promise.all(
+    Array.from({ length: Math.max(0, scanned - 1) }, (_, i) =>
+      apiFetch<ApiSalesResponse>(
+        `/sales?${salesQuery(filters, i + 2, INVENTORY_MAX_LIMIT)}`
+      )
+    )
+  );
+  for (const result of rest) {
+    if ("error" in result) return result;
+    rows.push(...result.data);
   }
 
-  return { sales, total: result.total };
+  return {
+    rows: rows.filter((s) => (s.staffId ?? "") === staffId),
+    truncated: pages > scanned,
+  };
+}
+
+export async function listSales(
+  filters: SaleFilters = {}
+): Promise<ActionResult<SalesPage>> {
+  const gate = await requireSession();
+  if ("error" in gate) return gate;
+
+  const page = Math.max(1, Math.trunc(filters.page ?? 1));
+  const limit = clampInventoryLimit(filters.limit ?? DEFAULT_SALES_LIMIT);
+
+  if (filters.staffId) {
+    const scan = await scanSalesByStaff(filters, filters.staffId);
+    if ("error" in scan) return scan;
+
+    const staffMap = staffNames(gate.user.organizationId);
+    const from = (page - 1) * limit;
+    return {
+      sales: scan.rows.slice(from, from + limit).map((s) => toSale(s, staffMap)),
+      total: scan.rows.length,
+      page,
+      limit,
+      truncated: scan.truncated,
+    };
+  }
+
+  const result = await apiFetch<ApiSalesResponse>(
+    `/sales?${salesQuery(filters, page, limit)}`
+  );
+  if ("error" in result) return result;
+
+  const staffMap = staffNames(gate.user.organizationId);
+  return {
+    sales: result.data.map((s) => toSale(s, staffMap)),
+    total: result.total,
+    page,
+    limit,
+    truncated: false,
+  };
+}
+
+// `today` is the caller's *local* calendar day (YYYY-MM-DD): the server has no
+// way to know the till's timezone, and the day boundary is what the cashier sees.
+export async function getSalesSummary(
+  filters: SaleFilters = {},
+  today?: string
+): Promise<ActionResult<SalesSummary>> {
+  const gate = await requireSession();
+  if ("error" in gate) return gate;
+
+  if (filters.staffId) {
+    const scan = await scanSalesByStaff(filters, filters.staffId);
+    if ("error" in scan) return scan;
+
+    const revenue = scan.rows.reduce((sum, s) => sum + parseDecimal(s.total), 0);
+    const todayRevenue = today
+      ? scan.rows
+          .filter((s) => s.createdAt.slice(0, 10) === today)
+          .reduce((sum, s) => sum + parseDecimal(s.total), 0)
+      : 0;
+
+    return {
+      count: scan.rows.length,
+      revenue,
+      todayRevenue,
+      truncated: scan.truncated,
+    };
+  }
+
+  // `/reports/sales` aggregates in the database, so the metrics stop depending on
+  // how many sales a page happened to carry. It counts completed sales only,
+  // while `/sales` also lists voided ones; this app never voids, so the two
+  // agree, and where they would not the report is the one answering "how much did
+  // this store actually take".
+  const { locationId } = await getInventoryConfig();
+  const reportQuery = (from?: string, to?: string) => {
+    const params = new URLSearchParams({ locationId });
+    if (from) params.set("from", from);
+    if (to) params.set("to", `${to}T23:59:59Z`);
+    return params.toString();
+  };
+
+  // Every metric describes the *filtered* set, so a range that leaves today out
+  // leaves today's total at zero — same as the staff-filtered branch above, which
+  // can only see what the range brought back.
+  const todayInRange =
+    !!today &&
+    (!filters.startDate || filters.startDate <= today) &&
+    (!filters.endDate || filters.endDate >= today);
+
+  const [range, todayReport] = await Promise.all([
+    apiFetch<ApiSalesReport>(`/reports/sales?${reportQuery(filters.startDate, filters.endDate)}`),
+    todayInRange
+      ? apiFetch<ApiSalesReport>(`/reports/sales?${reportQuery(today, today)}`)
+      : Promise.resolve(null),
+  ]);
+
+  if ("error" in range) return range;
+  if (todayReport && "error" in todayReport) return todayReport;
+
+  return {
+    count: range.totalCount,
+    revenue: parseDecimal(range.totalRevenue),
+    todayRevenue: todayReport ? parseDecimal(todayReport.totalRevenue) : 0,
+    truncated: false,
+  };
 }

@@ -19,6 +19,7 @@ import {
   addProduct,
   adjustStock,
   listSales,
+  getSalesSummary,
   listStaff,
   getInvoicePreviewInfo,
 } from "./actions";
@@ -382,6 +383,26 @@ describe("listInventory", () => {
     );
   });
 
+  it("delegates the search term to the service's name filter", async () => {
+    mockApiFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 8 });
+
+    await listInventory(1, 8, "  agu  ");
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/locations/loc-1/inventory?page=1&limit=8&name=agu"
+    );
+  });
+
+  it("omits the name filter for a blank search term", async () => {
+    mockApiFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 8 });
+
+    await listInventory(1, 8, "   ");
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/locations/loc-1/inventory?page=1&limit=8"
+    );
+  });
+
   it("propagates an API error", async () => {
     mockApiFetch.mockResolvedValue({ error: "Network error" });
 
@@ -537,20 +558,63 @@ describe("adjustStock", () => {
   });
 });
 
+function apiSale(id: string, staffId: string | null, total = "10.00") {
+  return {
+    id,
+    locationId: "loc-1",
+    staffId,
+    createdAt: "2026-07-28T12:00:00Z",
+    total,
+    items: [],
+  };
+}
+
 describe("listSales", () => {
   beforeEach(() => {
     const all = vi.fn().mockReturnValue([{ id: "u1", name: "Ana" }]);
     mockPrepare.mockReturnValue({ all } as never);
   });
 
-  it("builds query params and appends end-of-day time to endDate", async () => {
-    mockApiFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 50 });
+  it("sends an explicit page and limit and appends end-of-day time to endDate", async () => {
+    mockApiFetch.mockResolvedValue({ data: [], total: 0, page: 3, limit: 10 });
 
-    await listSales({ startDate: "2026-01-01", endDate: "2026-01-31", page: 1, limit: 50 });
+    await listSales({ startDate: "2026-01-01", endDate: "2026-01-31", page: 3, limit: 10 });
 
     expect(mockApiFetch).toHaveBeenCalledWith(
-      "/sales?startDate=2026-01-01&endDate=2026-01-31T23%3A59%3A59Z&page=1&limit=50"
+      "/sales?startDate=2026-01-01&endDate=2026-01-31T23%3A59%3A59Z&page=3&limit=10"
     );
+  });
+
+  it("never leaves the page size to the service's default of 20", async () => {
+    mockApiFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 });
+
+    await listSales();
+
+    expect(mockApiFetch).toHaveBeenCalledWith("/sales?page=1&limit=20");
+  });
+
+  it("clamps a limit above the service maximum instead of triggering a 422", async () => {
+    mockApiFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 100 });
+
+    await listSales({ limit: 500 });
+
+    expect(mockApiFetch).toHaveBeenCalledWith("/sales?page=1&limit=100");
+  });
+
+  it("reports the service total, not the number of rows on the page", async () => {
+    mockApiFetch.mockResolvedValue({
+      data: [apiSale("s1", "u1")],
+      total: 137,
+      page: 1,
+      limit: 10,
+    });
+
+    const result = await listSales({ page: 1, limit: 10 });
+    if ("error" in result) throw new Error("expected success");
+
+    expect(result.sales).toHaveLength(1);
+    expect(result.total).toBe(137);
+    expect(result.truncated).toBe(false);
   });
 
   it("propagates an API error", async () => {
@@ -561,69 +625,85 @@ describe("listSales", () => {
     expect(result).toEqual({ error: "Network error" });
   });
 
-  it("joins staffId with local users, falling back to the id then 'Unknown'", async () => {
+  it("joins staffId with the users of the session organization only", async () => {
+    const all = vi.fn().mockReturnValue([{ id: "u1", name: "Ana" }]);
+    mockPrepare.mockReturnValue({ all } as never);
     mockApiFetch.mockResolvedValue({
-      data: [
-        { id: "s1", locationId: "loc-1", staffId: "u1", createdAt: "t", total: 5, items: [] },
-        { id: "s2", locationId: "loc-1", staffId: "ghost", createdAt: "t", total: 5, items: [] },
-        { id: "s3", locationId: "loc-1", staffId: null, createdAt: "t", total: 5, items: [] },
-      ],
+      data: [apiSale("s1", "u1"), apiSale("s2", "ghost"), apiSale("s3", null)],
       total: 3,
       page: 1,
-      limit: 50,
+      limit: 20,
     });
 
     const result = await listSales();
     if ("error" in result) throw new Error("expected success");
 
     expect(result.sales.map((s) => s.staffName)).toEqual(["Ana", "ghost", "Unknown"]);
+    expect(mockPrepare).toHaveBeenCalledWith(
+      "SELECT id, name FROM users WHERE organization_id = ?"
+    );
+    expect(all).toHaveBeenCalledWith("org-1");
   });
 
-  it("computes subtotal from line items and filters by staffId client-side", async () => {
+  // Antes el filtro se aplicaba DESPUES de paginar: la pagina 1 mostraba las
+  // ventas del empleado que hubiera entre las 20 primeras del rango y `total`
+  // seguia siendo el recuento sin filtrar.
+  it("filters by staff before slicing the page, so the page is full and the total is the filtered count", async () => {
     mockApiFetch.mockResolvedValue({
       data: [
-        {
-          id: "s1",
-          locationId: "loc-1",
-          staffId: "u1",
-          createdAt: "t",
-          total: "20.00",
-          items: [
-            {
-              productId: "p1",
-              productName: "Agua",
-              quantity: 2,
-              unitPrice: "5.00",
-              lineTotal: "10.00",
-            },
-            {
-              productId: "p2",
-              productName: "Pan",
-              quantity: 2,
-              unitPrice: "5.00",
-              lineTotal: "10.00",
-            },
-          ],
-        },
-        {
-          id: "s2",
-          locationId: "loc-1",
-          staffId: "other",
-          createdAt: "t",
-          total: "5.00",
-          items: [],
-        },
+        apiSale("s1", "u1", "20.00"),
+        apiSale("s2", "other"),
+        apiSale("s3", "u1", "30.00"),
+        apiSale("s4", "other"),
+        apiSale("s5", "u1", "40.00"),
       ],
-      total: 2,
+      total: 5,
       page: 1,
-      limit: 50,
+      limit: 100,
+    });
+
+    const first = await listSales({ staffId: "u1", page: 1, limit: 2 });
+    if ("error" in first) throw new Error("expected success");
+    expect(first.sales.map((s) => s.id)).toEqual(["s1", "s3"]);
+    expect(first.total).toBe(3);
+
+    const second = await listSales({ staffId: "u1", page: 2, limit: 2 });
+    if ("error" in second) throw new Error("expected success");
+    expect(second.sales.map((s) => s.id)).toEqual(["s5"]);
+    expect(second.total).toBe(3);
+  });
+
+  it("walks every page of the range when filtering by staff", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      const page = Number(new URL(path, "http://x").searchParams.get("page"));
+      return {
+        data: [apiSale(`s${page}`, page === 2 ? "u1" : "other")],
+        total: 150,
+        page,
+        limit: 100,
+      };
     });
 
     const result = await listSales({ staffId: "u1" });
     if ("error" in result) throw new Error("expected success");
 
-    expect(result.sales).toHaveLength(1);
-    expect(result.sales[0].subtotal).toBe(20);
+    expect(mockApiFetch).toHaveBeenCalledWith("/sales?page=1&limit=100");
+    expect(mockApiFetch).toHaveBeenCalledWith("/sales?page=2&limit=100");
+    expect(result.sales.map((s) => s.id)).toEqual(["s2"]);
+    expect(result.truncated).toBe(false);
+  });
+
+  it("flags the result as truncated when the range outgrows the scan ceiling", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      const page = Number(new URL(path, "http://x").searchParams.get("page"));
+      return { data: [apiSale(`s${page}`, "u1")], total: 5000, page, limit: 100 };
+    });
+
+    const result = await listSales({ staffId: "u1" });
+    if ("error" in result) throw new Error("expected success");
+
+    expect(mockApiFetch).toHaveBeenCalledTimes(10);
+    expect(result.truncated).toBe(true);
   });
 
   it("converts the decimal strings of total, unitPrice and lineTotal to numbers", async () => {
@@ -662,6 +742,89 @@ describe("listSales", () => {
   });
 });
 
+describe("getSalesSummary", () => {
+  beforeEach(() => {
+    const all = vi.fn().mockReturnValue([{ id: "u1", name: "Ana" }]);
+    mockPrepare.mockReturnValue({ all } as never);
+  });
+
+  // El servicio agrega en la base de datos: las metricas dejan de depender de
+  // cuantas ventas cupieran en la pagina que la tabla acabara de pedir.
+  it("aggregates the whole filtered range and the caller's local day separately", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path.includes("from=2026-07-28")) {
+        return { totalCount: 4, totalRevenue: "125.00" };
+      }
+      return { totalCount: 120, totalRevenue: "9000.00" };
+    });
+
+    const result = await getSalesSummary(
+      { startDate: "2026-07-01", endDate: "2026-07-31" },
+      "2026-07-28"
+    );
+    if ("error" in result) throw new Error("expected success");
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/reports/sales?locationId=loc-1&from=2026-07-01&to=2026-07-31T23%3A59%3A59Z"
+    );
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/reports/sales?locationId=loc-1&from=2026-07-28&to=2026-07-28T23%3A59%3A59Z"
+    );
+    expect(result).toEqual({
+      count: 120,
+      revenue: 9000,
+      todayRevenue: 125,
+      truncated: false,
+    });
+  });
+
+  it("leaves today's total at zero when the filtered range excludes today", async () => {
+    mockApiFetch.mockResolvedValue({ totalCount: 3, totalRevenue: "60.00" });
+
+    const result = await getSalesSummary(
+      { startDate: "2026-01-01", endDate: "2026-01-31" },
+      "2026-07-28"
+    );
+    if ("error" in result) throw new Error("expected success");
+
+    expect(mockApiFetch).toHaveBeenCalledTimes(1);
+    expect(result.todayRevenue).toBe(0);
+  });
+
+  it("propagates a report error", async () => {
+    mockApiFetch.mockResolvedValue({ error: "Service unavailable" });
+
+    const result = await getSalesSummary({}, "2026-07-28");
+
+    expect(result).toEqual({ error: "Service unavailable" });
+  });
+
+  it("aggregates the scanned rows when a staff filter is set", async () => {
+    mockApiFetch.mockResolvedValue({
+      data: [
+        apiSale("s1", "u1", "20.00"),
+        apiSale("s2", "other", "500.00"),
+        apiSale("s3", "u1", "30.00"),
+      ],
+      total: 3,
+      page: 1,
+      limit: 100,
+    });
+
+    const result = await getSalesSummary({ staffId: "u1" }, "2026-07-28");
+
+    expect(mockApiFetch).not.toHaveBeenCalledWith(
+      expect.stringContaining("/reports/sales")
+    );
+    expect(result).toEqual({
+      count: 2,
+      revenue: 50,
+      todayRevenue: 50,
+      truncated: false,
+    });
+  });
+});
+
 // Server actions are dispatched by Next-Action id over POST to any route, so
 // the middleware never gates them: each action has to check the caller itself.
 describe("authorization", () => {
@@ -675,6 +838,7 @@ describe("authorization", () => {
       addProduct({ name: "Leche", sku: "222", price: 2.5, initialStock: 0 }),
     adjustStock: () => adjustStock("p1", 1),
     listSales: () => listSales(),
+    getSalesSummary: () => getSalesSummary(),
     listStaff: () => listStaff(),
     getInvoicePreviewInfo: () => getInvoicePreviewInfo(),
   };

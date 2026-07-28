@@ -4,11 +4,12 @@ import { useState, useCallback, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import BarcodeInput from "@/components/BarcodeInput";
 import { scanBarcode, listInventory, adjustStock } from "@/lib/actions";
-import { INVENTORY_MAX_LIMIT } from "@/lib/pagination";
 import { useActionErrorMessage } from "@/lib/useActionErrorMessage";
 import type { Product } from "@/lib/types";
 
 type Reason = "Restock" | "Shrinkage" | "Correction" | "Other";
+
+const SEARCH_RESULT_LIMIT = 10;
 
 export default function AdjustPage() {
   const t = useTranslations("adjust");
@@ -20,7 +21,6 @@ export default function AdjustPage() {
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [scanError, setScanError] = useState<string | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [searchTruncated, setSearchTruncated] = useState(false);
   const [adjustError, setAdjustError] = useState<string | null>(null);
   const [newStock, setNewStock] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -33,7 +33,6 @@ export default function AdjustPage() {
     setSearchQuery("");
     setSearchResults([]);
     setSearchError(null);
-    setSearchTruncated(false);
     setScanError(null);
     setAdjustError(null);
     setNewStock(null);
@@ -62,32 +61,24 @@ export default function AdjustPage() {
     [selectProduct, t, actionErrorMessage]
   );
 
-  // Only the first page of the catalog is searched locally; the service caps a
-  // page at INVENTORY_MAX_LIMIT. Server-side search lands with US-010.
+  // The term goes to the service's `name` filter instead of downloading a page
+  // of the catalog to sift through it here.
   const handleSearchChange = useCallback(async (query: string) => {
     setSearchQuery(query);
-    if (query.length < 2) {
+    const term = query.trim();
+    if (term.length < 2) {
       setSearchResults([]);
       setSearchError(null);
-      setSearchTruncated(false);
       return;
     }
-    const result = await listInventory(1, INVENTORY_MAX_LIMIT);
+    const result = await listInventory(1, SEARCH_RESULT_LIMIT, term);
     if ("error" in result) {
       setSearchError(actionErrorMessage(result));
       setSearchResults([]);
-      setSearchTruncated(false);
       return;
     }
-    const q = query.toLowerCase();
-    const filtered = result.products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.sku.toLowerCase().includes(q)
-    );
     setSearchError(null);
-    setSearchTruncated(result.total > result.products.length);
-    setSearchResults(filtered.slice(0, 10));
+    setSearchResults(result.products);
   }, [actionErrorMessage]);
 
   const handleApply = useCallback(() => {
@@ -122,7 +113,6 @@ export default function AdjustPage() {
     setSearchQuery("");
     setSearchResults([]);
     setSearchError(null);
-    setSearchTruncated(false);
   }, []);
 
   return (
@@ -157,15 +147,11 @@ export default function AdjustPage() {
             className="ui-search-field"
           />
         </div>
-        {searchError ? (
+        {searchError && (
           <p className="mt-2 text-xs text-red-600 dark:text-red-400">
             {t("searchFailed", { error: searchError })}
           </p>
-        ) : searchTruncated ? (
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-            {t("searchTruncated", { limit: INVENTORY_MAX_LIMIT })}
-          </p>
-        ) : null}
+        )}
         {searchResults.length > 0 && (
           <div className="absolute left-0 right-0 top-full mt-2 bg-surface dark:bg-brand-900 rounded-2xl shadow-[0_16px_40px_rgba(3,15,34,0.14)] z-10 overflow-hidden">
             {searchResults.map((p) => (

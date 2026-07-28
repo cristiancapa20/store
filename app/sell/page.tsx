@@ -5,9 +5,13 @@ import { useTranslations } from "next-intl";
 import BarcodeInput from "@/components/BarcodeInput";
 import { scanBarcode, createSale, listInventory, getInvoicePreviewInfo } from "@/lib/actions";
 import { newIdempotencyKey } from "@/lib/idempotency";
-import { INVENTORY_MAX_LIMIT } from "@/lib/pagination";
 import { useActionErrorMessage } from "@/lib/useActionErrorMessage";
 import type { CartItem, Product } from "@/lib/types";
+
+const SEARCH_RESULT_LIMIT = 8;
+// The service answers every keystroke; the delay keeps a fast typist from firing
+// one request per character.
+const SEARCH_DEBOUNCE_MS = 250;
 
 type InvoiceInfo = {
   storeName: string;
@@ -67,38 +71,52 @@ export default function SellPage() {
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [catalogTotal, setCatalogTotal] = useState(0);
-  const [catalogError, setCatalogError] = useState<string | null>(null);
-  const [searchLoaded, setSearchLoaded] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [scanPending, startScan] = useTransition();
   const [confirmPending, startConfirm] = useTransition();
-  const [searchPending, startSearchLoad] = useTransition();
+  const [searchPending, setSearchPending] = useState(false);
   const [, startInvoiceInfoLoad] = useTransition();
 
   const isPending = scanPending || confirmPending;
 
-  // Load the first page of products for local search. The service caps a page at
-  // INVENTORY_MAX_LIMIT, so a larger catalog is only partially searchable here
-  // until search is delegated to the service (US-010).
+  // The whole catalog used to be downloaded to be filtered in memory, so only
+  // its first page was findable. `listInventory` now forwards the term to the
+  // service's `name` filter, which matches partially and case-insensitively.
   useEffect(() => {
-    if (searchLoaded) return;
-    startSearchLoad(async () => {
-      const result = await listInventory(1, INVENTORY_MAX_LIMIT);
-      if ("error" in result) {
-        setCatalogError(actionErrorMessage(result));
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const term = searchQuery.trim();
+      if (term.length < 2) {
+        setSearchResults([]);
+        setSearchError(null);
+        setSearchPending(false);
         return;
       }
-      setAllProducts(result.products);
-      setCatalogTotal(result.total);
-      setCatalogError(null);
-      setSearchLoaded(true);
-    });
-  }, [searchLoaded, actionErrorMessage]);
 
-  const catalogTruncated = catalogTotal > allProducts.length;
+      const result = await listInventory(1, SEARCH_RESULT_LIMIT, term);
+      if (cancelled) return;
+      if ("error" in result) {
+        setSearchError(actionErrorMessage(result));
+        setSearchResults([]);
+      } else {
+        setSearchError(null);
+        setSearchResults(result.products);
+      }
+      setSearchPending(false);
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, actionErrorMessage]);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setSearchPending(value.trim().length >= 2);
+  }, []);
 
   const updateActiveCart = useCallback(
     (updater: (cart: CartEntry[]) => CartEntry[]) => {
@@ -134,22 +152,6 @@ export default function SellPage() {
     [tickets, activeTicketId]
   );
 
-  const handleSearchChange = useCallback(
-    (query: string) => {
-      setSearchQuery(query);
-      if (query.trim().length < 2) {
-        setSearchResults([]);
-        return;
-      }
-      const q = query.toLowerCase();
-      setSearchResults(
-        allProducts
-          .filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q))
-          .slice(0, 8)
-      );
-    },
-    [allProducts]
-  );
 
   const addToCart = useCallback(
     (product: Product) => {
@@ -368,7 +370,7 @@ export default function SellPage() {
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder={t("searchPlaceholder")}
-              disabled={isPending || searchPending}
+              disabled={isPending}
               className="ui-search-field disabled:opacity-50"
             />
 
@@ -378,7 +380,7 @@ export default function SellPage() {
             ) : searchQuery ? (
               <button
                 type="button"
-                onClick={() => { setSearchQuery(""); setSearchResults([]); searchRef.current?.focus(); }}
+                onClick={() => { handleSearchChange(""); setSearchResults([]); searchRef.current?.focus(); }}
                 className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-800 flex items-center justify-center text-brand-500 hover:bg-brand-200 dark:hover:bg-brand-700 transition-colors shrink-0"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -388,16 +390,12 @@ export default function SellPage() {
             ) : null}
           </div>
 
-          {/* Catalog status */}
-          {catalogError ? (
+          {/* Search status */}
+          {searchError && (
             <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-              {t("catalogLoadFailed", { error: catalogError })}
+              {t("searchFailed", { error: searchError })}
             </p>
-          ) : catalogTruncated ? (
-            <p className="mt-2 text-xs text-[var(--text-muted)]">
-              {t("catalogTruncated", { shown: allProducts.length, total: catalogTotal })}
-            </p>
-          ) : null}
+          )}
 
           {/* Dropdown results */}
           {searchResults.length > 0 && (
@@ -450,7 +448,7 @@ export default function SellPage() {
           )}
 
           {/* No results */}
-          {searchQuery.trim().length >= 2 && searchResults.length === 0 && !searchPending && (
+          {searchQuery.trim().length >= 2 && searchResults.length === 0 && !searchPending && !searchError && (
             <div className="absolute left-0 right-0 top-full mt-2 bg-surface dark:bg-brand-900 rounded-2xl border border-brand-100 dark:border-brand-700/50 shadow-lg z-20 px-4 py-4 flex items-center justify-center gap-2">
               <svg className="w-4 h-4 text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
