@@ -6,8 +6,6 @@ declare module "next-auth" {
       id: string
       role: string
       organizationId?: string | null
-      inventoryApiKey?: string | null
-      inventoryLocationId?: string | null
       organizationStatus?: string | null
       organizationPlan?: string | null
       organizationName?: string | null

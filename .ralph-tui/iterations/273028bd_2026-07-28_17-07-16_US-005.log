@@ -1,0 +1,106 @@
+# Iteration 2 Log
+
+## Metadata
+
+- **Task ID**: US-005
+- **Task Title**: Tratar los importes de la API como cadenas decimales
+- **Description**: Como cajero, quiero que el carrito no se rompa al escanear un producto. CONTEXTO: el servicio devuelve price como cadena, con item.price.toString(), pero lib/actions.ts:38 lo tipa como number | null y...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-28T22:07:16.780Z
+- **Ended At**: 2026-07-28T22:11:03.721Z
+- **Duration**: 3m 46s
+- **Input Tokens**: 128
+- **Output Tokens**: 12143
+- **Total Tokens**: 12271
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing the current state of the code and progress notes.
+[94m[Bash][0m Read progress.md header $ sed -n '1,80p' .ralph-tui/progress.md
+[94m[Bash][0m Read actions.ts head $ sed -n '1,200p' lib/actions.ts
+[94m[Bash][0m Read rest of actions.ts $ grep -rn "ApiSaleResponse\|unitPrice\|lineTotal\|\.total" lib/actions.ts
+[94m[Bash][0m Find scan tests $ grep -rn "scan" lib/actions.test.ts | head -40
+[94m[Bash][0m Read test file head $ sed -n 1,145p lib/actions.test.ts
+[94m[Bash][0m Find toFixed usages $ grep -rn "toFixed" app components lib | head -40
+[94m[Bash][0m Survey lib and numeric fields $ grep -rn "parseFloat\|price:\s*number\|total:\s*number" lib app --include=*.ts --include=*.tsx | gre...
+
+[91m[Error: Exit code 1
+actions.test.ts
+actions.ts
+db.ts
+inventoryClient.ts
+locale-action.ts
+pagination.test.ts
+pagination.ts
+theme-action.ts
+types.ts
+(eval):1: === not found][0m
+[94m[Bash][0m Grep parseFloat and read types $ sed -n 1,80p lib/types.ts
+[94m[Bash][0m Find apiFetch call sites $ grep -rn "apiFetch" --include="*.ts" --include="*.tsx" . | grep -v node_modules
+Now I'll add the shared decimal parser and apply it at the API boundary.
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/decimal.ts[0m "// The inventory service serialises every monetary column as a decimal string
+// ("350.00"), never as a JSON number. Converting once at the API boundary keeps
+// strings from leaking into the UI, wher... (616 chars)"
+Now updating the API shapes and conversions in `lib/actions.ts`:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "import { apiFetch, getInventoryConfig } from "./in..." → "import { parseDecimal, type ApiDecimal } from "./d..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "type ApiInventoryItem = {
+  productId: string;
+  n..." → "type ApiInventoryItem = {
+  productId: string;
+  n..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "    price: result.price ?? 0,
+    stock: result.st..." → "    price: parseDecimal(result.price),
+    stock: ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "  const subtotal = items.reduce((sum, i) => sum + ..." → "  const subtotal = items.reduce((sum, i) => sum + ..."
+[94m[Bash][0m Read createSale tests $ sed -n 137,230p lib/actions.test.ts
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "    createdAt: string;
+    total: number;
+    item..." → "    createdAt: string;
+    total: ApiDecimal;
+    ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "    items: s.items.map((i) => ({
+      productId: ..." → "    items: s.items.map((i) => ({
+      productId: ..."
+Now the inventory mapping and tests:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "      price: parseFloat(item.price)," → "      price: parseDecimal(item.price),"
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "  it("maps a found product, falling back to the sc..." → "  it("maps a found product, falling back to the sc..."
+[94m[Bash][0m Read listSales tests $ /p' lib/actions.test.ts
+[94m[Bash][0m Read listInventory tests $ sed -n 265,320p lib/actions.test.ts
+Now updating the `listSales` fixture to use real decimal strings:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "  it("computes subtotal from line items and filter..." → "  it("computes subtotal from line items and filter..."
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/decimal.test.ts[0m "import { describe, it, expect } from "vitest";
+
+import { parseDecimal } from "./decimal";
+
+describe("parseDecimal", () => {
+  it("converts the decimal strings the service returns", () => {
+    expect(... (966 chars)"
+[94m[Bash][0m Run typecheck, lint and tests $ npm run typecheck 2>&1 | tail -15 && npm run lint 2>&1 | tail -15 && npx vitest run 2>&1 | tail -25
+[94m[Bash][0m Append US-005 entry to progress.md $ convertir en el borde es lo que evita rastrearlos. EOF
+Adding the reusable pattern to the top section:
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "- **Errores de acción con código**:" → "- **Importes como cadenas decimales**: el servicio..."
+US-005 is implemented.
+
+**The bug and its siblings**
+
+`scanBarcode` typed `price` as `number | null` while the service sends `"350.00"`, so `entry.unitPrice.toFixed(2)` in the cart (`app/sell/page.tsx:487`) threw after *any* successful scan. Reviewing the sale shapes as the acceptance criteria asked turned up two more instances of the same defect that were never converted either:
+
+- `listSales` passed `total`, `unitPrice` and `lineTotal` through untouched — they reach `sale.total.toFixed(2)` (`app/history/page.tsx:316`) and the PDF invoice (`app/api/invoices/[saleId]/route.tsx:121`).
+- `subtotal: s.items.reduce((sum, i) => sum + i.lineTotal, 0)` doesn't throw with strings; it silently produces `"010.0010.00"`.
+
+**Changes**
+
+- `lib/decimal.ts` (new) — `ApiDecimal` type plus `parseDecimal(value, fallback = 0)`, which also rejects `NaN`/`Infinity`.
+- `lib/actions.ts` — `ApiScanResult.price` is now `string | null`; `ApiSaleResponse` and `listSales`' `ApiSale` type their money fields as `ApiDecimal`. Conversion happens once at the edge in `scanBarcode`, `createSale`, `listSales` and `listInventory` (the inline `typeof === "string" ? parseFloat` and the bare `parseFloat` are gone).
+- `lib/actions.test.ts` — scan fixture uses `"350.00"` instead of `null`; new test asserting the returned `price` is a usable number (`typeof`, `.toFixed(2)`, `* 2`); new `listSales` test with string money fields.
+- `lib/decimal.test.ts` (new) — covers the helper.
+
+`createSale` still builds its line items from the local cart rather than the response, since the service doesn't return `productName` — I typed the response fields correctly but left that behavior alone as it's outside this story.
+
+**Validation:** `npm run typecheck`, `npm run lint`, and `npm test` (77 passing) all exit 0. No visual check — the inventory service on port 3001 wasn't running in this session.
+
+<promise>COMPLETE</promise>

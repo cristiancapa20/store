@@ -7,6 +7,7 @@ after each iteration and it's included in prompts for context.
 
 - **Límites de paginación del servicio**: `lib/pagination.ts` exporta `INVENTORY_MAX_LIMIT` (100, el `MAX_LIMIT` del servicio) y `clampInventoryLimit()`. Los componentes cliente importan la constante; `listInventory` (server action) además recorta el `limit` recibido, así ninguna ruta puede provocar un 422 por límite. Es un módulo plano (sin `"use server"` ni `auth`), por eso puede importarse desde `"use client"`.
 - **Importes como cadenas decimales**: el servicio serializa todo importe como cadena (`"350.00"`), nunca como número JSON. `lib/decimal.ts` exporta el tipo `ApiDecimal` (`string | number | null | undefined`) y `parseDecimal()`. Toda forma `Api*` de `lib/actions.ts` tipa sus importes como `ApiDecimal` y convierte **una sola vez en el borde** con `parseDecimal`; de ahí para dentro (`Product`, `Sale`, `SaleItem`) todo es `number`. Nunca propagar la cadena a la UI: `"350".toFixed()` lanza y `sum + "10.00"` concatena en silencio.
+- **Credenciales fuera de la sesión**: NextAuth v5 sirve el objeto de sesión **descifrado** en `GET /api/auth/session`, ruta excluida del matcher de `proxy.ts`. Todo lo que el callback `session` asigne es legible desde el navegador. Los secretos se quedan en el token JWT (cifrado) y el servidor los resuelve bajo demanda: la sesión solo lleva `organizationId`, y `getInventoryConfig()` (`lib/inventoryClient.ts`) lo usa para leer `inventory_api_key`/`inventory_location_id` de la tabla `organizations`. `types/next-auth.d.ts` declara los campos en `Session`, `User` y `JWT` por separado — quitarlos de `Session` y dejarlos en las otras dos hace que `tsc` señale cualquier consumidor que siguiera leyéndolos de la sesión.
 - **Errores de acción con código**: `ActionError` es `{ error: string; code?: ActionErrorCode }`. `scanBarcode` marca `code: "not_found"` solo cuando el servicio responde `found:false`; cualquier otro fallo (422, red, auth) llega sin código. La UI debe ramificar por `result.code`, nunca por el texto del error.
 - **i18n**: toda cadena visible va en `messages/es.json` y `messages/en.json` con las mismas claves. Verificación rápida de paridad:
   `node -e "const es=require('./messages/es.json'),en=require('./messages/en.json');const f=(o,p='')=>Object.entries(o).flatMap(([k,v])=>typeof v==='object'&&v?f(v,p+k+'.'):[p+k]);const a=new Set(f(es)),b=new Set(f(en));console.log([...a].filter(k=>!b.has(k)),[...b].filter(k=>!a.has(k)))"`
@@ -68,3 +69,39 @@ after each iteration and it's included in prompts for context.
 - Los fixtures que simulan `apiFetch` son el contrato de facto: si un fixture usa `null` o `number` donde el servicio manda `"350.00"`, el tipado miente y las pruebas pasan igual. Al tocar una forma `Api*`, revisar el fixture antes que el tipo.
 - La ruta de búsqueda no fallaba solo porque `listInventory` era la **única** que convertía; el bug llevaba escondido en `scanBarcode` y `listSales` desde el principio. Cuando una conversión aparece en un solo mapeo, sospechar de los hermanos.
 - `subtotal: items.reduce((sum, i) => sum + i.lineTotal, 0)` con cadenas no lanza: devuelve `"010.0010.00"`. Los fallos por cadenas decimales se manifiestan tarde y en otra pantalla; convertir en el borde es lo que evita rastrearlos.
+
+---
+
+## 2026-07-28 - US-001: Retirar la API key de inventario del objeto de sesión
+
+**Implementado**
+
+- `auth.config.ts`, callback `session`: dejan de copiarse `inventoryApiKey` e `inventoryLocationId`. El callback `jwt` los sigue guardando en el token (cifrado). `organizationId` permanece en sesión.
+- `types/next-auth.d.ts`: ambos campos salen de `Session`; se conservan en `User` (alimenta el callback `jwt`) y en `JWT`. Así el compilador señala cualquier uso restante — que era exactamente uno.
+- `lib/inventoryClient.ts`: `getInventoryConfig()` ya no lee la credencial de la sesión; la resuelve contra `organizations` con el `organizationId` de la sesión (`SELECT inventory_api_key, inventory_location_id FROM organizations WHERE id = ?`). Se mantiene el fallback a `INVENTORY_API_KEY` / `INVENTORY_LOCATION_ID` cuando no hay organización (super_admin) o la organización no tiene credencial guardada, igual que antes.
+- Pruebas nuevas: `auth.config.test.ts` (el token conserva la credencial, el JSON de sesión no contiene `inv_live_`, `organizationId` sigue) y `lib/inventoryClient.test.ts` (resolución por `organizationId`, una `inventoryApiKey` inyectada en el objeto de sesión se ignora, y los tres fallbacks a env).
+
+**Archivos**
+
+- Nuevos: `auth.config.test.ts`, `lib/inventoryClient.test.ts`
+- Modificados: `auth.config.ts`, `types/next-auth.d.ts`, `lib/inventoryClient.ts`
+
+**Validación**: `npm run typecheck`, `npm run lint`, `npm test` (85 pruebas) y `npm run build` en verde.
+
+Verificación en vivo de AC 5: dev server levantado, login por `POST /api/auth/callback/credentials` con `admin@example.com`, y `GET /api/auth/session` devuelve
+
+```json
+{"user":{"name":"Admin","email":"admin@example.com","id":"616ac95f-…","role":"admin","organizationId":"bb07c46f-…","organizationName":"tiendita","organizationStatus":"active","organizationPlan":"basic"},"expires":"…"}
+```
+
+sin `inventoryApiKey` ni `inventoryLocationId`. Matiz honesto: ninguna organización de la DB de desarrollo tiene `inventory_api_key` (todas `null`), así que la ausencia de la cadena `inv_live_` no probaba nada por sí sola; lo que se comprueba arriba es lo más fuerte — los campos no aparecen en absoluto. `/profile`, `/products` y `/sell` responden 200 con la resolución nueva (el servicio de inventario no estaba levantado, así que las llamadas a la API fallan igual que antes; no es regresión).
+
+**Learnings**
+
+- Quitar el campo del tipo `Session` es lo que convierte el cambio en verificable: `tsc` localizó el único consumidor real (`lib/inventoryClient.ts:10`). Sin ese paso el borrado del callback habría roto la app en runtime en vez de en compilación.
+- El puerto 3001 está reservado al servicio de inventario (`INVENTORY_API_URL`). Si el 3000 está ocupado, `next dev` se muda al 3001 y la app se apunta a sí misma como servicio de inventario. En esta máquina el 3000 lo tiene tomado un proceso de Cursor sobre `127.0.0.1`, así que conviene fijar `next dev -p <puerto libre>` antes de verificar nada contra la API.
+- `lib/inventoryClient.ts` ya arrastraba `db` de forma transitiva vía `@/auth`, así que importarlo explícitamente no añade peso al bundle ni toca el edge runtime del middleware (`proxy.ts` solo importa `auth.config`, nunca `inventoryClient`).
+- `lib/actions.test.ts` mockea `./inventoryClient` entero, de modo que cambiar cómo se resuelve la credencial no afecta a esas 77 pruebas. El coste es que ninguna cubría la resolución; de ahí `lib/inventoryClient.test.ts`.
+- Al mockear `auth` de NextAuth v5 con `vi.mocked(...)`, `mockResolvedValue` choca con la sobrecarga de `NextMiddleware`: hace falta `as never`, tal como ya hacía `lib/actions.test.ts`.
+
+---

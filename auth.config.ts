@@ -70,8 +70,8 @@ export const authConfig: NextAuthConfig = {
         session.user.role = token.role as string
         session.user.organizationId = token.organizationId as string | null | undefined
         session.user.organizationName = token.organizationName as string | null | undefined
-        session.user.inventoryApiKey = token.inventoryApiKey as string | null | undefined
-        session.user.inventoryLocationId = token.inventoryLocationId as string | null | undefined
+        // inventoryApiKey/inventoryLocationId se quedan en el token (cifrado) a proposito:
+        // GET /api/auth/session sirve este objeto descifrado al navegador.
         session.user.organizationStatus = token.organizationStatus as string | null | undefined
         session.user.organizationPlan = token.organizationPlan as string | null | undefined
       }

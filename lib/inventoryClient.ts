@@ -1,17 +1,36 @@
 import { auth } from "@/auth"
+import db from "@/lib/db"
 
 export type ActionError = { error: string }
 export type ActionResult<T> = T | ActionError
 
+type OrgCredentials = {
+  inventory_api_key: string | null
+  inventory_location_id: string | null
+}
+
+// La credencial nunca viaja en la sesion: solo el organizationId, y el servidor
+// la resuelve aqui contra la tabla organizations.
 export async function getInventoryConfig() {
   const session = await auth()
+  const organizationId = session?.user?.organizationId
+
+  let credentials: OrgCredentials | undefined
+  if (organizationId) {
+    credentials = db
+      .prepare(
+        "SELECT inventory_api_key, inventory_location_id FROM organizations WHERE id = ?"
+      )
+      .get(organizationId) as OrgCredentials | undefined
+  }
+
   return {
     apiKey:
-      session?.user?.inventoryApiKey ??
+      credentials?.inventory_api_key ??
       process.env.INVENTORY_API_KEY ??
       "",
     locationId:
-      session?.user?.inventoryLocationId ??
+      credentials?.inventory_location_id ??
       process.env.INVENTORY_LOCATION_ID ??
       "",
     apiBase: process.env.INVENTORY_API_URL ?? "",

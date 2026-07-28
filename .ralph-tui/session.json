@@ -3,10 +3,10 @@
   "sessionId": "273028bd-e3fb-402f-a72e-935b06d4fdf1",
   "status": "running",
   "startedAt": "2026-07-28T22:01:24.050Z",
-  "updatedAt": "2026-07-28T22:11:03.747Z",
-  "currentIteration": 1,
+  "updatedAt": "2026-07-28T22:15:04.584Z",
+  "currentIteration": 2,
   "maxIterations": 0,
-  "tasksCompleted": 1,
+  "tasksCompleted": 2,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -24,8 +24,8 @@
       {
         "id": "US-005",
         "title": "Tratar los importes de la API como cadenas decimales",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-001",
@@ -99,6 +99,16 @@
       "durationMs": 345266,
       "startedAt": "2026-07-28T22:01:26.049Z",
       "endedAt": "2026-07-28T22:07:11.315Z"
+    },
+    {
+      "iteration": 2,
+      "status": "completed",
+      "taskId": "US-005",
+      "taskTitle": "Tratar los importes de la API como cadenas decimales",
+      "taskCompleted": true,
+      "durationMs": 226941,
+      "startedAt": "2026-07-28T22:07:16.780Z",
+      "endedAt": "2026-07-28T22:11:03.721Z"
     }
   ],
   "skippedTaskIds": [],
