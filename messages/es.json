@@ -337,5 +337,9 @@
     "ctaTitle": "¿Listo para organizar tu tienda?",
     "ctaSubtitle": "Únete a cientos de negocios que ya venden mejor con Mi Comercio.",
     "ctaBtn": "Crear cuenta gratis"
+  },
+  "errors": {
+    "unauthorized": "Tu sesión expiró. Inicia sesión de nuevo para continuar.",
+    "forbidden": "No tienes permisos para realizar esta acción."
   }
 }

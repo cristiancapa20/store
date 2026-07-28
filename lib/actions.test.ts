@@ -20,6 +20,7 @@ import {
   adjustStock,
   listSales,
   listStaff,
+  getInvoicePreviewInfo,
 } from "./actions";
 
 const mockAuth = vi.mocked(auth);
@@ -27,8 +28,16 @@ const mockApiFetch = vi.mocked(apiFetch);
 const mockGetInventoryConfig = vi.mocked(getInventoryConfig);
 const mockPrepare = vi.mocked(db.prepare);
 
+const adminSession = {
+  user: { id: "admin-1", name: "Ana", role: "admin" },
+};
+const staffSession = {
+  user: { id: "staff-1", name: "Bob", role: "staff" },
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
+  mockAuth.mockResolvedValue(adminSession as never);
   mockGetInventoryConfig.mockResolvedValue({
     apiKey: "test-key",
     locationId: "loc-1",
@@ -190,7 +199,7 @@ describe("createSale", () => {
     );
   });
 
-  it("falls back to 'unknown'/'Staff' when there is no session", async () => {
+  it("refuses to register a sale when there is no session", async () => {
     mockAuth.mockResolvedValue(null as never);
     mockApiFetch.mockResolvedValue({
       id: "sale-1",
@@ -201,11 +210,11 @@ describe("createSale", () => {
 
     const result = await createSale(items);
 
-    expect(result).toMatchObject({ staffId: "unknown", staffName: "Staff" });
+    expect(result).toMatchObject({ code: "unauthorized" });
+    expect(mockApiFetch).not.toHaveBeenCalled();
   });
 
   it("propagates an API error", async () => {
-    mockAuth.mockResolvedValue(null as never);
     mockApiFetch.mockResolvedValue({ error: "Insufficient stock" });
 
     const result = await createSale(items);
@@ -214,7 +223,6 @@ describe("createSale", () => {
   });
 
   it("computes subtotal from the cart and parses a string total", async () => {
-    mockAuth.mockResolvedValue(null as never);
     mockApiFetch.mockResolvedValue({
       id: "sale-1",
       createdAt: "2026-01-01T00:00:00Z",
@@ -231,7 +239,6 @@ describe("createSale", () => {
     // NOTE: the implementation uses `result.createdAt ?? new Date().toISOString()`,
     // which only falls back on null/undefined. An empty string passes through as-is —
     // documenting current behavior here rather than the likely intent.
-    mockAuth.mockResolvedValue(null as never);
     mockApiFetch.mockResolvedValue({
       id: "sale-1",
       createdAt: "",
@@ -246,7 +253,6 @@ describe("createSale", () => {
   });
 
   it("defaults createdAt when the API omits the field entirely", async () => {
-    mockAuth.mockResolvedValue(null as never);
     mockApiFetch.mockResolvedValue({
       id: "sale-1",
       createdAt: undefined as unknown as string,
@@ -321,7 +327,7 @@ describe("addProduct", () => {
 
   it("blocks new products on the basic plan once the 500 limit is reached", async () => {
     mockAuth.mockResolvedValue({
-      user: { organizationPlan: "basic" },
+      user: { ...adminSession.user, organizationPlan: "basic" },
     } as never);
     mockApiFetch.mockResolvedValueOnce({ total: 500 });
 
@@ -336,7 +342,7 @@ describe("addProduct", () => {
 
   it("allows creation on the basic plan when under the limit", async () => {
     mockAuth.mockResolvedValue({
-      user: { organizationPlan: "basic" },
+      user: { ...adminSession.user, organizationPlan: "basic" },
     } as never);
     mockApiFetch
       .mockResolvedValueOnce({ total: 10 }) // count check
@@ -357,7 +363,9 @@ describe("addProduct", () => {
   });
 
   it("skips the plan-limit check entirely on the pro plan", async () => {
-    mockAuth.mockResolvedValue({ user: { organizationPlan: "pro" } } as never);
+    mockAuth.mockResolvedValue({
+      user: { ...adminSession.user, organizationPlan: "pro" },
+    } as never);
     mockApiFetch
       .mockResolvedValueOnce({ id: "p1", name: "Leche", barcode: "222" })
       .mockResolvedValueOnce({})
@@ -372,7 +380,9 @@ describe("addProduct", () => {
   });
 
   it("skips the stock adjustment call when initialStock is 0", async () => {
-    mockAuth.mockResolvedValue({ user: { organizationPlan: "pro" } } as never);
+    mockAuth.mockResolvedValue({
+      user: { ...adminSession.user, organizationPlan: "pro" },
+    } as never);
     mockApiFetch
       .mockResolvedValueOnce({ id: "p1", name: "Leche", barcode: "222" })
       .mockResolvedValueOnce({});
@@ -384,7 +394,9 @@ describe("addProduct", () => {
   });
 
   it("propagates an error from product creation", async () => {
-    mockAuth.mockResolvedValue({ user: { organizationPlan: "pro" } } as never);
+    mockAuth.mockResolvedValue({
+      user: { ...adminSession.user, organizationPlan: "pro" },
+    } as never);
     mockApiFetch.mockResolvedValueOnce({ error: "Duplicate barcode" });
 
     const result = await addProduct(newProduct);
@@ -393,7 +405,9 @@ describe("addProduct", () => {
   });
 
   it("propagates an error from the stock adjustment step", async () => {
-    mockAuth.mockResolvedValue({ user: { organizationPlan: "pro" } } as never);
+    mockAuth.mockResolvedValue({
+      user: { ...adminSession.user, organizationPlan: "pro" },
+    } as never);
     mockApiFetch
       .mockResolvedValueOnce({ id: "p1", name: "Leche", barcode: "222" })
       .mockResolvedValueOnce({})
@@ -576,5 +590,67 @@ describe("listSales", () => {
     expect(sale.items[0].unitPrice).toBe(350.5);
     expect(sale.items[0].lineTotal).toBe(350.5);
     expect(sale.subtotal).toBe(350.5);
+  });
+});
+
+// Server actions are dispatched by Next-Action id over POST to any route, so
+// the middleware never gates them: each action has to check the caller itself.
+describe("authorization", () => {
+  const cart = [{ productId: "p1", quantity: 1, unitPrice: 5 }];
+
+  const callAction = {
+    scanBarcode: () => scanBarcode("123"),
+    createSale: () => createSale(cart),
+    listInventory: () => listInventory(),
+    addProduct: () =>
+      addProduct({ name: "Leche", sku: "222", price: 2.5, initialStock: 0 }),
+    adjustStock: () => adjustStock("p1", 1),
+    listSales: () => listSales(),
+    listStaff: () => listStaff(),
+    getInvoicePreviewInfo: () => getInvoicePreviewInfo(),
+  };
+
+  beforeEach(() => {
+    const all = vi.fn().mockReturnValue([]);
+    mockPrepare.mockReturnValue({ all } as never);
+    mockApiFetch.mockResolvedValue({ ok: true });
+  });
+
+  for (const [name, call] of Object.entries(callAction)) {
+    it(`rejects ${name} without a session`, async () => {
+      mockAuth.mockResolvedValue(null as never);
+
+      const result = await call();
+
+      expect(result).toMatchObject({ code: "unauthorized" });
+      expect(mockApiFetch).not.toHaveBeenCalled();
+      expect(mockPrepare).not.toHaveBeenCalled();
+    });
+  }
+
+  for (const name of ["addProduct", "adjustStock"] as const) {
+    it(`rejects ${name} for a non-admin session`, async () => {
+      mockAuth.mockResolvedValue(staffSession as never);
+
+      const result = await callAction[name]();
+
+      expect(result).toMatchObject({ code: "forbidden" });
+      expect(mockApiFetch).not.toHaveBeenCalled();
+    });
+  }
+
+  it("lets a staff session sell, scan and read", async () => {
+    mockAuth.mockResolvedValue(staffSession as never);
+    mockApiFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 50 });
+
+    const result = await listInventory();
+
+    expect(result).not.toHaveProperty("error");
+  });
+
+  it("resolves the invoice staff name from the session", async () => {
+    const result = await getInvoicePreviewInfo();
+
+    expect(result).toMatchObject({ staffName: "Ana" });
   });
 });

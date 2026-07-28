@@ -337,5 +337,9 @@
     "ctaTitle": "Ready to organize your store?",
     "ctaSubtitle": "Join hundreds of businesses already selling better with Mi Comercio.",
     "ctaBtn": "Create free account"
+  },
+  "errors": {
+    "unauthorized": "Your session expired. Sign in again to continue.",
+    "forbidden": "You do not have permission to perform this action."
   }
 }

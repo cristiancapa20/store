@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import BarcodeInput from "@/components/BarcodeInput";
 import { addProduct } from "@/lib/actions";
+import { useActionErrorMessage } from "@/lib/useActionErrorMessage";
 
 type FormErrors = {
   name?: string;
@@ -16,6 +17,7 @@ type FormErrors = {
 
 export default function AddProductForm() {
   const t = useTranslations("addProduct");
+  const actionErrorMessage = useActionErrorMessage();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState("");
@@ -61,7 +63,7 @@ export default function AddProductForm() {
         description: description.trim() || undefined,
       });
       if ("error" in result) {
-        setErrors({ form: result.error });
+        setErrors({ form: actionErrorMessage(result) });
       } else {
         router.push("/products?added=1");
       }

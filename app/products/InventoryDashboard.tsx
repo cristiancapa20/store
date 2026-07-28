@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { listInventory, listSales } from "@/lib/actions";
 import { INVENTORY_MAX_LIMIT } from "@/lib/pagination";
+import { useActionErrorMessage } from "@/lib/useActionErrorMessage";
 import type { Product } from "@/lib/types";
 
 const PAGE_SIZE = 10;
@@ -116,6 +117,7 @@ function TrendUpIcon() {
 export default function InventoryDashboard({ added }: { added?: boolean }) {
   const t = useTranslations("inventory");
   const tp = useTranslations("products");
+  const actionErrorMessage = useActionErrorMessage();
 
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [apiTotal, setApiTotal] = useState(0);
@@ -136,7 +138,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
       ]);
 
       if ("error" in invResult) {
-        setError(invResult.error);
+        setError(actionErrorMessage(invResult));
       } else {
         setAllProducts(invResult.products);
         setApiTotal(invResult.total);
@@ -149,7 +151,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
 
       setHasFetched(true);
     });
-  }, []);
+  }, [actionErrorMessage]);
 
   useEffect(() => {
     load();

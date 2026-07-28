@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import BarcodeInput from "@/components/BarcodeInput";
 import { scanBarcode, createSale, listInventory, getInvoicePreviewInfo } from "@/lib/actions";
 import { INVENTORY_MAX_LIMIT } from "@/lib/pagination";
+import { useActionErrorMessage } from "@/lib/useActionErrorMessage";
 import type { CartItem, Product } from "@/lib/types";
 
 type InvoiceInfo = {
@@ -41,6 +42,7 @@ function makeTicket(number: number): Ticket {
 
 export default function SellPage() {
   const t = useTranslations("sell");
+  const actionErrorMessage = useActionErrorMessage();
   const [tickets, setTickets] = useState<Ticket[]>(() => [makeTicket(1)]);
   const [activeTicketId, setActiveTicketId] = useState(1);
   const nextTicketNumber = useRef(2);
@@ -76,7 +78,7 @@ export default function SellPage() {
     startSearchLoad(async () => {
       const result = await listInventory(1, INVENTORY_MAX_LIMIT);
       if ("error" in result) {
-        setCatalogError(result.error);
+        setCatalogError(actionErrorMessage(result));
         return;
       }
       setAllProducts(result.products);
@@ -84,7 +86,7 @@ export default function SellPage() {
       setCatalogError(null);
       setSearchLoaded(true);
     });
-  }, [searchLoaded]);
+  }, [searchLoaded, actionErrorMessage]);
 
   const catalogTruncated = catalogTotal > allProducts.length;
 
@@ -181,7 +183,7 @@ export default function SellPage() {
           showToast(
             result.code === "not_found"
               ? t("productNotFound")
-              : t("scanFailed", { error: result.error }),
+              : t("scanFailed", { error: actionErrorMessage(result) }),
             "error"
           );
           return;
@@ -197,7 +199,7 @@ export default function SellPage() {
         });
       });
     },
-    [showToast, t, updateActiveCart]
+    [showToast, t, updateActiveCart, actionErrorMessage]
   );
 
   const updateQty = useCallback((productId: string, delta: number) => {
@@ -222,7 +224,7 @@ export default function SellPage() {
       }));
       const result = await createSale(items);
       if ("error" in result) {
-        showToast(result.error || t("failedToCreate"), "error");
+        showToast(actionErrorMessage(result) || t("failedToCreate"), "error");
         return;
       }
       setTickets((prev) =>
@@ -231,17 +233,21 @@ export default function SellPage() {
       setShowInvoicePreview(false);
       showToast(t("saleConfirmedToast"), "success");
     });
-  }, [cart, activeTicketId, showToast, t]);
+  }, [cart, activeTicketId, showToast, t, actionErrorMessage]);
 
   const openInvoicePreview = useCallback(() => {
     setShowInvoicePreview(true);
     if (!invoiceInfo) {
       startInvoiceInfoLoad(async () => {
         const info = await getInvoicePreviewInfo();
+        if ("error" in info) {
+          showToast(actionErrorMessage(info), "error");
+          return;
+        }
         setInvoiceInfo(info);
       });
     }
-  }, [invoiceInfo]);
+  }, [invoiceInfo, showToast, actionErrorMessage]);
 
   const subtotal = cart.reduce((s, e) => s + e.unitPrice * e.quantity, 0);
   const itemCount = cart.reduce((s, e) => s + e.quantity, 0);

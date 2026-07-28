@@ -135,7 +135,7 @@ export default function HistoryPage() {
   const fetchStaff = useCallback(() => {
     startStaffTransition(async () => {
       const users = await listStaff();
-      setStaffUsers(users);
+      setStaffUsers("error" in users ? [] : users);
     });
   }, []);
 

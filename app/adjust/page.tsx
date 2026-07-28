@@ -5,12 +5,14 @@ import { useTranslations } from "next-intl";
 import BarcodeInput from "@/components/BarcodeInput";
 import { scanBarcode, listInventory, adjustStock } from "@/lib/actions";
 import { INVENTORY_MAX_LIMIT } from "@/lib/pagination";
+import { useActionErrorMessage } from "@/lib/useActionErrorMessage";
 import type { Product } from "@/lib/types";
 
 type Reason = "Restock" | "Shrinkage" | "Correction" | "Other";
 
 export default function AdjustPage() {
   const t = useTranslations("adjust");
+  const actionErrorMessage = useActionErrorMessage();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [delta, setDelta] = useState<number>(0);
   const [reason, setReason] = useState<Reason>("Restock");
@@ -50,14 +52,14 @@ export default function AdjustPage() {
           setScanError(
             result.code === "not_found"
               ? t("productNotFound")
-              : t("scanFailed", { error: result.error })
+              : t("scanFailed", { error: actionErrorMessage(result) })
           );
         } else {
           selectProduct(result);
         }
       });
     },
-    [selectProduct, t]
+    [selectProduct, t, actionErrorMessage]
   );
 
   // Only the first page of the catalog is searched locally; the service caps a
@@ -72,7 +74,7 @@ export default function AdjustPage() {
     }
     const result = await listInventory(1, INVENTORY_MAX_LIMIT);
     if ("error" in result) {
-      setSearchError(result.error);
+      setSearchError(actionErrorMessage(result));
       setSearchResults([]);
       setSearchTruncated(false);
       return;
@@ -86,7 +88,7 @@ export default function AdjustPage() {
     setSearchError(null);
     setSearchTruncated(result.total > result.products.length);
     setSearchResults(filtered.slice(0, 10));
-  }, []);
+  }, [actionErrorMessage]);
 
   const handleApply = useCallback(() => {
     if (!selectedProduct || belowZero || delta === 0) return;
@@ -95,7 +97,7 @@ export default function AdjustPage() {
     startTransition(async () => {
       const result = await adjustStock(selectedProduct.id, delta);
       if ("error" in result) {
-        setAdjustError(result.error);
+        setAdjustError(actionErrorMessage(result));
       } else {
         setNewStock(result.stock);
         setSelectedProduct((prev) =>
@@ -104,7 +106,7 @@ export default function AdjustPage() {
         setDelta(0);
       }
     });
-  }, [selectedProduct, belowZero, delta]);
+  }, [selectedProduct, belowZero, delta, actionErrorMessage]);
 
   const handleDeltaInput = useCallback((val: string) => {
     const n = parseInt(val, 10);

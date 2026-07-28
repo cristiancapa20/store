@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireAdmin, requireSession } from "./authz";
 import db from "./db";
 import { parseDecimal, type ApiDecimal } from "./decimal";
 import { apiFetch, getInventoryConfig } from "./inventoryClient";
@@ -15,7 +15,12 @@ import type {
   SaleFilters,
 } from "./types";
 
-export async function listStaff(): Promise<{ id: string; name: string }[]> {
+export async function listStaff(): Promise<
+  ActionResult<{ id: string; name: string }[]>
+> {
+  const gate = await requireSession();
+  if ("error" in gate) return gate;
+
   try {
     return db
       .prepare("SELECT id, name FROM users ORDER BY name")
@@ -58,6 +63,9 @@ type ApiSaleResponse = {
 export async function scanBarcode(
   barcode: string
 ): Promise<ActionResult<Product>> {
+  const gate = await requireSession();
+  if ("error" in gate) return gate;
+
   const { locationId } = await getInventoryConfig();
   const result = await apiFetch<ApiScanResult>(
     `/scan?barcode=${encodeURIComponent(barcode)}&location_id=${locationId}`
@@ -73,25 +81,31 @@ export async function scanBarcode(
   };
 }
 
-export async function getInvoicePreviewInfo(): Promise<{
-  storeName: string;
-  taxRate: number;
-  staffName: string;
-}> {
-  const session = await auth();
+export async function getInvoicePreviewInfo(): Promise<
+  ActionResult<{
+    storeName: string;
+    taxRate: number;
+    staffName: string;
+  }>
+> {
+  const gate = await requireSession();
+  if ("error" in gate) return gate;
+
   return {
     storeName: process.env.STORE_NAME ?? "Store",
     taxRate: parseFloat(process.env.TAX_RATE ?? "0"),
-    staffName: session?.user?.name ?? "Staff",
+    staffName: gate.user.name ?? "Staff",
   };
 }
 
 export async function createSale(
   items: CartItem[]
 ): Promise<ActionResult<Sale>> {
-  const session = await auth();
-  const staffId = session?.user?.id ?? "unknown";
-  const staffName = session?.user?.name ?? "Staff";
+  const gate = await requireSession();
+  if ("error" in gate) return gate;
+
+  const staffId = gate.user.id ?? "unknown";
+  const staffName = gate.user.name ?? "Staff";
   const { locationId } = await getInventoryConfig();
 
   const result = await apiFetch<ApiSaleResponse>("/sales", {
@@ -132,6 +146,9 @@ export async function listInventory(
   page = 1,
   limit = 50
 ): Promise<ActionResult<InventoryPage>> {
+  const gate = await requireSession();
+  if ("error" in gate) return gate;
+
   type ApiResponse = {
     data: ApiInventoryItem[];
     total: number;
@@ -162,10 +179,12 @@ export async function listInventory(
 export async function addProduct(
   data: NewProduct
 ): Promise<ActionResult<Product>> {
+  const gate = await requireAdmin();
+  if ("error" in gate) return gate;
+
   type ApiProduct = { id: string; name: string; barcode: string | null };
 
-  const session = await auth();
-  const plan = session?.user?.organizationPlan ?? "basic";
+  const plan = gate.user.organizationPlan ?? "basic";
   const { locationId } = await getInventoryConfig();
 
   // Enforce plan limit: basic allows up to 500 products
@@ -234,6 +253,9 @@ export async function adjustStock(
   delta: number,
   reason = "manual"
 ): Promise<ActionResult<{ stock: number }>> {
+  const gate = await requireAdmin();
+  if ("error" in gate) return gate;
+
   const { locationId } = await getInventoryConfig();
   const result = await apiFetch<{ newStock: number }>(
     "/inventory-adjustments",
@@ -254,6 +276,9 @@ export async function adjustStock(
 export async function listSales(
   filters: SaleFilters = {}
 ): Promise<ActionResult<{ sales: Sale[]; total: number }>> {
+  const gate = await requireSession();
+  if ("error" in gate) return gate;
+
   type ApiSale = {
     id: string;
     locationId: string;

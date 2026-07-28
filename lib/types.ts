@@ -55,8 +55,9 @@ export type InventoryPage = {
 };
 
 // `code` lets the UI tell "the product does not exist" apart from a transport
-// or validation failure (e.g. a 422 from the service).
-export type ActionErrorCode = "not_found";
+// or validation failure (e.g. a 422 from the service), and an authorization
+// refusal apart from either.
+export type ActionErrorCode = "not_found" | "unauthorized" | "forbidden";
 
 export type ActionError = { error: string; code?: ActionErrorCode };
 

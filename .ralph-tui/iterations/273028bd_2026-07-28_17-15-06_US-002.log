@@ -1,0 +1,118 @@
+# Iteration 4 Log
+
+## Metadata
+
+- **Task ID**: US-002
+- **Task Title**: Resolver la configuracion de inventario desde el token, sin recurso al entorno
+- **Description**: Como propietario de una tienda, quiero que una peticion sin organizacion resuelta falle, en lugar de operar en silencio sobre el inventario de otra tienda. CONTEXTO: lib/inventoryClient.ts:9-16 cae a ...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-28T22:15:06.388Z
+- **Ended At**: 2026-07-28T22:21:13.388Z
+- **Duration**: 6m 7s
+- **Input Tokens**: 22236
+- **Output Tokens**: 22339
+- **Total Tokens**: 44575
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the current state of the code.
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/inventoryClient.ts[0m
+[94m[Bash][0m $ ls -la | head -40 && echo "---ENV FILES---" && ls -la | grep -i env
+[94m[Bash][0m $ tail -60 .ralph-tui/progress.md
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/inventoryClient.test.ts[0m
+[94m[Bash][0m $ grep -rn "process\.env\." --include=*.ts --include=*.tsx --include=*.mjs --include=*.js -I . --exclu...
+[94m[Bash][0m $ cat .env.local | sed 's/=.*/=<redacted>/' && echo "--- gitignore ---" && cat .gitignore
+[94m[Bash][0m $ grep -rn "process\.env\." app lib components scripts auth.ts auth.config.ts proxy.ts next.config.ts ...
+[94m[Read][0m [95m/Users/cristian/dev/store/app/register/actions.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/CLAUDE.md[0m
+[94m[Bash][0m $ cat package.json
+[94m[Read][0m [95m/Users/cristian/dev/store/app/profile/page.tsx[0m
+[94m[Bash][0m $ cat vitest.setup.* 2>/dev/null
+[94m[Bash][0m $ node -e "console.log(require.resolve('server-only'))" 2>&1 | head -3
+[94m[Bash][0m $ cat node_modules/server-only/package.json 2>/dev/null
+[94m[Bash][0m $ grep -rln "listInventory\|listSales\|scanBarcode" app | sort
+[94m[Read][0m [95m/Users/cristian/dev/store/auth.ts[0m
+[94m[Bash][0m $ cat scripts/seed.ts
+Now I'll implement the change.
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/inventoryClient.ts[0m edit: "import { auth } from "@/auth"
+import db from "@/li..." → "import "server-only"
+import { auth } from "@/auth"..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/profile/page.tsx[0m edit: "  const { apiKey, locationId, apiBase } = await ge..." → "  try {
+    // Dentro del try: sin credencial de l..."
+Now the test suite and vitest config:
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/inventoryClient.test.ts[0m "import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("@/auth", () => ({ auth: vi.fn() }));
+vi.mock("@/lib/db", () => ({
+  default: { prepare: vi.fn() },
+}));
+
+import { auth } from "... (4338 chars)"
+[94m[Edit][0m [95m/Users/cristian/dev/store/vitest.config.ts[0m edit: "    alias: {
+      "@": path.resolve(__dirname, "...." → "    alias: {
+      "@": path.resolve(__dirname, "...."
+[94m[Write][0m [95m/Users/cristian/dev/store/vitest.setup.ts[0m "process.env.INVENTORY_API_URL ??= "http://localhost:3001/v1";
+"
+
+[91m[Error: <tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>][0m
+[94m[Read][0m [95m/Users/cristian/dev/store/vitest.setup.ts[0m
+[94m[Write][0m [95m/Users/cristian/dev/store/vitest.setup.ts[0m "process.env.INVENTORY_API_URL ??= "http://localhost:3001/v1";
+"
+Now `.env.example` and the docs:
+[94m[Write][0m [95m/Users/cristian/dev/store/.env.example[0m "# Copia este fichero a .env.local y rellena los valores.
+# .env.local esta en .gitignore: nunca lo subas al repositorio.
+
+# --- Servicio de inventario ---
+# URL base del servicio, con sufijo /v1. No e... (902 chars)"
+[94m[Edit][0m [95m/Users/cristian/dev/store/CLAUDE.md[0m edit: "## Environment Variables
+
+Required in `.env.local`..." → "## Environment Variables
+
+Required in `.env.local`..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/CLAUDE.md[0m edit: "- **Never expose `INVENTORY_API_KEY` to the client..." → "- **Never expose the inventory API key to the clie..."
+Now the quality gates:
+[94m[Bash][0m $ npm run typecheck 2>&1 | tail -20
+[94m[Bash][0m $ npm test 2>&1 | tail -40
+[94m[Bash][0m $ npm run build 2>&1 | tail -25
+[94m[Bash][0m $ rm -rf app/zz-probe
+[94m[Bash][0m $ 155,185p' README.md
+[94m[Edit][0m [95m/Users/cristian/dev/store/README.md[0m edit: "- The [Inventory Service](../inventory-service) ru..." → "- The [Inventory Service](../inventory-service) ru..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/README.md[0m edit: "cp .env.local.example .env.local
+```
+
+| Variable |..." → "cp .env.example .env.local
+```
+
+| Variable | Descr..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/README.md[0m edit: "```env
+# Inventory Service
+INVENTORY_API_URL=http:..." → "```env
+# Inventory Service
+INVENTORY_API_URL=http:..."
+[94m[Bash][0m $ git status --short
+[94m[Bash][0m $ npm run build 2>&1 | tail -3 && npm run typecheck 2>&1 | tail -5 && echo "TYPECHECK OK"
+[94m[Bash][0m $ git diff next-env.d.ts
+[94m[Bash][0m $ git checkout -- next-env.d.ts tsconfig.tsbuildinfo && npm run typecheck 2>&1 | tail -5 && echo "TYPE...
+[94m[Bash][0m $ solo estaba una línea más abajo de donde hacía falta. Al convertir una función en lanzadora, revisar...
+[94m[Bash][0m $ head -12 .ralph-tui/progress.md
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "- **Errores de acción con código**:" → "- **Sin respaldo global de tenant**: `getInventory..."
+US-002 done. All acceptance criteria are met and verified.
+
+**What changed**
+
+- `lib/inventoryClient.ts` — `getInventoryConfig()` no longer has any env fallback. It requires `INVENTORY_API_URL` (throws with a clear message if absent), resolves `organizationId` via `auth()` (throws if there's no session or no organization), and requires the `organizations` row to carry both `inventory_api_key` and `inventory_location_id` (throws naming the org otherwise). Returns a typed `InventoryConfig` whose fields are guaranteed non-empty. Adds `import "server-only"`.
+- `app/profile/page.tsx:14` — the `getInventoryConfig()` call moved *inside* `fetchLocation()`'s existing `try`. It was one line above it; leaving it there would have turned the "API: disconnected" indicator into a broken page for any store without a credential.
+- `.env.example` (new) — exactly the vars still needed: `INVENTORY_API_URL`, `INVENTORY_ADMIN_SECRET`, `AUTH_SECRET`, `STORE_NAME`, `TAX_RATE`, `SUPER_ADMIN_EMAIL/PASSWORD`. No `INVENTORY_API_KEY`, no `INVENTORY_LOCATION_ID`.
+- `CLAUDE.md` / `README.md` — startup instruction fixed (`cp .env.local.example .env.local` pointed at a file that never existed → `cp .env.example .env.local`), variable tables updated, and a note on why the two credentials were removed. Incidentally, the documented `SEED_ADMIN_*` didn't exist either; `scripts/seed.ts` reads `SUPER_ADMIN_*`.
+- Tests — the three env-fallback cases are inverted: the env vars are now seeded on purpose with sentinel values in `beforeEach` and every unresolved-org case asserts `rejects.toThrow()`. Added null-session, partial-credential, and missing-`INVENTORY_API_URL` cases. `vitest.config.ts` aliases `server-only` to the package's own `empty.js` (outside the `react-server` condition its `index.js` throws on import).
+
+**Verification**: `npm run typecheck`, `npm run lint`, `npm test` (89 passing) and `npm run build` all green. AC 5 checked empirically — a temporary `"use client"` page importing `getInventoryConfig` failed the build with `'server-only' cannot be imported from a Client Component module`; the probe was removed.
+
+**Left out, deliberately**: `app/register/actions.ts:53-120` still persists an organization with `inventory_api_key = NULL` when provisioning fails outside production. That's no longer a cross-tenant leak — those accounts now fail loudly on any inventory call — but a dev signup still produces an unusable store without saying so. It's outside this story's criteria and noted in `progress.md` as needing its own story.
+
+<promise>COMPLETE</promise>
