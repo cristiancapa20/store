@@ -21,10 +21,15 @@ export async function listStaff(): Promise<
   const gate = await requireSession();
   if ("error" in gate) return gate;
 
+  const organizationId = gate.user.organizationId;
+  if (!organizationId) return [];
+
   try {
     return db
-      .prepare("SELECT id, name FROM users ORDER BY name")
-      .all() as { id: string; name: string }[];
+      .prepare(
+        "SELECT id, name FROM users WHERE organization_id = ? ORDER BY name"
+      )
+      .all(organizationId) as { id: string; name: string }[];
   } catch {
     return [];
   }

@@ -12,6 +12,7 @@ after each iteration and it's included in prompts for context.
 - **Errores de acción con código**: `ActionError` es `{ error: string; code?: ActionErrorCode }` con `ActionErrorCode = "not_found" | "unauthorized" | "forbidden"`. `scanBarcode` marca `not_found` solo cuando el servicio responde `found:false`; los códigos de autorización los ponen los guardias de `lib/authz.ts`; cualquier otro fallo (422, red) llega sin código. La UI debe ramificar por `result.code`, nunca por el texto del error.
 - **Autorización dentro de cada server action**: los server actions se despachan por identificador `Next-Action` con POST contra **cualquier** ruta, incluidas las que `auth.config.ts` deja públicas (`/`, `/register`), así que el middleware nunca los ve. `lib/authz.ts` (importa `server-only`) exporta `requireSession()` y `requireAdmin()`, que **devuelven** `Authorized | ActionError` en vez de lanzar. Toda acción exportada de `lib/actions.ts` empieza con `const gate = await requireX(); if ("error" in gate) return gate;` y lee la identidad de `gate.user` en lugar de volver a llamar a `auth()`. Efecto secundario en los tipos: una acción que antes devolvía un valor desnudo (`listStaff`, `getInvoicePreviewInfo`) pasa a `ActionResult<T>` y `tsc` señala a sus consumidores.
 - **Mensaje de error traducido en el cliente**: los server actions no tienen contexto de locale, así que devuelven el código y la UI resuelve el texto con `useActionErrorMessage()` (`lib/useActionErrorMessage.ts`, módulo `"use client"`): devuelve `t("errors."+code)` para `unauthorized`/`forbidden` y `result.error` para el resto. Añadir el hook a un componente obliga a incluirlo en las dependencias de sus `useCallback`/`useEffect` (`eslint react-hooks/exhaustive-deps` está activo).
+- **Toda lectura de `users` filtra por organización**: `users` es una tabla multi-tenant; cualquier `SELECT` sin `WHERE organization_id = ?` expone los usuarios de todas las tiendas, incluido el superadministrador (que no pertenece a ninguna). El `organizationId` sale de `gate.user` (guardia de `lib/authz.ts`) en server actions y de `session.user` en componentes de servidor (`app/staff/page.tsx:15`). Está tipado `string | null | undefined`, así que hay que cortocircuitar con lista vacía **antes** de la consulta: better-sqlite3 lanza si se le pasa `undefined` como parámetro, y el fallo acabaría en el `catch` genérico confundiendo «sin organización» con «BD caída». Al aseverar esto en pruebas, comprobar el SQL **y** el argumento de `all()`; solo el texto del SQL deja pasar un binding olvidado.
 - **i18n**: toda cadena visible va en `messages/es.json` y `messages/en.json` con las mismas claves. Verificación rápida de paridad:
   `node -e "const es=require('./messages/es.json'),en=require('./messages/en.json');const f=(o,p='')=>Object.entries(o).flatMap(([k,v])=>typeof v==='object'&&v?f(v,p+k+'.'):[p+k]);const a=new Set(f(es)),b=new Set(f(en));console.log([...a].filter(k=>!b.has(k)),[...b].filter(k=>!a.has(k)))"`
 
@@ -168,3 +169,21 @@ sin `inventoryApiKey` ni `inventoryLocationId`. Matiz honesto: ninguna organizac
 - Añadir un hook a un componente cliente arrastra sus dependencias: `react-hooks/exhaustive-deps` está activo, así que `useActionErrorMessage()` tuvo que entrar en las listas de `useCallback`/`useEffect` de `sell`, `adjust` y el dashboard.
 
 ---
+
+## 2026-07-28 - US-004: Restringir listStaff a la organización que consulta
+
+**Implementado**
+
+- `lib/actions.ts` (`listStaff`): la consulta pasa de `SELECT id, name FROM users ORDER BY name` a `SELECT id, name FROM users WHERE organization_id = ? ORDER BY name`, con el parámetro tomado de `gate.user.organizationId` (el guardia `requireSession()` de US-003 ya deja la identidad disponible, así que no hay una segunda llamada a `auth()`). Es la misma consulta que ya usaba `app/staff/page.tsx:15`.
+- Cortocircuito antes del acceso a la BD: si la sesión no resuelve `organizationId` se devuelve `[]`. `organizationId` está declarado como `string | null | undefined` en `types/next-auth.d.ts`, y pasar `undefined` como parámetro a better-sqlite3 lanza; el cortocircuito evita además que el fallo caiga en el `catch` genérico y se confunda un «sin organización» con un «BD caída».
+- Pruebas (`lib/actions.test.ts`): la que fijaba el SQL sin filtro ahora exige el `WHERE organization_id = ?` **y** que `all()` reciba `"org-1"` — aseverar solo el texto del SQL dejaría pasar un binding olvidado. Nueva prueba para la sesión sin organización (lista vacía y `db.prepare` sin llamar). `adminSession`/`staffSession` del `beforeEach` global incorporan `organizationId: "org-1"`.
+
+**Archivos**: `lib/actions.ts`, `lib/actions.test.ts`
+
+**Validación**: `npm run typecheck`, `npm run lint` y `npm test` (108 pruebas, 10 ficheros) en verde. Sin cambios de UI ni de i18n, así que no hubo verificación visual.
+
+**Learnings**
+
+- El superadministrador es el caso que hace visible la fuga: no pertenece a ninguna organización, así que aparecía en el filtro de historial de **todas** las tiendas. Devolver `[]` cuando no hay `organizationId` es lo correcto en ambos sentidos — ni la tienda ve a otros, ni el superadmin (que no tiene tienda) recibe el listado global.
+- La prueba aseveraba el SQL exacto, es decir, fijaba el bug: cualquier corrección la rompía. Cuando una prueba de este tipo falla hay que preguntarse si documenta un requisito o solo la implementación de ayer; aquí era lo segundo.
+- La consulta correcta ya vivía en `app/staff/page.tsx`. Antes de escribir un filtro nuevo, conviene buscar si otra ruta ya consulta la misma tabla: la divergencia entre dos lecturas de `users` es justo donde se coló la fuga.

@@ -1,0 +1,308 @@
+# Iteration 5 Log
+
+## Metadata
+
+- **Task ID**: US-003
+- **Task Title**: Exigir sesion y rol en todos los server actions
+- **Description**: Como propietario de una tienda, quiero que las acciones del servidor comprueben quien llama, para que nadie las invoque sin sesion ni por encima de su rol. CONTEXTO: lib/actions.ts declara 'use server...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-28T22:21:15.303Z
+- **Ended At**: 2026-07-28T22:28:28.840Z
+- **Duration**: 7m 13s
+- **Input Tokens**: 16461
+- **Output Tokens**: 34608
+- **Total Tokens**: 51069
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the current state of the code.
+[94m[Bash][0m Read staff actions $ cat app/staff/actions.ts
+[94m[Bash][0m List lib files $ wc -l lib/actions.ts lib/actions.test.ts && ls lib/
+[94m[Bash][0m Read progress $ tail -100 .ralph-tui/progress.md
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/types.ts[0m
+[94m[Bash][0m Read test head $ sed -n 1,80p lib/actions.test.ts
+[94m[Bash][0m Read test middle $ sed -n 120,220p lib/actions.test.ts
+[94m[Bash][0m $ grep -rn "listStaff\|getInvoicePreviewInfo\|listSales\|adjustStock\|addProduct\|listInventory\|creat...
+[94m[Bash][0m Rest of tests $ sed -n 220,580p lib/actions.test.ts
+[94m[Bash][0m $ grep -rn "listStaff\|getInvoicePreviewInfo\|listSales\|adjustStock\|addProduct\|listInventory\|creat...
+[94m[Bash][0m $ sed -n 1,40p auth.config.ts
+[94m[Bash][0m $ grep -n "code ===\|result.code\|\"error\" in" app/sell/page.tsx app/adjust/page.tsx app/history/page...
+[94m[Bash][0m $ sed -n 125,175p app/history/page.tsx
+
+[91m[Error: Exit code 1
+  );
+
+  const showToast = useCallback(
+    (message: string, variant: "success" | "error") => {
+      const id = ++_toastId;
+      setToasts((prev) => [...prev, { id, message, variant }]);
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
+    },
+    []
+  );
+
+  const handleScan = useCallback(
+    (barcode: string) => {
+      startScan(async () => {
+        const result = await scanBarcode(barcode);
+        if ("error" in result) {
+          showToast(
+            result.code === "not_found"
+              ? t("productNotFound")
+              : t("scanFailed", { error: result.error }),
+            "error"
+          );
+          return;
+        }
+        if (result.stock <= 0) {
+          showToast(t("outOfStock"), "error");
+          return;
+        }
+        updateActiveCart((prev) => {
+          const idx = prev.findIndex((e) => e.productId === result.id);
+          if (idx !== -1) return prev.map((e, i) => (i === idx ? { ...e, quantity: e.quantity + 1 } : e));
+          return [...prev, { productId: result.id, productName: result.name, unitPrice: result.price, quantity: 1 }];
+        });
+      });
+    },
+    [showToast, t, updateActiveCart]
+  );
+
+  const updateQty = useCallback((productId: string, delta: number) => {
+    updateActiveCart((prev) =>
+      prev.map((e) => (e.productId === productId ? { ...e, quantity: e.quantity + delta } : e))
+          .filter((e) => e.quantity > 0)
+    );
+  }, [updateActiveCart]);
+
+  const removeItem = useCallback((productId: string) => {
+    updateActiveCart((prev) => prev.filter((e) => e.productId !== productId));
+  }, [updateActiveCart]);
+
+  const handleConfirm = useCallback(() => {
+    if (cart.length === 0) return;
+    const ticketId = activeTicketId;
+    startConfirm(async () => {
+      const items: CartItem[] = cart.map((e) => ({
+        productId: e.productId,
+        quantity: e.quantity,
+        unitPrice: e.unitPrice,
+      }));
+      const result = await createSale(items);
+      if ("error" in result) {
+        showToast(result.error || t("failedToCreate"), "error");
+        return;
+      }
+      setTickets((prev) =>
+        prev.map((tk) => (tk.id === ticketId ? { ...tk, cart: [], lastSaleId: result.id } : tk))
+      );
+      setShowInvoicePreview(false);
+      showToast(t("saleConfirmedToast"), "success");
+    });
+  }, [cart, activeTicketId, showToast, t]);
+
+  const openInvoicePreview = useCallback(() => {
+    setShowInvoicePreview(true);
+    if (!invoiceInfo) {
+      startInvoiceInfoLoad(async () => {
+        const info = await getInvoicePreviewInfo();
+        setInvoiceInfo(info);
+      });
+    }
+  }, [invoiceInfo]);
+
+  const subtotal = cart.reduce((s, e) => s + e.unitPrice * e.quantity, 0);
+  const itemCount = cart.reduce((s, e) => s + e.quantity, 0);
+  const taxRate = invoiceInfo?.taxRate ?? 0;
+  const taxAmount = subtotal * taxRate;
+  const grandTotal = subtotal + taxAmount;
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Toast stack */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-[calc(100%-2rem)] max-w-sm pointer-events-none">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            role="alert"
+            className={`px-5 py-3 rounded-full text-white text-sm font-medium shadow-[0_12px_32px_rgba(3,15,34,0.2)] pointer-events-auto ${
+(eval):1: == not found][0m
+[94m[Bash][0m $ sed -n 40,110p app/adjust/page.tsx
+[94m[Bash][0m $ grep -n "invoiceInfo" app/sell/page.tsx | head -30
+[94m[Bash][0m $ console.log(Object.keys(es))"
+[94m[Bash][0m $ cat types/next-auth.d.ts
+Now creating the authorization helpers.
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/authz.ts[0m "import "server-only";
+
+import type { Session } from "next-auth";
+import { auth } from "@/auth";
+import type { ActionError } from "./types";
+
+export type SessionUser = Session["user"];
+
+export type Aut... (1073 chars)"
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/types.ts[0m edit: "// `code` lets the UI tell "the product does not e..." → "// `code` lets the UI tell "the product does not e..."
+Now the actions themselves:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "import { auth } from "@/auth";
+import db from "./d..." → "import { requireAdmin, requireSession } from "./au..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "): Promise<ActionResult<Product>> {
+  const { loca..." → "): Promise<ActionResult<Product>> {
+  const gate =..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "export async function getInvoicePreviewInfo(): Pro..." → "export async function getInvoicePreviewInfo(): Pro..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "  const session = await auth();
+  const staffId = ..." → "  const gate = await requireSession();
+  if ("erro..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "    limit: number;
+  };
+
+  const { locationId } = ..." → "    limit: number;
+  };
+
+  const gate = await requ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "): Promise<ActionResult<InventoryPage>> {
+  type A..." → "): Promise<ActionResult<InventoryPage>> {
+  const ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "): Promise<ActionResult<Product>> {
+  type ApiProd..." → "): Promise<ActionResult<Product>> {
+  const gate =..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "): Promise<ActionResult<{ stock: number }>> {
+  co..." → "): Promise<ActionResult<{ stock: number }>> {
+  co..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "): Promise<ActionResult<{ sales: Sale[]; total: nu..." → "): Promise<ActionResult<{ sales: Sale[]; total: nu..."
+[94m[Bash][0m $ npm run typecheck 2>&1 | tail -20
+[94m[Bash][0m $ console.log(JSON.stringify(es.adjust,null,1).slice(0,400))"
+[94m[Bash][0m $ tail -12 messages/en.json
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/es.json[0m edit: "    "ctaBtn": "Crear cuenta gratis"
+  }
+}" → "    "ctaBtn": "Crear cuenta gratis"
+  },
+  "errors..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/en.json[0m edit: "    "ctaBtn": "Create free account"
+  }
+}" → "    "ctaBtn": "Create free account"
+  },
+  "errors..."
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/useActionErrorMessage.ts[0m ""use client";
+
+import { useCallback } from "react";
+import { useTranslations } from "next-intl";
+import type { ActionError } from "./types";
+
+// Authorization refusals carry a code instead of a transl... (554 chars)"
+Now updating the consumers:
+[94m[Bash][0m $ sed -n 1,20p app/history/page.tsx
+Now editing each consumer.
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/history/page.tsx[0m edit: "      const users = await listStaff();
+      setSt..." → "      const users = await listStaff();
+      setSt..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "        const info = await getInvoicePreviewInfo()..." → "        const info = await getInvoicePreviewInfo()..."
+[94m[Bash][0m $ grep -n "useTranslations(" app/sell/page.tsx app/adjust/page.tsx app/products/InventoryDashboard.tsx...
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "import { INVENTORY_MAX_LIMIT } from "@/lib/paginat..." → "import { INVENTORY_MAX_LIMIT } from "@/lib/paginat..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "  const t = useTranslations("sell");" → "  const t = useTranslations("sell");
+  const actio..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "      const result = await listInventory(1, INVENT..." → "      const result = await listInventory(1, INVENT..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "        if ("error" in result) {
+          showToa..." → "        if ("error" in result) {
+          showToa..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "      if ("error" in result) {
+        showToast(r..." → "      if ("error" in result) {
+        showToast(a..."
+[94m[Bash][0m $ grep -n "}, \[searchLoaded\]\|\[showToast, t, updateActiveCart\]\|\[cart, activeTicketId, showToast,...
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "  }, [searchLoaded]);" → "  }, [searchLoaded, actionErrorMessage]);"
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "    [showToast, t, updateActiveCart]" → "    [showToast, t, updateActiveCart, actionErrorMe..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "  }, [cart, activeTicketId, showToast, t]);" → "  }, [cart, activeTicketId, showToast, t, actionEr..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "  }, [invoiceInfo]);" → "  }, [invoiceInfo, showToast, actionErrorMessage])..."
+Now adjust page, dashboard, and the add-product form:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "import { INVENTORY_MAX_LIMIT } from "@/lib/paginat..." → "import { INVENTORY_MAX_LIMIT } from "@/lib/paginat..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "  const t = useTranslations("adjust");" → "  const t = useTranslations("adjust");
+  const act..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "          setScanError(
+            result.code ==..." → "          setScanError(
+            result.code ==..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "    [selectProduct, t]
+  );" → "    [selectProduct, t, actionErrorMessage]
+  );"
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "    if ("error" in result) {
+      setSearchError(..." → "    if ("error" in result) {
+      setSearchError(..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "      const result = await adjustStock(selectedPro..." → "      const result = await adjustStock(selectedPro..."
+[94m[Bash][0m $ \|\[selectedProduct, belowZero, delta\]" app/adjust/page.tsx | head
+[94m[Bash][0m $ sed -n 107,110p app/adjust/page.tsx
+Now the dashboard and add-product form:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m edit: "import { INVENTORY_MAX_LIMIT } from "@/lib/paginat..." → "import { INVENTORY_MAX_LIMIT } from "@/lib/paginat..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m edit: "  const tp = useTranslations("products");" → "  const tp = useTranslations("products");
+  const ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m edit: "      if ("error" in invResult) {
+        setError..." → "      if ("error" in invResult) {
+        setError..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m edit: "      setHasFetched(true);
+    });
+  }, []);" → "      setHasFetched(true);
+    });
+  }, [actionErr..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/new/AddProductForm.tsx[0m edit: "import { addProduct } from "@/lib/actions";" → "import { addProduct } from "@/lib/actions";
+import..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/new/AddProductForm.tsx[0m edit: "  const t = useTranslations("addProduct");" → "  const t = useTranslations("addProduct");
+  const..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/new/AddProductForm.tsx[0m edit: "      if ("error" in result) {
+        setErrors({..." → "      if ("error" in result) {
+        setErrors({..."
+[94m[Bash][0m $ npm run typecheck 2>&1 | tail -10 && npm run lint 2>&1 | tail -20
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "import {
+  scanBarcode,
+  createSale,
+  listInvent..." → "import {
+  scanBarcode,
+  createSale,
+  listInvent..."
+[94m[Bash][0m $ grep -n "mockAuth.mockResolvedValue" lib/actions.test.ts
+[94m[Bash][0m $ ''') open(p,'w').write(s) EOF grep -n "mockAuth.mockResolvedValue" lib/actions.test.ts
+[94m[Bash][0m $ mockApiFetch.mockResolvedValue({       id: "sale-1",       createdAt: undefined as unknown as string...
+Now adding the authorization test suite:
+[94m[Bash][0m $ tail -5 lib/actions.test.ts
+[94m[Bash][0m $ EOF npm test 2>&1 | tail -30
+[94m[Bash][0m $ ls app/staff
+[94m[Bash][0m $ sed -n 32,100p components/BottomNav.tsx
+[94m[Bash][0m $ sed -n 36,80p auth.config.ts
+[94m[Edit][0m [95m/Users/cristian/dev/store/components/BottomNav.tsx[0m edit: "    href: "/adjust",
+    key: "adjustStock",
+    i..." → "    href: "/adjust",
+    key: "adjustStock",
+    a..."
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/authz.test.ts[0m "import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("@/auth", () => ({ auth: vi.fn() }));
+
+import { auth } from "@/auth";
+import { requireAdmin, requireSession } from "./authz";
+
+c... (1814 chars)"
+[94m[Bash][0m $ npm test 2>&1 | tail -12
+[94m[Bash][0m $ console.log([...a].filter(k=>!b.has(k)),[...b].filter(k=>!a.has(k)))"
+[94m[Bash][0m $ git status --short
+[94m[Bash][0m $ sed -n 1,12p .ralph-tui/progress.md
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "- **Errores de acción con código**: `ActionError` ..." → "- **Errores de acción con código**: `ActionError` ..."
+[94m[Bash][0m $ unificarlos obliga a cambiar `deleteStaff` (hoy `Promise<void>`) y su prueba, y eso queda fuera de e...
+[94m[Bash][0m $ grep -n "^export async function\|requireSession()\|requireAdmin()" lib/actions.ts
+US-003 is implemented.
+
+**What changed**
+
+- **`lib/authz.ts` (new)** — `requireSession()` and `requireAdmin()`, following the `app/staff/actions.ts:9-13` pattern (one `auth()` call, role compared against `"admin"`) but **returning** `Authorized | ActionError` instead of throwing, so the UI gets a controlled error. Imports `server-only`.
+- **`lib/actions.ts`** — all eight exported actions now open with a guard: `requireSession()` for `scanBarcode`, `createSale`, `listInventory`, `listSales`, `listStaff`, `getInvoicePreviewInfo`; `requireAdmin()` for `addProduct` and `adjustStock`. The `auth` import is gone — identity (`id`, `name`, `organizationPlan`) comes from `gate.user`.
+- **Type fallout that proved useful**: `listStaff` and `getInvoicePreviewInfo` could no longer return bare values, so they became `ActionResult<T>` and `tsc` pointed at their two consumers (`app/history/page.tsx:138`, `app/sell/page.tsx:241`), both updated. A throwing guard would have compiled clean and broken at runtime.
+- **`ActionErrorCode`** gains `"unauthorized" | "forbidden"`; new `errors` namespace in both message files plus `lib/useActionErrorMessage.ts` (client hook) resolves the code to translated text, adopted in sell, adjust, dashboard and add-product form.
+- **Tests**: the `createSale` case that asserted it worked without a session now asserts `code: "unauthorized"` and that `apiFetch` is never called. New `authorization` block sweeps all eight actions with no session, checks `addProduct`/`adjustStock` reject a `staff` role, and that `staff` can still read. New `lib/authz.test.ts`. The global `beforeEach` seeds an admin session so existing tests still exercise the happy path.
+
+**Judgement call worth your attention**: a `staff` user could adjust stock until now — nothing gated it. AC 3 requires admin on `adjustStock`, so I also marked the `/adjust` tab `adminOnly` in `BottomNav.tsx` rather than leave staff a screen that always answers "no permission". The page stays reachable by URL, where the guard returns the translated error. If staff *should* be able to adjust stock, the AC is what needs revisiting, not the guard.
+
+**Validation**: `npm run typecheck`, `npm run lint`, `npm test` (107 tests, 10 files) and `npm run build` all green; es/en key parity verified. No visual check — neither the inventory service (3001) nor a dev server was running; the anonymous-rejection proof is unit-level, not a real POST with a `Next-Action` header.
+
+One leftover I did not touch: `app/staff/actions.ts` keeps its own `requireAdmin` that *throws*, and its test asserts `rejects.toThrow("Unauthorized")`. Unifying the two would mean changing `deleteStaff`'s `Promise<void>` signature and that test — outside this story, noted in progress.md.
+
+<promise>COMPLETE</promise>

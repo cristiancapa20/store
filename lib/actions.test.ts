@@ -29,10 +29,10 @@ const mockGetInventoryConfig = vi.mocked(getInventoryConfig);
 const mockPrepare = vi.mocked(db.prepare);
 
 const adminSession = {
-  user: { id: "admin-1", name: "Ana", role: "admin" },
+  user: { id: "admin-1", name: "Ana", role: "admin", organizationId: "org-1" },
 };
 const staffSession = {
-  user: { id: "staff-1", name: "Bob", role: "staff" },
+  user: { id: "staff-1", name: "Bob", role: "staff", organizationId: "org-1" },
 };
 
 beforeEach(() => {
@@ -46,7 +46,7 @@ beforeEach(() => {
 });
 
 describe("listStaff", () => {
-  it("returns staff ordered by name", async () => {
+  it("returns only the session organization's staff, ordered by name", async () => {
     const all = vi.fn().mockReturnValue([{ id: "u1", name: "Ana" }]);
     mockPrepare.mockReturnValue({ all } as never);
 
@@ -54,8 +54,20 @@ describe("listStaff", () => {
 
     expect(result).toEqual([{ id: "u1", name: "Ana" }]);
     expect(mockPrepare).toHaveBeenCalledWith(
-      "SELECT id, name FROM users ORDER BY name"
+      "SELECT id, name FROM users WHERE organization_id = ? ORDER BY name"
     );
+    expect(all).toHaveBeenCalledWith("org-1");
+  });
+
+  it("returns an empty array when the session has no organization", async () => {
+    mockAuth.mockResolvedValue({
+      user: { id: "super-1", name: "Root", role: "admin" },
+    } as never);
+
+    const result = await listStaff();
+
+    expect(result).toEqual([]);
+    expect(mockPrepare).not.toHaveBeenCalled();
   });
 
   it("returns an empty array when the query throws", async () => {
