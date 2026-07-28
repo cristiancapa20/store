@@ -68,10 +68,12 @@ export async function apiFetch<T>(
   try {
     const res = await fetch(`${apiBase}${path}`, {
       ...init,
+      // Las cabeceras del llamante van primero: puede anadir (Idempotency-Key)
+      // pero no puede pisar el Content-Type ni, sobre todo, la credencial.
       headers: {
+        ...(init?.headers as Record<string, string> | undefined),
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
-        ...(init?.headers as Record<string, string> | undefined),
       },
     })
     if (!res.ok) {

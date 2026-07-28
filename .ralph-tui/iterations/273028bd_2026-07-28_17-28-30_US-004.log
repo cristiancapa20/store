@@ -1,0 +1,64 @@
+# Iteration 6 Log
+
+## Metadata
+
+- **Task ID**: US-004
+- **Task Title**: Restringir listStaff a la organizacion que consulta
+- **Description**: Como propietario de una tienda, no quiero ver en mi filtro de historial los nombres de los empleados de otras tiendas. CONTEXTO: lib/actions.ts:18-20 ejecuta SELECT id, name FROM users ORDER BY name s...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-28T22:28:30.662Z
+- **Ended At**: 2026-07-28T22:30:03.934Z
+- **Duration**: 1m 33s
+- **Input Tokens**: 74
+- **Output Tokens**: 5410
+- **Total Tokens**: 5484
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by looking at the current state of the code.
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/staff/page.tsx[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/authz.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/types/next-auth.d.ts[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "  const gate = await requireSession();
+  if ("erro..." → "  const gate = await requireSession();
+  if ("erro..."
+Now the test. Let me check how sessions are used across the test file.
+[94m[Bash][0m $ grep -n "Session\|organizationId" lib/actions.test.ts
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "const adminSession = {
+  user: { id: "admin-1", na..." → "const adminSession = {
+  user: { id: "admin-1", na..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "describe("listStaff", () => {
+  it("returns staff ..." → "describe("listStaff", () => {
+  it("returns only t..."
+[94m[Bash][0m $ npm run typecheck 2>&1 | tail -20 && npm run lint 2>&1 | tail -20 && npm test 2>&1 | tail -30
+All three gates pass. Now documenting learnings.
+[94m[Bash][0m $ tail -30 .ralph-tui/progress.md
+[94m[Bash][0m $ aquí era lo segundo. - La consulta correcta ya vivía en `app/staff/page.tsx`. Antes de escribir un f...
+[94m[Bash][0m $ head -5 .ralph-tui/progress.md
+[94m[Bash][0m $ grep -n "^- \*\*i18n\*\*" .ralph-tui/progress.md | head -3
+[94m[Read][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "- **i18n**: toda cadena visible va en `messages/es..." → "- **Toda lectura de `users` filtra por organizació..."
+US-004 implementada.
+
+**Cambio** — `lib/actions.ts:18-36` (`listStaff`):
+- La consulta pasa a `SELECT id, name FROM users WHERE organization_id = ? ORDER BY name`, con el parámetro tomado de `gate.user.organizationId` (el guardia de US-003 ya deja la identidad disponible, sin segunda llamada a `auth()`). Es la misma consulta que ya usaba `app/staff/page.tsx:15`.
+- Si la sesión no resuelve `organizationId` se devuelve `[]` **antes** de tocar la BD. `organizationId` está tipado `string | null | undefined`, y pasar `undefined` como parámetro a better-sqlite3 lanza; el cortocircuito evita además que ese fallo caiga en el `catch` genérico y se confunda «sin organización» con «BD caída».
+
+**Pruebas** — `lib/actions.test.ts`:
+- La prueba que fijaba el SQL sin filtro ahora exige el `WHERE organization_id = ?` y que `all()` reciba `"org-1"`; aseverar solo el texto del SQL dejaría pasar un binding olvidado.
+- Nueva prueba: sesión sin organización → lista vacía y `db.prepare` sin llamar.
+- `adminSession` / `staffSession` del `beforeEach` global incorporan `organizationId: "org-1"`.
+
+**Validación**: `npm run typecheck`, `npm run lint` y `npm test` (108 pruebas, 10 ficheros) en verde. Sin cambios de UI ni de i18n, así que no hubo verificación visual.
+
+Nota sobre el alcance: el caso que hace visible la fuga es el superadministrador — no pertenece a ninguna organización, así que aparecía en el filtro de historial de todas las tiendas. Devolver `[]` cuando no hay organización lo cubre en ambos sentidos. No he tocado otras lecturas de `users` en el repo; `app/staff/page.tsx` ya filtraba correctamente.
+
+Aprendizajes documentados en `.ralph-tui/progress.md` (entrada de la historia + un patrón reusable sobre lecturas multi-tenant de `users`). No he creado commits.
+
+<promise>COMPLETE</promise>

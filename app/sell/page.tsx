@@ -4,6 +4,7 @@ import { useCallback, useState, useTransition, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import BarcodeInput from "@/components/BarcodeInput";
 import { scanBarcode, createSale, listInventory, getInvoicePreviewInfo } from "@/lib/actions";
+import { newIdempotencyKey } from "@/lib/idempotency";
 import { INVENTORY_MAX_LIMIT } from "@/lib/pagination";
 import { useActionErrorMessage } from "@/lib/useActionErrorMessage";
 import type { CartItem, Product } from "@/lib/types";
@@ -26,6 +27,9 @@ type Ticket = {
   number: number;
   cart: CartEntry[];
   lastSaleId: string | null;
+  // Identifica al ticket, no al clic: mientras la venta no se registre, cada
+  // reintento reenvia esta misma clave y el servicio deduplica.
+  idempotencyKey: string;
 };
 
 type Toast = {
@@ -37,7 +41,13 @@ type Toast = {
 let _toastId = 0;
 
 function makeTicket(number: number): Ticket {
-  return { id: number, number, cart: [], lastSaleId: null };
+  return {
+    id: number,
+    number,
+    cart: [],
+    lastSaleId: null,
+    idempotencyKey: newIdempotencyKey(),
+  };
 }
 
 export default function SellPage() {
@@ -216,24 +226,32 @@ export default function SellPage() {
   const handleConfirm = useCallback(() => {
     if (cart.length === 0) return;
     const ticketId = activeTicketId;
+    const idempotencyKey = activeTicket.idempotencyKey;
     startConfirm(async () => {
       const items: CartItem[] = cart.map((e) => ({
         productId: e.productId,
         quantity: e.quantity,
         unitPrice: e.unitPrice,
       }));
-      const result = await createSale(items);
+      const result = await createSale(items, idempotencyKey);
       if ("error" in result) {
         showToast(actionErrorMessage(result) || t("failedToCreate"), "error");
         return;
       }
+      // La clave se renueva solo al registrarse la venta: el ticket vacio que
+      // queda es ya otra venta. Si el fallo llega antes, la clave sigue viva y
+      // el reintento reutiliza la misma.
       setTickets((prev) =>
-        prev.map((tk) => (tk.id === ticketId ? { ...tk, cart: [], lastSaleId: result.id } : tk))
+        prev.map((tk) =>
+          tk.id === ticketId
+            ? { ...tk, cart: [], lastSaleId: result.id, idempotencyKey: newIdempotencyKey() }
+            : tk
+        )
       );
       setShowInvoicePreview(false);
       showToast(t("saleConfirmedToast"), "success");
     });
-  }, [cart, activeTicketId, showToast, t, actionErrorMessage]);
+  }, [cart, activeTicketId, activeTicket.idempotencyKey, showToast, t, actionErrorMessage]);
 
   const openInvoicePreview = useCallback(() => {
     setShowInvoicePreview(true);

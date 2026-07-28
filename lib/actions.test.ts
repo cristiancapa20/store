@@ -193,7 +193,7 @@ describe("createSale", () => {
       items: [],
     });
 
-    await createSale(items);
+    await createSale(items, "ticket-key-1");
 
     expect(mockApiFetch).toHaveBeenCalledWith(
       "/sales",
@@ -211,6 +211,42 @@ describe("createSale", () => {
     );
   });
 
+  it("forwards the ticket key as the Idempotency-Key header", async () => {
+    mockApiFetch.mockResolvedValue({
+      id: "sale-1",
+      createdAt: "2026-01-01T00:00:00Z",
+      total: 13,
+      items: [],
+    });
+
+    await createSale(items, "ticket-key-1");
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/sales",
+      expect.objectContaining({
+        headers: { "Idempotency-Key": "ticket-key-1" },
+      })
+    );
+  });
+
+  it("omits the header rather than sending a blank key", async () => {
+    // El servicio guardaria "" tal cual y el unico (location_id,
+    // idempotency_key) haria chocar entre si a todas las ventas sin clave.
+    mockApiFetch.mockResolvedValue({
+      id: "sale-1",
+      createdAt: "2026-01-01T00:00:00Z",
+      total: 13,
+      items: [],
+    });
+
+    await createSale(items, "   ");
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/sales",
+      expect.objectContaining({ headers: undefined })
+    );
+  });
+
   it("refuses to register a sale when there is no session", async () => {
     mockAuth.mockResolvedValue(null as never);
     mockApiFetch.mockResolvedValue({
@@ -220,7 +256,7 @@ describe("createSale", () => {
       items: [],
     });
 
-    const result = await createSale(items);
+    const result = await createSale(items, "ticket-key-1");
 
     expect(result).toMatchObject({ code: "unauthorized" });
     expect(mockApiFetch).not.toHaveBeenCalled();
@@ -229,7 +265,7 @@ describe("createSale", () => {
   it("propagates an API error", async () => {
     mockApiFetch.mockResolvedValue({ error: "Insufficient stock" });
 
-    const result = await createSale(items);
+    const result = await createSale(items, "ticket-key-1");
 
     expect(result).toEqual({ error: "Insufficient stock" });
   });
@@ -242,7 +278,7 @@ describe("createSale", () => {
       items: [],
     });
 
-    const result = await createSale(items);
+    const result = await createSale(items, "ticket-key-1");
 
     expect(result).toMatchObject({ subtotal: 13, total: 13 });
   });
@@ -258,7 +294,7 @@ describe("createSale", () => {
       items: [],
     });
 
-    const result = await createSale(items);
+    const result = await createSale(items, "ticket-key-1");
 
     if ("error" in result) throw new Error("expected success");
     expect(result.createdAt).toBe("");
@@ -272,7 +308,7 @@ describe("createSale", () => {
       items: [],
     });
 
-    const result = await createSale(items);
+    const result = await createSale(items, "ticket-key-1");
 
     if ("error" in result) throw new Error("expected success");
     expect(result.createdAt).not.toBe("");
@@ -612,7 +648,7 @@ describe("authorization", () => {
 
   const callAction = {
     scanBarcode: () => scanBarcode("123"),
-    createSale: () => createSale(cart),
+    createSale: () => createSale(cart, "ticket-key-1"),
     listInventory: () => listInventory(),
     addProduct: () =>
       addProduct({ name: "Leche", sku: "222", price: 2.5, initialStock: 0 }),

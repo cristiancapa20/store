@@ -7,7 +7,7 @@ vi.mock("@/lib/db", () => ({
 
 import { auth } from "@/auth";
 import db from "@/lib/db";
-import { getInventoryConfig } from "./inventoryClient";
+import { apiFetch, getInventoryConfig } from "./inventoryClient";
 
 const mockAuth = vi.mocked(auth);
 const mockPrepare = vi.mocked(db.prepare);
@@ -123,5 +123,59 @@ describe("getInventoryConfig", () => {
       mockOrgRow({ inventory_api_key: null, inventory_location_id: null });
       await expect(getInventoryConfig()).rejects.toThrow();
     }
+  });
+});
+
+describe("apiFetch headers", () => {
+  function mockResolvedConfig() {
+    mockSession({ id: "u1", role: "staff", organizationId: "org-1" });
+    mockOrgRow({
+      inventory_api_key: "inv_live_org_one",
+      inventory_location_id: "loc-1",
+    });
+  }
+
+  function headersOf(fetchMock: ReturnType<typeof vi.fn>): Record<string, string> {
+    return (fetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+  }
+
+  it("merges caller headers with the ones it already sets", async () => {
+    mockResolvedConfig();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await apiFetch("/sales", {
+      method: "POST",
+      headers: { "Idempotency-Key": "ticket-key-1" },
+    });
+
+    expect(headersOf(fetchMock)).toEqual({
+      "Content-Type": "application/json",
+      Authorization: "Bearer inv_live_org_one",
+      "Idempotency-Key": "ticket-key-1",
+    });
+
+    vi.unstubAllGlobals();
+  });
+
+  it("does not let a caller overwrite the credential or the content type", async () => {
+    mockResolvedConfig();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await apiFetch("/sales", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer attacker",
+        "Content-Type": "text/plain",
+      },
+    });
+
+    expect(headersOf(fetchMock)).toEqual({
+      "Content-Type": "application/json",
+      Authorization: "Bearer inv_live_org_one",
+    });
+
+    vi.unstubAllGlobals();
   });
 });

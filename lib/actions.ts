@@ -104,7 +104,8 @@ export async function getInvoicePreviewInfo(): Promise<
 }
 
 export async function createSale(
-  items: CartItem[]
+  items: CartItem[],
+  idempotencyKey: string
 ): Promise<ActionResult<Sale>> {
   const gate = await requireSession();
   if ("error" in gate) return gate;
@@ -113,8 +114,14 @@ export async function createSale(
   const staffName = gate.user.name ?? "Staff";
   const { locationId } = await getInventoryConfig();
 
+  // Una clave vacia seria peor que ninguna: el servicio la guardaria tal cual y
+  // el unico (location_id, idempotency_key) haria chocar entre si a todas las
+  // ventas sin clave de la misma tienda.
+  const key = idempotencyKey.trim();
+
   const result = await apiFetch<ApiSaleResponse>("/sales", {
     method: "POST",
+    headers: key ? { "Idempotency-Key": key } : undefined,
     body: JSON.stringify({
       location_id: locationId,
       actor_ref: staffId,
