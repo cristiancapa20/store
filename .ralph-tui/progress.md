@@ -6,6 +6,7 @@ after each iteration and it's included in prompts for context.
 ## Codebase Patterns (Study These First)
 
 - **Límites de paginación del servicio**: `lib/pagination.ts` exporta `INVENTORY_MAX_LIMIT` (100, el `MAX_LIMIT` del servicio) y `clampInventoryLimit()`. Los componentes cliente importan la constante; `listInventory` (server action) además recorta el `limit` recibido, así ninguna ruta puede provocar un 422 por límite. Es un módulo plano (sin `"use server"` ni `auth`), por eso puede importarse desde `"use client"`.
+- **Importes como cadenas decimales**: el servicio serializa todo importe como cadena (`"350.00"`), nunca como número JSON. `lib/decimal.ts` exporta el tipo `ApiDecimal` (`string | number | null | undefined`) y `parseDecimal()`. Toda forma `Api*` de `lib/actions.ts` tipa sus importes como `ApiDecimal` y convierte **una sola vez en el borde** con `parseDecimal`; de ahí para dentro (`Product`, `Sale`, `SaleItem`) todo es `number`. Nunca propagar la cadena a la UI: `"350".toFixed()` lanza y `sum + "10.00"` concatena en silencio.
 - **Errores de acción con código**: `ActionError` es `{ error: string; code?: ActionErrorCode }`. `scanBarcode` marca `code: "not_found"` solo cuando el servicio responde `found:false`; cualquier otro fallo (422, red, auth) llega sin código. La UI debe ramificar por `result.code`, nunca por el texto del error.
 - **i18n**: toda cadena visible va en `messages/es.json` y `messages/en.json` con las mismas claves. Verificación rápida de paridad:
   `node -e "const es=require('./messages/es.json'),en=require('./messages/en.json');const f=(o,p='')=>Object.entries(o).flatMap(([k,v])=>typeof v==='object'&&v?f(v,p+k+'.'):[p+k]);const a=new Set(f(es)),b=new Set(f(en));console.log([...a].filter(k=>!b.has(k)),[...b].filter(k=>!a.has(k)))"`
@@ -43,3 +44,27 @@ after each iteration and it's included in prompts for context.
 - Los KPIs de `InventoryDashboard` (valor de inventario, stock bajo, desglose) se calculan sobre los productos cargados, mientras que «Total Productos» viene del `total` del servicio: siguen discrepando por diseño hasta US-010; el banner nuevo lo hace explícito en lugar de disimularlo.
 
 ---
+
+## 2026-07-28 - US-005: Tratar los importes de la API como cadenas decimales
+
+**Implementado**
+
+- Nuevo `lib/decimal.ts`: tipo `ApiDecimal = string | number | null | undefined` y `parseDecimal(value, fallback = 0)`, que convierte una sola vez en el borde y descarta `NaN`/`Infinity`.
+- `ApiScanResult.price` pasa a `string | null` (contrato real del servicio) y `scanBarcode` devuelve `parseDecimal(result.price)`. Esto era el TypeError: `"350".toFixed is not a function` en `app/sell/page.tsx:487` tras **cualquier** escaneo con éxito.
+- `ApiSaleResponse` (`total`, `items[].unitPrice`, `items[].lineTotal`) y el `ApiSale` de `listSales` se tipan como `ApiDecimal`. `listSales` convertía nada: `total`, `unitPrice` y `lineTotal` llegaban como cadenas a `app/history/page.tsx:316` (`sale.total.toFixed(2)`) y a la factura PDF (`app/api/invoices/[saleId]/route.tsx:121`), y `subtotal` se calculaba con `sum + "10.00"` → concatenación de cadenas. Ahora todo pasa por `parseDecimal`.
+- `createSale`: el `typeof result.total === "string" ? parseFloat(...) : ...` inline se sustituye por `parseDecimal`. Sigue construyendo las líneas desde el carrito local (el servicio no devuelve `productName`), pero el carrito ya trae números reales.
+- `listInventory`: `parseFloat(item.price)` → `parseDecimal(item.price)`, así un precio nulo o corrupto da 0 en vez de `NaN`.
+- Pruebas: el fixture de escaneo usa `"350.00"` en vez de `null`; nueva prueba que asevera `typeof price === "number"`, `price.toFixed(2)` y `price * 2`; nueva prueba de `listSales` con `total`/`unitPrice`/`lineTotal` como cadenas; `lib/decimal.test.ts` cubre el helper.
+
+**Archivos**
+
+- Nuevos: `lib/decimal.ts`, `lib/decimal.test.ts`
+- Modificados: `lib/actions.ts`, `lib/actions.test.ts`
+
+**Validación**: `npm run typecheck`, `npm run lint` y `npm test` (77 pruebas) en verde. Sin verificación visual: el servicio de inventario (3001) no estaba levantado en esta sesión.
+
+**Learnings**
+
+- Los fixtures que simulan `apiFetch` son el contrato de facto: si un fixture usa `null` o `number` donde el servicio manda `"350.00"`, el tipado miente y las pruebas pasan igual. Al tocar una forma `Api*`, revisar el fixture antes que el tipo.
+- La ruta de búsqueda no fallaba solo porque `listInventory` era la **única** que convertía; el bug llevaba escondido en `scanBarcode` y `listSales` desde el principio. Cuando una conversión aparece en un solo mapeo, sospechar de los hermanos.
+- `subtotal: items.reduce((sum, i) => sum + i.lineTotal, 0)` con cadenas no lanza: devuelve `"010.0010.00"`. Los fallos por cadenas decimales se manifiestan tarde y en otra pantalla; convertir en el borde es lo que evita rastrearlos.

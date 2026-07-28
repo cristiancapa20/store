@@ -3,10 +3,10 @@
   "sessionId": "273028bd-e3fb-402f-a72e-935b06d4fdf1",
   "status": "running",
   "startedAt": "2026-07-28T22:01:24.050Z",
-  "updatedAt": "2026-07-28T22:07:11.346Z",
-  "currentIteration": 0,
+  "updatedAt": "2026-07-28T22:11:03.747Z",
+  "currentIteration": 1,
   "maxIterations": 0,
-  "tasksCompleted": 0,
+  "tasksCompleted": 1,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -18,8 +18,8 @@
       {
         "id": "US-012",
         "title": "Dejar de solicitar limites por encima del maximo del servicio",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-005",
@@ -89,7 +89,18 @@
       }
     ]
   },
-  "iterations": [],
+  "iterations": [
+    {
+      "iteration": 1,
+      "status": "completed",
+      "taskId": "US-012",
+      "taskTitle": "Dejar de solicitar limites por encima del maximo del servicio",
+      "taskCompleted": true,
+      "durationMs": 345266,
+      "startedAt": "2026-07-28T22:01:26.049Z",
+      "endedAt": "2026-07-28T22:07:11.315Z"
+    }
+  ],
   "skippedTaskIds": [],
   "cwd": "/Users/cristian/dev/store",
   "activeTaskIds": [],

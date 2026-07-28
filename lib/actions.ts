@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import db from "./db";
+import { parseDecimal, type ApiDecimal } from "./decimal";
 import { apiFetch, getInventoryConfig } from "./inventoryClient";
 import { clampInventoryLimit } from "./pagination";
 import type {
@@ -29,26 +30,26 @@ type ApiInventoryItem = {
   productId: string;
   name: string;
   barcode: string | null;
-  price: string;
+  price: ApiDecimal;
   stock: number;
 };
 
 type ApiScanResult = {
   found: boolean;
   product: { id: string; name: string; barcode: string | null };
-  price: number | null;
+  price: string | null;
   stock: number | null;
 };
 
 type ApiSaleResponse = {
   id: string;
   createdAt: string;
-  total: number | string;
+  total: ApiDecimal;
   items: Array<{
     productId: string;
     quantity: number;
-    unitPrice: number;
-    lineTotal: number;
+    unitPrice: ApiDecimal;
+    lineTotal: ApiDecimal;
   }>;
 };
 
@@ -67,7 +68,7 @@ export async function scanBarcode(
     id: result.product.id,
     name: result.product.name,
     sku: result.product.barcode ?? barcode,
-    price: result.price ?? 0,
+    price: parseDecimal(result.price),
     stock: result.stock ?? 0,
   };
 }
@@ -108,8 +109,7 @@ export async function createSale(
   if ("error" in result) return result;
 
   const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
-  const total =
-    typeof result.total === "string" ? parseFloat(result.total) : result.total;
+  const total = parseDecimal(result.total);
 
   return {
     id: result.id,
@@ -150,7 +150,7 @@ export async function listInventory(
       id: item.productId,
       name: item.name,
       sku: item.barcode ?? item.productId.slice(0, 8),
-      price: parseFloat(item.price),
+      price: parseDecimal(item.price),
       stock: item.stock,
     })),
     total: result.total,
@@ -259,13 +259,13 @@ export async function listSales(
     locationId: string;
     staffId: string | null;
     createdAt: string;
-    total: number;
+    total: ApiDecimal;
     items: Array<{
       productId: string | null;
       productName: string | null;
       quantity: number;
-      unitPrice: number;
-      lineTotal: number;
+      unitPrice: ApiDecimal;
+      lineTotal: ApiDecimal;
     }>;
   };
   type ApiResponse = {
@@ -301,11 +301,11 @@ export async function listSales(
       productId: i.productId ?? "",
       productName: i.productName ?? "",
       quantity: i.quantity,
-      unitPrice: i.unitPrice,
-      lineTotal: i.lineTotal,
+      unitPrice: parseDecimal(i.unitPrice),
+      lineTotal: parseDecimal(i.lineTotal),
     })),
-    subtotal: s.items.reduce((sum, i) => sum + i.lineTotal, 0),
-    total: s.total,
+    subtotal: s.items.reduce((sum, i) => sum + parseDecimal(i.lineTotal), 0),
+    total: parseDecimal(s.total),
   }));
 
   if (filters.staffId) {

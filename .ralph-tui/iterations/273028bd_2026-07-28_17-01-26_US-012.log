@@ -1,0 +1,168 @@
+# Iteration 1 Log
+
+## Metadata
+
+- **Task ID**: US-012
+- **Task Title**: Dejar de solicitar limites por encima del maximo del servicio
+- **Description**: Como cajero, quiero que la pantalla de venta vuelva a cargar productos, porque hoy no carga ninguno. CONTEXTO: el servicio de inventario ahora declara MAX_LIMIT = 100 y valida con .max(MAX_LIMIT) en z...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-28T22:01:26.049Z
+- **Ended At**: 2026-07-28T22:07:11.315Z
+- **Duration**: 5m 45s
+- **Input Tokens**: 286
+- **Output Tokens**: 25077
+- **Total Tokens**: 25363
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the progress file and the relevant code.
+[94m[Read][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m
+[94m[Bash][0m $ grep -n "listInventory\|MAX_LIMIT\|scanBarcode" -r --include=*.ts --include=*.tsx . | grep -v node_m...
+[94m[Bash][0m $ ls && cat package.json
+[94m[Bash][0m $ grep -rn "listInventory\|MAX_LIMIT" --include="*.ts" --include="*.tsx" app lib components e2e script...
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/inventoryClient.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/types.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m
+[94m[Read][0m [95m/Users/cristian/dev/store/app/products/ProductList.tsx[0m
+[94m[Bash][0m $ grep -n "US-012\|US-010" -A 30 /Users/cristian/dev/store/tasks/prd-store-security-hardening.md | hea...
+[94m[Bash][0m $ grep -rn "ProductList" /Users/cristian/dev/store --include="*.ts" --include="*.tsx" --include="*.jso...
+[94m[Bash][0m $ console.log(JSON.stringify({sell:m.sell,adjust:m.adjust,inventory:m.inventory,products:m.products},n...
+[94m[Bash][0m $ find /Users/cristian/dev/store -name "*.test.tsx" -not -path "*/node_modules/*"
+[94m[Bash][0m $ grep -rn "outOfStock\|inStock" /Users/cristian/dev/store/app /Users/cristian/dev/store/components
+[94m[Bash][0m $ ls /Users/cristian/dev/store/.beads 2>/dev/null || echo "no beads dir"
+[94m[Bash][0m $ bd list --status=open 2>&1 | head -30
+Now implementing. First the shared limit constant and the action changes:
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/pagination.ts[0m "// The Inventory Service validates `limit` with `.max(100)`: anything above it
+// is rejected with 422 instead of being silently trimmed.
+export const INVENTORY_MAX_LIMIT = 100;
+
+export function clamp... (373 chars)"
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/types.ts[0m edit: "export type ActionError = { error: string };" → "// `code` lets the UI tell "the product does not e..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "  if ("error" in result) return result;
+  if (!res..." → "  if ("error" in result) return result;
+  if (!res..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "  const { locationId } = await getInventoryConfig(..." → "  const { locationId } = await getInventoryConfig(..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.ts[0m edit: "import { apiFetch, getInventoryConfig } from "./in..." → "import { apiFetch, getInventoryConfig } from "./in..."
+Now the sell page:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "import { scanBarcode, createSale, listInventory, g..." → "import { scanBarcode, createSale, listInventory, g..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "  const [allProducts, setAllProducts] = useState<P..." → "  const [allProducts, setAllProducts] = useState<P..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "  // Load product list once for search
+  useEffect..." → "  // Load the first page of products for local sea..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "        const result = await scanBarcode(barcode);..." → "        const result = await scanBarcode(barcode);..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/sell/page.tsx[0m edit: "            ) : null}
+          </div>
+
+          ..." → "            ) : null}
+          </div>
+
+          ..."
+Now the adjust page:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "import { scanBarcode, listInventory, adjustStock }..." → "import { scanBarcode, listInventory, adjustStock }..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "  const [scanError, setScanError] = useState<strin..." → "  const [scanError, setScanError] = useState<strin..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "  const selectProduct = useCallback((product: Prod..." → "  const selectProduct = useCallback((product: Prod..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "      const result = await scanBarcode(barcode);
+ ..." → "      const result = await scanBarcode(barcode);
+ ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "  const handleScan = useCallback((barcode: string)..." → "  const handleScan = useCallback(
+    (barcode: st..."
+[94m[Read][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "  const handleScan = useCallback(
+    (barcode: st..." → "  const handleScan = useCallback(
+    (barcode: st..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "    setScanError(null);
+    setSearchQuery("");
+  ..." → "    setScanError(null);
+    setSearchQuery("");
+  ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/adjust/page.tsx[0m edit: "            className="ui-search-field"
+          ..." → "            className="ui-search-field"
+          ..."
+Now the inventory dashboard:
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m edit: "import { listInventory, listSales } from "@/lib/ac..." → "import { listInventory, listSales } from "@/lib/ac..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m edit: "        listInventory(1, 200)," → "        listInventory(1, INVENTORY_MAX_LIMIT),"
+[94m[Bash][0m $ grep -n "ui-alert" /Users/cristian/dev/store/app/globals.css
+[94m[Read][0m [95m/Users/cristian/dev/store/app/globals.css[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m edit: "  const showSkeleton = isPending && !hasFetched;" → "  const showSkeleton = isPending && !hasFetched;
+ ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/app/products/InventoryDashboard.tsx[0m edit: "      {/* Error */}
+      {error && !isPending && ..." → "      {/* Error */}
+      {error && !isPending && ..."
+Now delete the dead `ProductList.tsx` and add the i18n strings:
+[94m[Bash][0m $ git rm -q app/products/ProductList.tsx && git status --short
+[94m[Bash][0m $ console.log(JSON.stringify({sell:m.sell,adjust:m.adjust,inventory:m.inventory,products:m.products},n...
+[94m[Bash][0m $ grep -n "\"noResults\"\|\"productNotFound\"\|\"stockLabel\"\|\"stockOut\"\|\"inStock\"\|\"outOfStock...
+[94m[Read][0m [95m/Users/cristian/dev/store/messages/es.json[0m
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/es.json[0m edit: "    "noResults": "Sin resultados"
+  },
+  "products..." → "    "noResults": "Sin resultados",
+    "scanFailed..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/es.json[0m edit: "    "noProducts": "Aún no hay productos.",
+    "ou..." → "    "noProducts": "Aún no hay productos.",
+    "ad..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/es.json[0m edit: "    "productNotFound": "Producto no encontrado: {e..." → "    "productNotFound": "Producto no encontrado",
+ ..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/es.json[0m edit: "    "stockOut": "Sin Stock"" → "    "stockOut": "Sin Stock",
+    "partialCatalog":..."
+Now the English file:
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/en.json[0m edit: "    "noResults": "No results"
+  },
+  "products": {" → "    "noResults": "No results",
+    "scanFailed": "..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/en.json[0m edit: "    "noProducts": "No products yet.",
+    "outOfSt..." → "    "noProducts": "No products yet.",
+    "addProd..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/en.json[0m edit: "    "productNotFound": "Product not found: {error}..." → "    "productNotFound": "Product not found",
+    "s..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/messages/en.json[0m edit: "    "stockOut": "Out of Stock"" → "    "stockOut": "Out of Stock",
+    "partialCatalo..."
+Now updating tests:
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "  it("returns 'Product not found' when the API rep..." → "  it("tags a found:false response with the not_fou..."
+[94m[Edit][0m [95m/Users/cristian/dev/store/lib/actions.test.ts[0m edit: "  it("propagates an API error", async () => {
+    ..." → "  it("clamps a limit above the service maximum ins..."
+[94m[Write][0m [95m/Users/cristian/dev/store/lib/pagination.test.ts[0m "import { describe, it, expect } from "vitest";
+import { INVENTORY_MAX_LIMIT, clampInventoryLimit } from "./pagination";
+
+describe("clampInventoryLimit", () => {
+  it("matches the service maximum", () ... (838 chars)"
+[94m[Bash][0m $ npm run typecheck 2>&1 | tail -20
+[94m[Bash][0m $ npm run lint 2>&1 | tail -20 && npm test 2>&1 | tail -30
+[94m[Bash][0m $ " && grep -rn "listInventory(" app lib | grep -v test
+[94m[Bash][0m $ curl -s -o /dev/null -w "%{http_code}\n" --max-time 3 http://localhost:3000 2>&1
+
+[91m[Error: Exit code 52
+000
+000][0m
+[94m[Bash][0m $ npm run build 2>&1 | tail -25
+Build passes. Now documenting in progress.md:
+[94m[Edit][0m [95m/Users/cristian/dev/store/.ralph-tui/progress.md[0m edit: "## Codebase Patterns (Study These First)
+
+*Add reu..." → "## Codebase Patterns (Study These First)
+
+- **Lími..."
+[94m[Bash][0m $ el banner nuevo lo hace explícito en lugar de disimularlo.  --- EOF echo ok
+US-012 implemented.
+
+**Changes**
+- `lib/pagination.ts` (new): `INVENTORY_MAX_LIMIT = 100` + `clampInventoryLimit()`. Plain module so `"use client"` files can import it (`lib/actions.ts` is `"use server"` and can only export async functions).
+- `lib/actions.ts`: `listInventory` clamps `limit` before building the URL, so no call path can trigger a 422; `scanBarcode` now tags a `found:false` response with `code: "not_found"`.
+- `lib/types.ts`: `ActionError` gains `code?: "not_found"` — the UI branches on the code, not on error text.
+- `app/sell/page.tsx`, `app/adjust/page.tsx`, `app/products/InventoryDashboard.tsx`: request `INVENTORY_MAX_LIMIT` instead of 500/200.
+- Truncation is now surfaced: a note under the sell search (`sell.catalogTruncated`), a note on the adjust search (`adjust.searchTruncated`), and an info banner on the dashboard (`inventory.partialCatalog`) stating that KPIs and table only cover the loaded page. Sell and adjust also show catalog-load errors that were previously swallowed silently.
+- A 422 no longer reads as "producto no encontrado": both scan handlers show `scanFailed` with the service message unless `code === "not_found"`. The adjust page's hardcoded English `Product not found: ${error}` is gone.
+- New strings in `messages/es.json` and `messages/en.json` (key parity verified).
+- **`app/products/ProductList.tsx` deleted** — dead code, nothing imports it (`app/products/page.tsx` renders `InventoryDashboard`). Its two orphaned keys `products.outOfStock` / `products.inStock` were removed with it. Decision recorded in progress.md.
+- Tests: updated the two `scanBarcode` assertions, added a 422-has-no-code case, a clamp case for `listInventory(1, 500)`, and `lib/pagination.test.ts`.
+
+**Validation**: `npm run typecheck`, `npm run lint`, `npm test` (71 passing) and `npm run build` all green. No visual check against the real service — neither the inventory service (3001) nor the dev server (3000) was running in this session.
+
+Note the underlying problem stays open by design: adjust still refetches the inventory on every keystroke and the dashboard KPIs still cover only one page. That's US-010's scope; this story just makes the gap visible instead of pretending the list is complete.
+
+<promise>COMPLETE</promise>

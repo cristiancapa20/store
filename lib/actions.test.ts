@@ -95,7 +95,7 @@ describe("scanBarcode", () => {
     mockApiFetch.mockResolvedValue({
       found: true,
       product: { id: "p1", name: "Coca-Cola", barcode: null },
-      price: 1.5,
+      price: "350.00",
       stock: 10,
     });
 
@@ -105,9 +105,25 @@ describe("scanBarcode", () => {
       id: "p1",
       name: "Coca-Cola",
       sku: "7501234567890",
-      price: 1.5,
+      price: 350,
       stock: 10,
     });
+  });
+
+  it("returns a price the cart can do arithmetic on, not the raw decimal string", async () => {
+    mockApiFetch.mockResolvedValue({
+      found: true,
+      product: { id: "p1", name: "Coca-Cola", barcode: null },
+      price: "350.00",
+      stock: 10,
+    });
+
+    const result = await scanBarcode("7501234567890");
+
+    if ("error" in result) throw new Error("expected success");
+    expect(typeof result.price).toBe("number");
+    expect(result.price.toFixed(2)).toBe("350.00");
+    expect(result.price * 2).toBe(700);
   });
 
   it("defaults null price/stock to 0", async () => {
@@ -488,10 +504,22 @@ describe("listSales", () => {
           locationId: "loc-1",
           staffId: "u1",
           createdAt: "t",
-          total: 20,
+          total: "20.00",
           items: [
-            { productId: "p1", productName: "Agua", quantity: 2, unitPrice: 5, lineTotal: 10 },
-            { productId: "p2", productName: "Pan", quantity: 2, unitPrice: 5, lineTotal: 10 },
+            {
+              productId: "p1",
+              productName: "Agua",
+              quantity: 2,
+              unitPrice: "5.00",
+              lineTotal: "10.00",
+            },
+            {
+              productId: "p2",
+              productName: "Pan",
+              quantity: 2,
+              unitPrice: "5.00",
+              lineTotal: "10.00",
+            },
           ],
         },
         {
@@ -499,7 +527,7 @@ describe("listSales", () => {
           locationId: "loc-1",
           staffId: "other",
           createdAt: "t",
-          total: 5,
+          total: "5.00",
           items: [],
         },
       ],
@@ -513,5 +541,40 @@ describe("listSales", () => {
 
     expect(result.sales).toHaveLength(1);
     expect(result.sales[0].subtotal).toBe(20);
+  });
+
+  it("converts the decimal strings of total, unitPrice and lineTotal to numbers", async () => {
+    mockApiFetch.mockResolvedValue({
+      data: [
+        {
+          id: "s1",
+          locationId: "loc-1",
+          staffId: "u1",
+          createdAt: "t",
+          total: "350.50",
+          items: [
+            {
+              productId: "p1",
+              productName: "Agua",
+              quantity: 1,
+              unitPrice: "350.50",
+              lineTotal: "350.50",
+            },
+          ],
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 50,
+    });
+
+    const result = await listSales();
+    if ("error" in result) throw new Error("expected success");
+
+    const sale = result.sales[0];
+    expect(sale.total.toFixed(2)).toBe("350.50");
+    expect(sale.items[0].unitPrice).toBe(350.5);
+    expect(sale.items[0].lineTotal).toBe(350.5);
+    expect(sale.subtotal).toBe(350.5);
   });
 });
