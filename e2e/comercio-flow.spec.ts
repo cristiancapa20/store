@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import Database from "better-sqlite3";
 import path from "path";
+import es from "../messages/es.json";
 
 /**
  * Golden-path e2e: register a brand-new comercio (isolated by its own
@@ -35,17 +36,17 @@ test("Golden path: comercio -> producto -> venta -> historial -> staff", async (
     await page.locator("#email").fill(email);
     await page.locator("#password").fill(password);
     await page.locator("#confirmPassword").fill(password);
-    await page.getByRole("button", { name: "Crear cuenta gratis" }).click();
+    await page.getByRole("button", { name: es.register.submit }).click();
     await expect(page).toHaveURL(/\/sell/, { timeout: 20_000 });
   });
 
   await test.step("agrega un producto nuevo y aparece en el inventario", async () => {
     await page.goto("/products/new");
-    await page.getByPlaceholder("Nombre del producto").fill(productName);
-    await page.getByPlaceholder("SKU o código de barras").fill(productSku);
+    await page.getByPlaceholder(es.addProduct.namePlaceholder).fill(productName);
+    await page.getByPlaceholder(es.addProduct.skuPlaceholder).fill(productSku);
     await page.locator('input[type="number"]').nth(0).fill("9.99");
     await page.locator('input[type="number"]').nth(1).fill("20");
-    await page.getByRole("button", { name: "Agregar Producto" }).click();
+    await page.getByRole("button", { name: es.addProduct.submit }).click();
 
     await expect(page).toHaveURL(/\/products\?added=1/, { timeout: 20_000 });
     // Both a desktop table row and a mobile card render the product name.
@@ -55,16 +56,17 @@ test("Golden path: comercio -> producto -> venta -> historial -> staff", async (
   await test.step("ajusta el stock del producto", async () => {
     await page.goto("/adjust");
     await page
-      .getByPlaceholder("O buscar por nombre / SKU…")
+      .getByPlaceholder(es.adjust.searchPlaceholder)
       .fill(productName);
     await page.getByText(productName).first().click();
 
-    await page.getByRole("button", { name: "Aumentar" }).click();
-    await page.getByRole("button", { name: "Aumentar" }).click();
-    await page.getByRole("button", { name: "Aumentar" }).click();
-    await page.getByRole("button", { name: "Aplicar Ajuste" }).click();
+    for (let i = 0; i < 3; i++) {
+      await page.getByRole("button", { name: es.adjust.increase }).click();
+    }
+    await page.getByRole("button", { name: es.adjust.apply }).click();
 
-    await expect(page.getByText("Stock actualizado a 23")).toBeVisible({
+    const updated = es.adjust.updated.replace("{stock}", "23");
+    await expect(page.getByText(updated)).toBeVisible({
       timeout: 10_000,
     });
   });
@@ -72,13 +74,13 @@ test("Golden path: comercio -> producto -> venta -> historial -> staff", async (
   await test.step("crea una venta del producto y descarga la factura", async () => {
     await page.goto("/sell");
     await page
-      .getByPlaceholder("Buscar producto por nombre o SKU…")
+      .getByPlaceholder(es.sell.searchPlaceholder)
       .fill(productName);
     await page.getByText(productName).first().click();
-    await page.getByRole("button", { name: "Ver Factura" }).click();
-    await page.getByRole("button", { name: "Generar Factura" }).click();
+    await page.getByRole("button", { name: es.sell.viewInvoice }).click();
+    await page.getByRole("button", { name: es.sell.generateInvoice }).click();
 
-    await expect(page.getByText("¡Venta confirmada!")).toBeVisible({
+    await expect(page.getByText(es.sell.saleConfirmed)).toBeVisible({
       timeout: 10_000,
     });
 
@@ -91,7 +93,7 @@ test("Golden path: comercio -> producto -> venta -> historial -> staff", async (
         predicate: (response) => response.url().includes("/api/invoices/"),
         timeout: 20_000,
       }),
-      page.getByRole("link", { name: "Descargar Factura (PDF)" }).click(),
+      page.getByRole("link", { name: es.sell.downloadInvoicePdf }).click(),
     ]);
     expect(invoiceResponse.status()).toBe(200);
     expect(invoiceResponse.headers()["content-type"]).toBe("application/pdf");
@@ -102,7 +104,7 @@ test("Golden path: comercio -> producto -> venta -> historial -> staff", async (
     // the product name never appears here — match on the invoice total
     // instead. This org is freshly isolated, so it's the only sale so far.
     await page.goto("/history");
-    await expect(page.getByText("Facturas Emitidas")).toBeVisible();
+    await expect(page.getByText(es.history.invoicesIssued)).toBeVisible();
     await expect(page.getByText("$9.99", { exact: true }).first()).toBeVisible({
       timeout: 10_000,
     });
@@ -110,17 +112,17 @@ test("Golden path: comercio -> producto -> venta -> historial -> staff", async (
 
   await test.step("agrega y elimina un empleado", async () => {
     await page.goto("/staff");
-    await page.getByRole("button", { name: "Agregar" }).click();
+    await page.getByRole("button", { name: es.staff.add }).click();
     await page.locator("#name").fill("E2E Empleado");
     await page.locator("#email").fill(staffEmail);
     await page.locator("#password").fill("staffpass123");
-    await page.getByRole("button", { name: "Guardar empleado" }).click();
+    await page.getByRole("button", { name: es.staff.save }).click();
 
     await expect(page.getByText(staffEmail)).toBeVisible({ timeout: 10_000 });
 
     await page
       .locator("div", { has: page.getByText(staffEmail) })
-      .getByRole("button", { name: "Eliminar" })
+      .getByRole("button", { name: es.staff.delete })
       .click();
     await expect(page.getByText(staffEmail)).not.toBeVisible({
       timeout: 10_000,
