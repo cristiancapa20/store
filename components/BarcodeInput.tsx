@@ -179,7 +179,7 @@ export default function BarcodeInput({ onScan, disabled, initialMode = "scanner"
           className={mode === "scanner" ? "ui-segment-on" : "ui-segment-off"}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
           </svg>
           {t("scannerMode")}
         </button>
@@ -212,17 +212,15 @@ export default function BarcodeInput({ onScan, disabled, initialMode = "scanner"
             disabled={disabled}
           />
           <div
-            className="flex flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-brand-400/35 bg-surface dark:bg-brand-900 p-6 text-center cursor-pointer min-h-[120px] shadow-[0_8px_28px_rgba(3,15,34,0.06)]"
+            className="ui-empty py-8 cursor-pointer"
             onClick={() => scannerInputRef.current?.focus()}
           >
-            <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+            <svg className="w-8 h-8 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.25} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
             </svg>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              {t("scannerReady")}
-            </p>
+            <p className="text-sm">{t("scannerReady")}</p>
             {lastBarcode && (
-              <p className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+              <p className="ui-num text-xs text-accent">
                 {t("lastScanned", { barcode: lastBarcode })}
               </p>
             )}
@@ -232,22 +230,22 @@ export default function BarcodeInput({ onScan, disabled, initialMode = "scanner"
 
       {/* Camera mode: viewfinder + overlays */}
       {mode === "camera" && (
-        <div className="relative rounded-3xl overflow-hidden bg-black aspect-video w-full shadow-[0_12px_40px_rgba(3,15,34,0.15)]">
+        <div className="relative rounded-2xl overflow-hidden bg-black aspect-video w-full border border-line">
           <video ref={videoRef} className="w-full h-full object-cover" muted playsInline autoPlay />
 
           {/* Green border flash on detection */}
           {showOverlay && (
-            <div className="absolute inset-0 border-4 border-brand-400 rounded-2xl pointer-events-none animate-pulse" />
+            <div className="absolute inset-0 border-4 border-accent rounded-2xl pointer-events-none animate-pulse" />
           )}
 
           {/* Scanning reticle when active */}
           {cameraState === "active" && !showOverlay && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="relative w-3/4 h-16 border-2 border-white/40 rounded-lg">
-                <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-brand-400 rounded-tl" />
-                <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-brand-400 rounded-tr" />
-                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-brand-400 rounded-bl" />
-                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-brand-400 rounded-br" />
+                <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-accent rounded-tl" />
+                <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-accent rounded-tr" />
+                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-accent rounded-bl" />
+                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-accent rounded-br" />
               </div>
             </div>
           )}
@@ -276,7 +274,7 @@ export default function BarcodeInput({ onScan, disabled, initialMode = "scanner"
                 <button
                   type="button"
                   onClick={() => { setCameraState("idle"); setMode("scanner"); setTimeout(() => setMode("camera"), 50); }}
-                  className="mt-1 px-4 py-2 bg-white text-black text-sm font-medium rounded-2xl min-h-[48px] min-w-[120px]"
+                  className="mt-1 px-4 bg-white text-black text-sm font-medium rounded-xl min-h-[48px] min-w-[120px]"
                 >
                   {t("retry")}
                 </button>
@@ -295,7 +293,7 @@ export default function BarcodeInput({ onScan, disabled, initialMode = "scanner"
                 <button
                   type="button"
                   onClick={() => { setMode("scanner"); setTimeout(() => setMode("camera"), 50); }}
-                  className="mt-1 px-4 py-2 bg-white text-black text-sm font-medium rounded-2xl min-h-[48px] min-w-[120px]"
+                  className="mt-1 px-4 bg-white text-black text-sm font-medium rounded-xl min-h-[48px] min-w-[120px]"
                 >
                   {t("retry")}
                 </button>
@@ -306,7 +304,7 @@ export default function BarcodeInput({ onScan, disabled, initialMode = "scanner"
           {/* Last scanned badge */}
           {lastBarcode && cameraState === "active" && (
             <div className="absolute bottom-2 left-2 right-2 bg-black/60 rounded-xl px-3 py-1.5">
-              <p className="text-xs text-white font-mono truncate">Last: {lastBarcode}</p>
+              <p className="ui-num text-xs text-white truncate">{lastBarcode}</p>
             </div>
           )}
         </div>

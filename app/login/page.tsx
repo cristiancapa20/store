@@ -15,7 +15,7 @@ export default function LoginPage() {
     <AuthLayout title={t("title")} description={t("subtitle")}>
       <form action={formAction} className="space-y-4">
         <div>
-          <label htmlFor="email" className="ui-label mb-1.5">
+          <label htmlFor="email" className="ui-label">
             {t("email")}
           </label>
           <input
@@ -30,7 +30,7 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label htmlFor="password" className="ui-label mb-1.5">
+          <label htmlFor="password" className="ui-label">
             {t("password")}
           </label>
           <PasswordInput
@@ -55,9 +55,9 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="text-center text-sm text-brand-700/70 dark:text-brand-100/60 mt-6">
+      <p className="text-center text-sm text-muted mt-6">
         {t("noAccountYet")}{" "}
-        <Link href="/register" className="font-semibold text-brand-600 dark:text-brand-400 hover:underline">
+        <Link href="/register" className="font-medium text-accent hover:underline underline-offset-4">
           {t("registerLink")}
         </Link>
       </p>

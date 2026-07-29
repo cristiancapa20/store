@@ -90,8 +90,13 @@ For UI changes, also verify visually in the browser using the dev-browser skill.
 ## Conventions
 
 - **Never expose the inventory API key to the client.** It is per-tenant, lives in `organizations`, and is only read by `lib/inventoryClient.ts` (which imports `server-only`). All API calls go through server actions.
-- **Tailwind only** — no inline styles, no CSS modules. Use `rounded-2xl` or higher for cards and buttons.
+- **Tailwind only** — no inline styles, no CSS modules. La única excepción son las variables del tema (`style={{ boxShadow: "var(--shadow-pop)" }}`), que Tailwind no puede expresar.
 - **Min 48px tap targets** on all interactive elements (buttons, links, steppers).
+- **Usa las clases `.ui-*` de `app/globals.css`**, no compongas utilidades sueltas para lo que ya existe (`.ui-card`, `.ui-input`, `.ui-btn-primary`, `.ui-tag`, `.ui-empty`…). Si algo se repite en dos pantallas, va a `globals.css`.
+- **Un solo color de marca.** `--accent` (esmeralda) marca lo interactivo *y* lo correcto: no hay un segundo verde de "éxito". La escala de estado es acento / ámbar (atención) / rojo (error). El acento lleva **un tono por tema** porque el mismo hex no cumple contraste AA en los dos fondos — si tocas uno, recalcula el otro.
+- **Los bordes hacen el trabajo, no las sombras.** `border border-line` (blanco al 8 % en oscuro, negro al 10 % en claro). El hover tiñe el borde de acento; el fondo no cambia. Las sombras se reservan para lo que flota (`--shadow-pop`: menús, modales, barra móvil).
+- **Radios**: `rounded-3xl` shells y modales · `rounded-2xl` tarjetas · `rounded-xl` inputs y botones · `rounded-md` etiquetas.
+- **Tres familias con un rol cada una**: `font-display` (Space Grotesk) para títulos, `font-sans` (Inter) para cuerpo, `font-mono` (JetBrains Mono) para cifras, SKUs, códigos y etiquetas. Toda cifra en columna lleva `.ui-num` (mono + tabular) para que no baile.
 - **No new SQLite tables** without a clear reason — the inventory service owns the data.
 - **TypeScript strict** — no `any`, no `@ts-ignore`. Use proper types or generics.
 - **No comments** unless the WHY is non-obvious (hidden constraint, workaround, invariant).

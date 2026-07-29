@@ -28,18 +28,20 @@ function KpiCard({
 }) {
   return (
     <div
-      className="ui-card flex flex-col gap-1"
-      style={alert ? { borderColor: "rgb(252 165 165 / 0.6)" } : undefined}
+      className="ui-card flex flex-col gap-2"
+      style={
+        alert
+          ? { borderColor: "color-mix(in srgb, #dc2626 40%, transparent)" }
+          : undefined
+      }
     >
-      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
         {label}
       </p>
       <div className="flex items-end gap-1.5">
         <p
-          className={`text-2xl font-bold leading-none ${
-            alert
-              ? "text-red-600 dark:text-red-400"
-              : "text-zinc-900 dark:text-zinc-100"
+          className={`ui-num text-2xl leading-none ${
+            alert ? "text-red-600 dark:text-red-400" : "text-content"
           }`}
         >
           {value}
@@ -48,10 +50,8 @@ function KpiCard({
       </div>
       {sub && (
         <p
-          className={`text-xs mt-0.5 ${
-            alert
-              ? "text-red-500 dark:text-red-400 font-medium"
-              : "text-zinc-400 dark:text-zinc-500"
+          className={`text-xs ${
+            alert ? "text-red-600 dark:text-red-400" : "text-muted"
           }`}
         >
           {sub}
@@ -61,34 +61,30 @@ function KpiCard({
   );
 }
 
+// Verde, ambar y rojo son la escala de stock: el acento (verde) significa "hay",
+// y por eso no se usa aqui ningun otro verde.
 function StockDot({ stock }: { stock: number }) {
   if (stock === 0)
-    return (
-      <span className="inline-block w-2 h-2 rounded-full bg-red-500 shrink-0" />
-    );
+    return <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />;
   if (stock <= 10)
-    return (
-      <span className="inline-block w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-    );
-  return (
-    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-  );
+    return <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />;
+  return <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent shrink-0" />;
 }
 
 function stockTextClass(stock: number): string {
-  if (stock === 0) return "text-red-600 dark:text-red-400 font-semibold";
-  if (stock <= 10) return "text-amber-600 dark:text-amber-400 font-semibold";
-  return "text-zinc-700 dark:text-zinc-300";
+  if (stock === 0) return "text-red-600 dark:text-red-400";
+  if (stock <= 10) return "text-amber-700 dark:text-amber-300";
+  return "text-muted";
 }
 
 function TableSkeleton() {
   return (
     <>
       {Array.from({ length: 5 }).map((_, i) => (
-        <tr key={i} className="border-b border-zinc-50 dark:border-zinc-800/50">
+        <tr key={i} className="border-b border-line">
           {Array.from({ length: 5 }).map((_, j) => (
             <td key={j} className="px-4 py-3.5">
-              <div className="h-4 bg-zinc-100 dark:bg-zinc-800 rounded-full animate-pulse" />
+              <div className="h-4 bg-surface-2 rounded-md animate-pulse" />
             </td>
           ))}
         </tr>
@@ -99,16 +95,11 @@ function TableSkeleton() {
 
 function TrendUpIcon() {
   return (
-    <svg
-      className="w-4 h-4 text-emerald-500"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
+    <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={2}
+        strokeWidth={1.75}
         d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
       />
     </svg>
@@ -222,9 +213,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
           <h1 className="ui-page-title">{t("title")}</h1>
-          <p className="text-sm text-brand-600 dark:text-brand-300 mt-0.5">
-            {t("subtitle")}
-          </p>
+          <p className="text-sm text-muted mt-1">{t("subtitle")}</p>
         </div>
         <Link
           href="/products/new"
@@ -289,7 +278,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <div className="ui-search flex-1">
           <svg
-            className="w-5 h-5 text-brand-400 shrink-0"
+            className="w-5 h-5 text-muted shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -363,10 +352,9 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
       <div className="ui-card p-0 overflow-hidden">
         {!showSkeleton && (
           <div
-            className="flex items-center justify-between px-4 pt-3 pb-2.5"
-            style={{ borderBottom: "1px solid var(--border-color)" }}
+            className="flex items-center justify-between px-4 py-3 border-b border-line"
           >
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            <p className="font-mono text-[11px] text-muted">
               {stockFilter === "all"
                 ? t("showing", {
                     from: pageTotal === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1,
@@ -387,7 +375,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
+              <tr className="border-b border-line">
                 {[
                   t("colCode"),
                   t("colName"),
@@ -397,7 +385,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
                 ].map((col) => (
                   <th
                     key={col}
-                    className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 whitespace-nowrap"
+                    className="text-left px-4 py-3 font-mono text-[10px] font-normal uppercase tracking-[0.16em] text-muted whitespace-nowrap"
                   >
                     {col}
                   </th>
@@ -410,7 +398,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-12 text-center text-zinc-400 text-sm"
+                    className="px-4 py-12 text-center text-muted text-sm"
                   >
                     {search || stockFilter !== "all"
                       ? tp("noMatch")
@@ -422,30 +410,29 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
                 paginated.map((p) => (
                   <tr
                     key={p.id}
-                    className="hover:bg-zinc-50/60 dark:hover:bg-white/[0.02] transition-colors"
-                    style={{ borderBottom: "1px solid var(--border-color)" }}
+                    className="border-b border-line transition-colors hover:bg-[var(--surface-2)]"
                   >
-                    <td className="px-4 py-3.5 font-mono text-xs text-brand-600 dark:text-brand-400 whitespace-nowrap">
+                    <td className="ui-num px-4 py-3.5 text-xs text-accent whitespace-nowrap">
                       #{p.sku.slice(0, 10).toUpperCase()}
                     </td>
-                    <td className="px-4 py-3.5 font-medium text-zinc-900 dark:text-zinc-100 max-w-[200px]">
+                    <td className="px-4 py-3.5 font-medium text-content max-w-[200px]">
                       <span className="line-clamp-1">{p.name}</span>
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <span
-                        className={`flex items-center gap-1.5 ${stockTextClass(p.stock)}`}
+                        className={`ui-num flex items-center gap-2 text-xs ${stockTextClass(p.stock)}`}
                       >
                         <StockDot stock={p.stock} />
                         {p.stock} {t("units")}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
+                    <td className="ui-num px-4 py-3.5 text-content whitespace-nowrap">
                       ${p.price.toFixed(2)}
                     </td>
                     <td className="px-4 py-3.5">
                       <Link
                         href="/adjust"
-                        className="text-xs text-brand-600 dark:text-brand-400 font-medium hover:underline min-h-[48px] flex items-center"
+                        className="text-xs text-accent hover:underline underline-offset-4 min-h-[48px] flex items-center"
                       >
                         {tp("adjustStock")}
                       </Link>
@@ -467,7 +454,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
           >
             {t("previous")}
           </button>
-          <span className="text-sm text-zinc-500 dark:text-zinc-400">
+          <span className="ui-num text-sm text-muted">
             {t("pageOf", { current: safePage, total: totalPages })}
           </span>
           <button
@@ -484,36 +471,36 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-24 lg:pb-4">
         {/* Recently Added */}
         <div className="ui-card">
-          <h2 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-3 text-sm">
+          <h2 className="ui-section-title mb-4">
             {t("recentTitle")}
           </h2>
           {!showSkeleton && statsProducts.length === 0 && (
-            <p className="text-sm text-zinc-400">{tp("noProducts")}</p>
+            <p className="text-sm text-muted">{tp("noProducts")}</p>
           )}
           {showSkeleton &&
             Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 py-2.5 border-b border-zinc-50 dark:border-zinc-800/50 last:border-0 animate-pulse"
+                className="flex items-center gap-3 py-2.5 border-b border-line last:border-0 animate-pulse"
               >
-                <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 shrink-0" />
+                <div className="w-8 h-8 rounded-lg bg-surface-2 shrink-0" />
                 <div className="flex-1">
-                  <div className="h-3.5 bg-zinc-100 dark:bg-zinc-800 rounded-full w-3/4 mb-1.5" />
-                  <div className="h-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-full w-1/3" />
+                  <div className="h-3.5 bg-surface-2 rounded-md w-3/4 mb-1.5" />
+                  <div className="h-2.5 bg-surface-2 rounded-md w-1/3" />
                 </div>
-                <div className="h-4 w-12 bg-zinc-100 dark:bg-zinc-800 rounded-full" />
+                <div className="h-4 w-12 bg-surface-2 rounded-md" />
               </div>
             ))}
           {!showSkeleton &&
             [...statsProducts].slice(-3).reverse().map((p) => (
               <div
                 key={p.id}
-                className="flex items-center justify-between py-2.5 border-b border-zinc-50 dark:border-zinc-800/50 last:border-0"
+                className="flex items-center justify-between py-2.5 border-b border-line last:border-0"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg border border-line flex items-center justify-center shrink-0 text-accent">
                     <svg
-                      className="w-4 h-4 text-brand-500 dark:text-brand-400"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -527,15 +514,15 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
                     </svg>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                    <p className="text-sm font-medium text-content truncate">
                       {p.name}
                     </p>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                      SKU: {p.sku}
+                    <p className="ui-num text-[11px] text-muted mt-0.5">
+                      {p.sku}
                     </p>
                   </div>
                 </div>
-                <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 shrink-0 ml-3">
+                <span className="ui-num text-sm text-content shrink-0 ml-3">
                   ${p.price.toFixed(2)}
                 </span>
               </div>
@@ -544,7 +531,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
 
         {/* Stock Status */}
         <div className="ui-card">
-          <h2 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-4 text-sm">
+          <h2 className="ui-section-title mb-4">
             {t("stockStatusTitle")}
           </h2>
           {(() => {
@@ -559,7 +546,7 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
                 label: t("stockSufficient"),
                 count: ok,
                 pct: ok / tot,
-                color: "bg-emerald-500",
+                color: "bg-accent",
               },
               {
                 label: t("stockLow"),
@@ -579,16 +566,16 @@ export default function InventoryDashboard({ added }: { added?: boolean }) {
                 {rows.map((r) => (
                   <div key={r.label}>
                     <div className="flex justify-between text-xs mb-1.5">
-                      <span className="text-zinc-600 dark:text-zinc-400">
+                      <span className="text-muted">
                         {r.label} ({Math.round(r.pct * 100)}%)
                       </span>
-                      <span className="text-zinc-500 dark:text-zinc-400">
-                        {r.count} items
+                      <span className="ui-num text-muted">
+                        {r.count}
                       </span>
                     </div>
                     <div
-                      className="h-2 rounded-full overflow-hidden"
-                      style={{ backgroundColor: "var(--bg-elevated)" }}
+                      className="h-1.5 rounded-full overflow-hidden"
+                      style={{ backgroundColor: "var(--surface-2)" }}
                     >
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${r.color}`}

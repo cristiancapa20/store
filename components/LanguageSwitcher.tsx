@@ -4,40 +4,27 @@ import { useLocale } from "next-intl";
 import { useTransition } from "react";
 import { setLocale } from "@/lib/locale-action";
 
+// Un solo control "ES / EN" en mono, no dos pastillas: ocupa menos en la barra
+// y el idioma activo se lee por color, igual que en el portafolio.
 export default function LanguageSwitcher() {
   const locale = useLocale();
   const [isPending, startTransition] = useTransition();
 
-  const switchTo = (next: "es" | "en") => {
-    if (next === locale || isPending) return;
-    startTransition(() => setLocale(next));
-  };
+  const current = locale === "en" ? "en" : "es";
+  const other = current === "es" ? "en" : "es";
 
   return (
-    <div
-      role="group"
-      aria-label="Cambiar idioma"
-      className="flex items-center gap-0.5 rounded-full bg-brand-100 dark:bg-brand-800/50 p-0.5"
+    <button
+      type="button"
+      onClick={() => !isPending && startTransition(() => setLocale(other))}
+      disabled={isPending}
+      aria-label={`Cambiar idioma a ${other.toUpperCase()}`}
+      className="flex items-center justify-center min-h-[48px] px-3 rounded-xl
+                 font-mono text-xs transition-colors disabled:opacity-60"
     >
-      {(["es", "en"] as const).map((lang) => {
-        const isActive = locale === lang;
-        return (
-          <button
-            key={lang}
-            type="button"
-            onClick={() => switchTo(lang)}
-            disabled={isPending}
-            aria-pressed={isActive}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide transition-all duration-200 min-h-[24px] disabled:opacity-60 ${
-              isActive
-                ? "bg-brand-600 text-white shadow-sm"
-                : "text-brand-500 dark:text-brand-300 hover:text-brand-700 dark:hover:text-brand-100"
-            }`}
-          >
-            {lang}
-          </button>
-        );
-      })}
-    </div>
+      <span className={current === "es" ? "text-accent" : "text-muted"}>ES</span>
+      <span className="mx-1 text-muted/40">/</span>
+      <span className={current === "en" ? "text-accent" : "text-muted"}>EN</span>
+    </button>
   );
 }

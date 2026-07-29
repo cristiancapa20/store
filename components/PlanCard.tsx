@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 
 type Props = {
   role?: string
@@ -8,15 +9,17 @@ type Props = {
 }
 
 export default function PlanCard({ role, plan }: Props) {
+  const t = useTranslations("nav")
+
   if (role !== "admin") return null
 
   if (plan === "pro") {
     return (
-      <div className="mx-3 mb-3 px-4 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-700/30">
+      <div className="mx-3 mb-2 px-3 py-2.5 rounded-xl border border-line">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-          <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-            Plan Pro ✓
+          <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+          <span className="font-mono text-[11px] uppercase tracking-wider text-accent">
+            {t("planPro")}
           </span>
         </div>
       </div>
@@ -24,18 +27,16 @@ export default function PlanCard({ role, plan }: Props) {
   }
 
   return (
-    <div className="mx-3 mb-3 px-4 py-3 rounded-2xl bg-brand-50 dark:bg-brand-900/30 border border-brand-200/60 dark:border-brand-700/30">
-      <p className="text-xs font-semibold text-brand-700 dark:text-brand-300 mb-0.5">
-        Plan Básico · $9/mes
+    <div className="mx-3 mb-2 px-3 py-3 rounded-xl border border-line">
+      <p className="font-mono text-[11px] uppercase tracking-wider text-muted">
+        {t("planBasic")}
       </p>
-      <p className="text-xs text-brand-500 dark:text-brand-400 mb-2">
-        500 productos · 2 usuarios
-      </p>
+      <p className="mt-1 text-xs text-muted">{t("planBasicLimits")}</p>
       <Link
         href="/plans"
-        className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors"
+        className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-accent hover:gap-2 transition-all"
       >
-        Mejorar a Pro →
+        {t("planUpgrade")} <span aria-hidden>→</span>
       </Link>
     </div>
   )

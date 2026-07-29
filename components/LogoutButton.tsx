@@ -15,8 +15,8 @@ export default async function LogoutButton({ variant = "pill" }: Props) {
 
   const className =
     variant === "menuitem"
-      ? "w-full text-left text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors min-h-[48px] px-4 rounded-xl"
-      : "text-sm text-brand-700 dark:text-brand-300 hover:text-brand-950 dark:hover:text-brand-50 transition-colors min-h-[48px] px-3 rounded-full hover:bg-brand-50 dark:hover:bg-brand-800/40";
+      ? "w-full text-left text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/8 transition-colors min-h-[48px] px-4 rounded-xl"
+      : "text-sm text-muted hover:text-content transition-colors min-h-[48px] px-3 rounded-xl";
 
   return (
     <form action={handleSignOut} className={variant === "menuitem" ? "w-full" : undefined}>

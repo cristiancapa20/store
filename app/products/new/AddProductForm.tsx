@@ -44,7 +44,10 @@ export default function AddProductForm() {
     }
     if (!initialStock.trim()) {
       errs.initialStock = t("stockRequired");
-    } else if (!Number.isInteger(Number(initialStock)) || Number(initialStock) < 0) {
+    } else if (
+      !Number.isInteger(Number(initialStock)) ||
+      Number(initialStock) < 0
+    ) {
       errs.initialStock = t("stockInvalid");
     }
 
@@ -71,15 +74,13 @@ export default function AddProductForm() {
   };
 
   return (
-    <div className="flex flex-col h-full gap-4 overflow-y-auto">
+    <div className="flex flex-col h-full gap-5 overflow-y-auto">
       <h1 className="ui-page-title">{t("title")}</h1>
 
       {/* SKU barcode scanner inline overlay */}
       {showSkuScanner && (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            {t("scanHint")}
-          </p>
+        <div className="flex flex-col gap-3 max-w-2xl">
+          <p className="text-sm text-muted">{t("scanHint")}</p>
           <BarcodeInput onScan={handleSkuScan} initialMode="camera" />
           <button
             type="button"
@@ -92,9 +93,9 @@ export default function AddProductForm() {
       )}
 
       {!showSkuScanner && (
-        <>
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-[1.3fr_1.3fr_1fr_1fr] items-start">
           {/* Name */}
-          <div className="flex flex-col gap-1.5">
+          <div>
             <label className="ui-label">
               {t("nameLabel")} <span className="text-red-500">*</span>
             </label>
@@ -106,12 +107,14 @@ export default function AddProductForm() {
               className={`ui-input ${errors.name ? "ui-input-error" : ""}`}
             />
             {errors.name && (
-              <p className="text-xs text-red-600 dark:text-red-400">{errors.name}</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1.5">
+                {errors.name}
+              </p>
             )}
           </div>
 
           {/* SKU */}
-          <div className="flex flex-col gap-1.5">
+          <div>
             <label className="ui-label">
               {t("skuLabel")} <span className="text-red-500">*</span>
             </label>
@@ -130,7 +133,7 @@ export default function AddProductForm() {
                 className="ui-btn-icon-circle"
               >
                 <svg
-                  className="w-5 h-5 text-zinc-600 dark:text-zinc-400"
+                  className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -138,19 +141,21 @@ export default function AddProductForm() {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
+                    strokeWidth={1.75}
                     d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"
                   />
                 </svg>
               </button>
             </div>
             {errors.sku && (
-              <p className="text-xs text-red-600 dark:text-red-400">{errors.sku}</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1.5">
+                {errors.sku}
+              </p>
             )}
           </div>
 
           {/* Price */}
-          <div className="flex flex-col gap-1.5">
+          <div>
             <label className="ui-label">
               {t("priceLabel")} <span className="text-red-500">*</span>
             </label>
@@ -164,12 +169,14 @@ export default function AddProductForm() {
               className={`ui-input ${errors.price ? "ui-input-error" : ""}`}
             />
             {errors.price && (
-              <p className="text-xs text-red-600 dark:text-red-400">{errors.price}</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1.5">
+                {errors.price}
+              </p>
             )}
           </div>
 
           {/* Initial Stock */}
-          <div className="flex flex-col gap-1.5">
+          <div>
             <label className="ui-label">
               {t("stockLabel")} <span className="text-red-500">*</span>
             </label>
@@ -183,14 +190,14 @@ export default function AddProductForm() {
               className={`ui-input ${errors.initialStock ? "ui-input-error" : ""}`}
             />
             {errors.initialStock && (
-              <p className="text-xs text-red-600 dark:text-red-400">
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1.5">
                 {errors.initialStock}
               </p>
             )}
           </div>
 
           {/* Description */}
-          <div className="flex flex-col gap-1.5">
+          <div className="sm:col-span-2 xl:col-span-4">
             <label className="ui-label">{t("descriptionLabel")}</label>
             <textarea
               value={description}
@@ -203,19 +210,23 @@ export default function AddProductForm() {
 
           {/* API / form-level error */}
           {errors.form && (
-            <div className="ui-alert-error">{errors.form}</div>
+            <div className="ui-alert-error sm:col-span-2 xl:col-span-4">
+              {errors.form}
+            </div>
           )}
 
           {/* Submit */}
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isPending}
-            className="ui-btn-primary-block py-4 text-base"
-          >
-            {isPending ? t("adding") : t("submit")}
-          </button>
-        </>
+          <div className="sm:col-span-2 xl:col-span-4">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isPending}
+              className="ui-btn-primary w-full sm:w-auto sm:min-w-64"
+            >
+              {isPending ? t("adding") : t("submit")}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

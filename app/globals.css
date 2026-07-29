@@ -1,146 +1,253 @@
 @import "tailwindcss";
 
-/* Class-based dark mode — .dark class on <html> activates dark: variants */
+/* El toggle de tema (components/ThemeToggle.tsx) guarda la eleccion en la cookie
+   STORE_THEME y el servidor la pinta ya en el HTML inicial como clase `dark` en
+   <html> (ver app/layout.tsx), asi que no hay parpadeo. */
 @variant dark (&:where(.dark, .dark *));
 
-/* ─── Brand Palette ──────────────────────────────────────────────────────────
-   #0A1931 = brand-600  →  buttons / primary actions (sidebar navy)
+/* ─── Sistema de color ───────────────────────────────────────────────────────
+   Un solo color de marca: el esmeralda de `--accent`. Marca lo interactivo y
+   lo que salio bien, que en una tienda son la misma cosa — no hay un segundo
+   verde de "exito" compitiendo con el acento. La escala de estado que queda:
+
+     accent  bien / en stock / venta cerrada
+     ambar   atencion / stock bajo
+     rojo    error / sin stock
+
+   El acento lleva un tono por tema porque el mismo hex no cumple contraste en
+   los dos fondos: #34d399 sobre #0b0c0e da 10.18:1 y #047857 sobre #f6f7f8 da
+   5.2:1 (AA pide 4.5:1). Cruzados no llegan — #34d399 sobre el fondo claro se
+   queda en 1.7:1. Si tocas un tono, recalcula los dos.
    ─────────────────────────────────────────────────────────────────────────── */
-@theme {
-  --color-brand-50:  #eaf0fb;
-  --color-brand-100: #d5e2f6;
-  --color-brand-200: #aac4ee;
-  --color-brand-300: #739ee2;
-  --color-brand-400: #3472d5;
-  --color-brand-500: #2152a1;
-  --color-brand-600: #0A1931;
-  --color-brand-700: #081326;
-  --color-brand-800: #060e1c;
-  --color-brand-900: #040a13;
-  --color-brand-950: #02050b;
-
-  --color-surface:       #ffffff;
-  --color-surface-muted: #f4f6fd;
-}
-
-/* ─── Semantic tokens — light mode ─────────────────────────────────────────── */
 :root {
-  --bg-base:      #ffffff;
-  --bg-surface:   #ffffff;
-  --bg-sidebar:          #0A1931;
-  --bg-sidebar-elevated: #1B2A4A;
-  --bg-elevated:  #e4e8f5;
-  --border-color: #dde2f0;
-  --text-primary: #0e1229;
-  --text-muted:   #64708a;
+  --bg:          #f6f7f8;
+  --surface:     #ffffff;
+  --surface-2:   #eef0f2;
+  --line:        rgba(11, 12, 14, 0.10);
+  --line-strong: rgba(11, 12, 14, 0.18);
+  --content:     #16181d;
+  --muted:       #5c6470;
+  --accent:      #047857;
+  --accent-soft: #059669;
+  --accent-wash: rgba(4, 120, 87, 0.09);
+  --on-accent:   #ffffff;
+  --shadow-card: 0 1px 2px rgba(11, 12, 14, 0.04);
+  --shadow-pop:  0 12px 32px rgba(11, 12, 14, 0.12);
+  --hairline:    rgba(11, 12, 14, 0.03);
 }
 
-/* ─── Semantic tokens — dark mode (navy-blue SaaS) ──────────────────────────── */
 .dark {
-  --bg-base:      #0c0e1a;
-  --bg-surface:   #161928;
-  --bg-sidebar:   #0A1931;
-  --bg-elevated:  #1d2035;
-  --border-color: #252a42;
-  --text-primary: #e2e6f8;
-  --text-muted:   #64708a;
+  --bg:          #0b0c0e;
+  --surface:     #16181d;
+  --surface-2:   #1e2127;
+  --line:        rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --content:     #e6e7e9;
+  --muted:       #9aa0a6;
+  --accent:      #34d399;
+  --accent-soft: #6ee7b7;
+  --accent-wash: rgba(52, 211, 153, 0.10);
+  --on-accent:   #06251a;
+  --shadow-card: none;
+  --shadow-pop:  0 12px 32px rgba(0, 0, 0, 0.55);
+  --hairline:    rgba(255, 255, 255, 0.02);
 }
 
-/* ─── Base ─────────────────────────────────────────────────────────────────── */
-* { -webkit-tap-highlight-color: transparent; }
+/* `inline` a proposito: las utilidades (`text-accent`, `border-line`, …)
+   apuntan a la variable en vez de copiar su valor, asi que todo el tema cambia
+   sin una sola variante `dark:` en el markup. */
+@theme inline {
+  --color-bg:          var(--bg);
+  --color-surface:     var(--surface);
+  --color-surface-2:   var(--surface-2);
+  --color-line:        var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-content:     var(--content);
+  --color-muted:       var(--muted);
+  --color-accent:      var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent:   var(--on-accent);
+
+  --font-display: var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
+  --font-sans:    var(--font-inter), Inter, system-ui, sans-serif;
+  --font-mono:    var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
 
 body {
-  font-family: var(--font-geist-sans), system-ui, Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  color: var(--content);
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-*:focus-visible:not(:where(.ui-search-field, .ui-search *, .ui-input)) {
-  outline: 2px solid #3472d566;
-  outline-offset: 2px;
-  border-radius: 6px;
+::selection {
+  background-color: var(--accent-wash);
+  color: var(--content);
 }
 
-/* ─── Components ───────────────────────────────────────────────────────────── */
+/* Anillo de foco de toda la app, declarado una sola vez: cualquier control
+   nace con el foco visible puesto sin repetir una clase `focus-visible:` en
+   cada `className`. Va fuera de `@layer` para ganarle a las utilidades sin
+   subir la especificidad. Los campos de texto lo excluyen porque ya declaran
+   el suyo (borde + halo en `.ui-input`); sumarles este outline dibujaria dos
+   anillos concentricos. */
+*:focus-visible:not(:where(.ui-input, .ui-search-field, .ui-search *)) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ─── Utilidades de fondo ────────────────────────────────────────────────────
+   Las dos vienen del portafolio: la grilla tenue estilo blueprint y el
+   resplandor radial del acento. Se usan en las pantallas sin sesion (landing,
+   login, registro) y detras de encabezados destacados. */
+.grid-bg {
+  background-image:
+    linear-gradient(var(--hairline) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hairline) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.accent-glow {
+  background: radial-gradient(600px circle at 20% 20%, var(--accent-wash), transparent 60%);
+}
+
+/* ─── Componentes ────────────────────────────────────────────────────────── */
 @layer components {
 
-  /* Shell */
+  /* ── Estructura ────────────────────────────────────────────────────────── */
+
   .ui-shell {
-    @apply flex flex-col min-h-0 overflow-hidden rounded-[2rem]
-           shadow-[0_8px_40px_rgba(30,38,84,0.10)]
-           dark:shadow-[0_8px_40px_rgba(0,0,0,0.50)];
-    background-color: var(--bg-surface);
+    @apply flex flex-col min-h-0 overflow-hidden rounded-3xl;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
   }
 
-  /* Inner panel */
   .ui-panel {
     @apply flex-1 overflow-y-auto overflow-x-clip min-h-0
            rounded-2xl m-3 sm:m-4 px-5 sm:px-6 py-4 sm:py-5;
-    background-color: var(--bg-base);
+    background-color: var(--bg);
   }
 
-  /* Card */
+  /* Regla que se extiende hasta el borde, cierra los encabezados de seccion */
+  .ui-rule {
+    @apply flex-1 h-px;
+    background-color: var(--line);
+  }
+
+  .ui-divider {
+    @apply h-px my-1;
+    background-color: var(--line);
+  }
+
+  /* ── Tipografia ────────────────────────────────────────────────────────── */
+
+  /* Numeracion mono en acento que abre cada seccion: "01 / INVENTARIO" */
+  .ui-eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.18em];
+    color: var(--accent);
+  }
+
+  .ui-page-title {
+    @apply font-display text-xl sm:text-2xl font-bold tracking-tight;
+    color: var(--content);
+  }
+
+  .ui-section-title {
+    @apply font-display text-base font-semibold tracking-tight;
+    color: var(--content);
+  }
+
+  .ui-muted {
+    @apply text-sm;
+    color: var(--muted);
+  }
+
+  /* Cifras: mono y tabular para que las columnas de precios no bailen */
+  .ui-num {
+    @apply font-mono;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Superficies ───────────────────────────────────────────────────────── */
+
   .ui-card {
-    @apply rounded-2xl p-4
-           shadow-[0_2px_8px_rgba(30,38,84,0.06)]
-           dark:shadow-none;
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
+    @apply rounded-2xl p-4;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-card);
   }
 
-  /* Interactive card */
+  /* El hover tiñe el borde de acento y levanta la tarjeta; el fondo no cambia
+     — es el gesto del portafolio y evita el parpadeo de color en listas largas. */
   .ui-card-interactive {
-    @apply rounded-2xl p-4
-           shadow-[0_2px_8px_rgba(30,38,84,0.06)]
-           dark:shadow-none
-           transition-shadow duration-150 cursor-pointer
-           hover:shadow-[0_4px_16px_rgba(30,38,84,0.12)];
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
+    @apply rounded-2xl p-4 cursor-pointer
+           transition-[border-color,transform] duration-200
+           hover:-translate-y-0.5;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-card);
   }
 
   .ui-card-interactive:hover {
-    background-color: var(--bg-elevated);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
   }
 
-  /* Label */
+  /* Fila de lista: mismo lenguaje que la tarjeta pero sin elevacion, para
+     inventario e historial donde el movimiento vertical marearia. */
+  .ui-row {
+    @apply rounded-xl px-4 py-3 transition-colors duration-150;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+  }
+
+  .ui-row:hover {
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  /* ── Formularios ───────────────────────────────────────────────────────── */
+
   .ui-label {
-    @apply block text-sm font-semibold text-brand-800 dark:text-brand-100 px-1;
+    @apply block text-sm font-medium mb-1.5;
+    color: var(--content);
   }
 
   .ui-label-muted {
-    @apply block text-xs font-medium text-brand-600/80 dark:text-brand-300/80 mb-1.5 px-1;
+    @apply block font-mono text-[11px] uppercase tracking-[0.14em] mb-1.5;
+    color: var(--muted);
   }
 
-  /* Text field */
   .ui-input {
     @apply w-full max-w-full min-w-0 box-border
-           rounded-xl
-           text-brand-900 dark:text-brand-50
-           placeholder:text-[var(--text-muted)]
-           px-4 sm:px-5 py-3
-           shadow-[0_2px_8px_rgba(30,38,84,0.06)]
-           focus:outline-none
-           focus:shadow-[0_4px_16px_rgba(10,25,49,0.14)]
-           focus-visible:outline-none
-           min-h-[48px] text-sm
-           transition-[box-shadow,border-color] duration-150;
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
+           rounded-xl px-4 py-3 min-h-[48px] text-sm
+           outline-none transition-[border-color,box-shadow] duration-150;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--content);
+  }
+
+  .ui-input::placeholder {
+    color: var(--muted);
   }
 
   .ui-input:focus {
-    border-color: #2152a1;
-  }
-
-  .dark .ui-input:focus {
-    border-color: #3472d5;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-wash);
   }
 
   .ui-input-error {
-    @apply border-red-400 dark:border-red-500
-           focus:border-red-500 dark:focus:border-red-400
-           focus:shadow-[0_4px_16px_rgba(220,38,38,0.12)];
+    border-color: #dc2626;
+  }
+
+  .ui-input-error:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14);
   }
 
   .ui-textarea {
@@ -149,44 +256,39 @@ body {
 
   select.ui-input {
     @apply cursor-pointer pr-11 appearance-none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%232152a1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23047857'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 1.125rem center;
     background-size: 1rem;
   }
 
   .dark select.ui-input {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%233472d5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2334d399'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
   }
 
-  /* Search bar */
   .ui-search {
     @apply flex w-full max-w-full min-w-0 items-center gap-2.5
-           rounded-xl box-border
-           px-4 sm:px-5 min-h-[52px]
-           shadow-[0_2px_8px_rgba(30,38,84,0.06)]
-           transition-[box-shadow,border-color] duration-150;
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
+           rounded-xl box-border px-4 min-h-[52px]
+           transition-[border-color,box-shadow] duration-150;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
   }
 
   .ui-search:focus-within {
-    @apply shadow-[0_4px_16px_rgba(33,82,161,0.18)];
-    border-color: #2152a1;
-  }
-
-  .dark .ui-search:focus-within {
-    border-color: #3472d5;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-wash);
   }
 
   .ui-search-field {
     @apply flex-1 min-w-0 min-h-[48px] bg-transparent
-           border-0 shadow-none outline-none ring-0
-           text-sm text-brand-900 dark:text-brand-50
-           placeholder:text-[var(--text-muted)]
-           focus:outline-none focus:ring-0 focus-visible:outline-none;
+           border-0 shadow-none outline-none ring-0 text-sm;
+    color: var(--content);
     -webkit-appearance: none;
     appearance: none;
+  }
+
+  .ui-search-field::placeholder {
+    color: var(--muted);
   }
 
   .ui-search-field::-webkit-search-cancel-button,
@@ -195,156 +297,217 @@ body {
     appearance: none;
   }
 
-  /* Primary button */
+  /* ── Botones ───────────────────────────────────────────────────────────── */
+
   .ui-btn-primary {
     @apply inline-flex items-center justify-center gap-2
-           bg-brand-600 hover:bg-brand-700 active:bg-brand-800
-           text-white font-semibold text-sm
-           rounded-xl min-h-[48px] px-5
-           shadow-[0_2px_8px_rgba(10,25,49,0.30)]
-           transition-all duration-150 active:scale-[0.97]
+           font-semibold text-sm rounded-xl min-h-[48px] px-5
+           transition-[background-color,transform] duration-150 active:scale-[0.97]
            disabled:opacity-50 disabled:pointer-events-none;
+    background-color: var(--accent);
+    color: var(--on-accent);
   }
 
-  /* Primary button full-width */
+  .ui-btn-primary:hover {
+    background-color: var(--accent-soft);
+  }
+
   .ui-btn-primary-block {
-    @apply inline-flex items-center justify-center gap-2 w-full py-3.5
-           bg-brand-600 hover:bg-brand-700 active:bg-brand-800
-           text-white font-semibold text-sm
-           rounded-xl min-h-[48px] px-5
-           shadow-[0_2px_8px_rgba(10,25,49,0.30)]
-           transition-all duration-150 active:scale-[0.97]
+    @apply inline-flex items-center justify-center gap-2 w-full
+           font-semibold text-sm rounded-xl min-h-[48px] px-5
+           transition-[background-color,transform] duration-150 active:scale-[0.97]
            disabled:opacity-50 disabled:pointer-events-none;
+    background-color: var(--accent);
+    color: var(--on-accent);
   }
 
-  /* Secondary button */
+  .ui-btn-primary-block:hover {
+    background-color: var(--accent-soft);
+  }
+
   .ui-btn-secondary {
     @apply inline-flex items-center justify-center gap-2
-           text-brand-700 dark:text-brand-200 font-medium text-sm
-           rounded-xl min-h-[48px] px-5
-           transition-all duration-150 active:scale-[0.97]
+           font-medium text-sm rounded-xl min-h-[48px] px-5
+           transition-[border-color,color,transform] duration-150 active:scale-[0.97]
            disabled:opacity-50 disabled:pointer-events-none;
-    background-color: var(--bg-elevated);
-    border: 1px solid var(--border-color);
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--content);
   }
 
   .ui-btn-secondary:hover {
-    filter: brightness(0.95);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    color: var(--accent);
   }
 
-  /* Circular icon button */
-  .ui-btn-icon-circle {
-    @apply flex items-center justify-center shrink-0
-           rounded-full text-brand-800 dark:text-brand-100
-           shadow-[0_6px_20px_rgba(3,15,34,0.08)]
-           hover:bg-brand-50 dark:hover:bg-brand-800/40
-           min-h-[48px] min-w-[48px] w-12 h-12
-           transition-all disabled:opacity-50 disabled:pointer-events-none;
-    background-color: var(--bg-surface);
+  .ui-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           font-medium text-sm rounded-xl min-h-[48px] px-4
+           transition-colors duration-150
+           disabled:opacity-50 disabled:pointer-events-none;
+    color: var(--muted);
   }
 
-  .dark .ui-btn-icon-circle {
-    background-color: var(--color-brand-900);
+  .ui-btn-ghost:hover {
+    background-color: var(--surface-2);
+    color: var(--content);
   }
 
-  /* Text-only button (pill, transparent) */
   .ui-btn-text {
     @apply w-full inline-flex items-center justify-center
-           rounded-full py-3 text-sm font-medium
-           text-brand-700 dark:text-brand-200
-           hover:bg-brand-50/80 dark:hover:bg-brand-800/30
-           min-h-[48px] transition-colors
+           rounded-xl py-3 text-sm font-medium min-h-[48px]
+           transition-colors duration-150
            disabled:opacity-50 disabled:pointer-events-none;
+    color: var(--muted);
   }
 
-  /* Danger button */
+  .ui-btn-text:hover {
+    background-color: var(--surface-2);
+    color: var(--content);
+  }
+
+  .ui-btn-icon-circle {
+    @apply flex items-center justify-center shrink-0 rounded-full
+           min-h-[48px] min-w-[48px] w-12 h-12
+           transition-[border-color,color] duration-150
+           disabled:opacity-40 disabled:pointer-events-none;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--content);
+  }
+
+  .ui-btn-icon-circle:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    color: var(--accent);
+  }
+
   .ui-btn-danger {
     @apply inline-flex items-center justify-center gap-2
-           bg-red-50 hover:bg-red-100
-           dark:bg-red-900/20 dark:hover:bg-red-900/40
-           text-red-600 dark:text-red-400 font-medium text-sm
-           rounded-xl min-h-[48px] px-5
-           border border-red-200/60 dark:border-red-800/40
-           transition-all duration-150 active:scale-[0.97];
+           font-medium text-sm rounded-xl min-h-[48px] px-5
+           text-red-600 dark:text-red-400
+           transition-[border-color,background-color,transform] duration-150 active:scale-[0.97]
+           disabled:opacity-50 disabled:pointer-events-none;
+    background-color: transparent;
+    border: 1px solid color-mix(in srgb, #dc2626 32%, transparent);
   }
 
-  /* Segment control */
+  .ui-btn-danger:hover {
+    background-color: rgba(220, 38, 38, 0.08);
+    border-color: color-mix(in srgb, #dc2626 55%, transparent);
+  }
+
+  /* ── Segmentos ─────────────────────────────────────────────────────────── */
+
   .ui-segment-track {
     @apply flex gap-1 p-1 rounded-xl;
-    background-color: var(--bg-elevated);
-    border: 1px solid var(--border-color);
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
   }
 
   .ui-segment-on {
     @apply flex-1 flex items-center justify-center gap-2
            py-2.5 px-3 text-sm font-semibold min-h-[44px]
-           rounded-lg bg-brand-600 text-white
-           shadow-[0_2px_8px_rgba(10,25,49,0.25)]
-           transition-all duration-150;
+           rounded-lg transition-colors duration-150;
+    background-color: var(--accent);
+    color: var(--on-accent);
   }
 
   .ui-segment-off {
     @apply flex-1 flex items-center justify-center gap-2
            py-2.5 px-3 text-sm font-medium min-h-[44px]
-           rounded-lg text-brand-600/80 dark:text-brand-300/70
-           hover:bg-brand-200/60 dark:hover:bg-brand-800/40
-           transition-all duration-150;
+           rounded-lg transition-colors duration-150;
+    color: var(--muted);
   }
 
-  /* Page title */
-  .ui-page-title {
-    @apply text-xl font-bold tracking-tight;
-    color: var(--text-primary);
+  .ui-segment-off:hover {
+    color: var(--content);
   }
 
-  /* Alerts */
+  /* ── Etiquetas ─────────────────────────────────────────────────────────────
+     Pill tenue, no de color solido: fondo de superficie y borde de linea. Las
+     de estado si llevan color porque ahi el color ES el dato. */
+
+  .ui-tag {
+    @apply inline-flex items-center gap-1.5 font-mono text-[11px]
+           px-2.5 py-1 rounded-md whitespace-nowrap;
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+  }
+
+  .ui-tag-accent {
+    @apply inline-flex items-center gap-1.5 font-mono text-[11px]
+           px-2.5 py-1 rounded-md whitespace-nowrap;
+    background-color: var(--accent-wash);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    color: var(--accent);
+  }
+
+  .ui-badge {
+    @apply inline-flex items-center font-mono text-[11px] px-2.5 py-1 rounded-md;
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+  }
+
+  .ui-badge-success {
+    @apply inline-flex items-center font-mono text-[11px] px-2.5 py-1 rounded-md;
+    background-color: var(--accent-wash);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    color: var(--accent);
+  }
+
+  .ui-badge-warning {
+    @apply inline-flex items-center font-mono text-[11px] px-2.5 py-1 rounded-md
+           bg-amber-400/10 border border-amber-500/30
+           text-amber-700 dark:text-amber-300;
+  }
+
+  .ui-badge-danger {
+    @apply inline-flex items-center font-mono text-[11px] px-2.5 py-1 rounded-md
+           bg-red-500/10 border border-red-500/30
+           text-red-600 dark:text-red-400;
+  }
+
+  /* ── Avisos ────────────────────────────────────────────────────────────── */
+
   .ui-alert-success {
-    @apply rounded-xl bg-emerald-50 dark:bg-emerald-900/20
-           border border-emerald-200/60 dark:border-emerald-700/30
-           px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300 font-medium;
+    @apply rounded-xl px-4 py-3 text-sm font-medium;
+    background-color: var(--accent-wash);
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    color: var(--accent);
   }
 
   .ui-alert-error {
-    @apply rounded-xl bg-red-50 dark:bg-red-900/20
-           border border-red-200/60 dark:border-red-700/30
-           px-4 py-3 text-sm text-red-600 dark:text-red-400;
+    @apply rounded-xl px-4 py-3 text-sm
+           bg-red-500/8 border border-red-500/30
+           text-red-600 dark:text-red-400;
+  }
+
+  .ui-alert-warning {
+    @apply rounded-xl px-4 py-3 text-sm
+           bg-amber-400/8 border border-amber-500/30
+           text-amber-700 dark:text-amber-300;
   }
 
   .ui-alert-info {
     @apply rounded-xl px-4 py-3 text-sm;
-    background-color: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
-    border: 1px solid var(--border-color);
-    color: var(--text-muted);
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
   }
 
-  /* Badges */
-  .ui-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
-  }
+  /* ── Estado vacio ──────────────────────────────────────────────────────── */
 
-  .ui-badge-success {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-           bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400;
-  }
-
-  .ui-badge-warning {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-           bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400;
-  }
-
-  .ui-badge-danger {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-           bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400;
-  }
-
-  /* Divider */
-  .ui-divider {
-    @apply h-px my-1;
-    background-color: var(--border-color);
+  .ui-empty {
+    @apply flex flex-col items-center justify-center text-center
+           rounded-2xl px-6 py-14 gap-3;
+    border: 1px dashed var(--line-strong);
+    color: var(--muted);
   }
 }
 
-/* ─── Animations ───────────────────────────────────────────────────────────── */
+/* ─── Animaciones ────────────────────────────────────────────────────────── */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -355,13 +518,27 @@ body {
   to   { opacity: 1; }
 }
 
-.animate-fade-in-up { animation: fadeInUp 180ms ease-out both; }
+.animate-fade-in-up { animation: fadeInUp 200ms ease-out both; }
 .animate-fade-in    { animation: fadeIn   150ms ease-out both; }
 
-/* ─── Scrollbar ────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
 @media (hover: hover) {
-  ::-webkit-scrollbar       { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #c2caee; border-radius: 99px; }
-  .dark ::-webkit-scrollbar-thumb { background: #252a42; }
+  ::-webkit-scrollbar       { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 99px;
+    border: 3px solid var(--bg);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 }

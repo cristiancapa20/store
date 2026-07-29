@@ -1,77 +1,121 @@
-"use client"
+"use client";
 
-import { useActionState, useState } from "react"
-import { createStaff, deleteStaff } from "./actions"
-import PasswordInput from "@/components/PasswordInput"
+import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
+import { createStaff, deleteStaff } from "./actions";
+import PasswordInput from "@/components/PasswordInput";
 
-type StaffRow = { id: string; name: string; email: string }
+type StaffRow = { id: string; name: string; email: string };
 
 type Props = {
-  staff: StaffRow[]
-  canAdd: boolean
-  plan: string
-  limit: number | null
-}
+  staff: StaffRow[];
+  canAdd: boolean;
+  plan: string;
+  limit: number | null;
+};
 
 export default function StaffClient({ staff, canAdd, plan, limit }: Props) {
-  const [createState, createAction, creating] = useActionState(createStaff, null)
-  const [showForm, setShowForm] = useState(false)
-  const [deleting, setDeleting] = useState<string | null>(null)
+  const t = useTranslations("staff");
+  const [createState, createAction, creating] = useActionState(
+    createStaff,
+    null,
+  );
+  const [showForm, setShowForm] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   async function handleDelete(userId: string) {
-    setDeleting(userId)
-    await deleteStaff(userId)
-    setDeleting(null)
+    setDeleting(userId);
+    await deleteStaff(userId);
+    setDeleting(null);
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="ui-page-title">Empleados</h1>
-          <p className="text-sm text-brand-600 dark:text-brand-300 mt-0.5">
-            {staff.length}{limit !== null ? `/${limit}` : ""} empleados · Plan{" "}
-            <span className="font-medium capitalize">{plan}</span>
+          <h1 className="ui-page-title">{t("title")}</h1>
+          <p className="text-sm text-muted mt-1">
+            {t("countLine", {
+              count: staff.length,
+              limit: limit !== null ? `/${limit}` : "",
+              plan,
+            })}
           </p>
         </div>
         {canAdd && !showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="ui-btn-primary"
+            className="ui-btn-primary shrink-0"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.75}
+                d="M12 4v16m8-8H4"
+              />
             </svg>
-            Agregar
+            {t("add")}
           </button>
         )}
       </div>
 
       {!canAdd && (
-        <div className="ui-alert-info">
-          Has alcanzado el límite de {limit} usuarios del plan Básico.{" "}
-          <span className="font-medium">Mejora a Pro para agregar más empleados.</span>
+        <div className="ui-alert-warning">
+          {t("limitReached", { limit: limit ?? 0 })}{" "}
+          <span className="font-medium">{t("limitUpgrade")}</span>
         </div>
       )}
 
       {showForm && (
-        <form action={createAction} className="ui-card space-y-4">
-          <h2 className="font-semibold text-brand-900 dark:text-brand-50">
-            Nuevo empleado
-          </h2>
+        <form
+          action={createAction}
+          className="ui-card space-y-4 animate-fade-in-up"
+        >
+          <h2 className="ui-section-title">{t("newTitle")}</h2>
 
           <div className="grid sm:grid-cols-3 gap-3">
             <div>
-              <label htmlFor="name" className="ui-label mb-1.5">Nombre</label>
-              <input id="name" name="name" type="text" required className="ui-input" placeholder="Nombre completo" />
+              <label htmlFor="name" className="ui-label">
+                {t("name")}
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                required
+                className="ui-input"
+                placeholder={t("namePlaceholder")}
+              />
             </div>
             <div>
-              <label htmlFor="email" className="ui-label mb-1.5">Email</label>
-              <input id="email" name="email" type="email" required className="ui-input" placeholder="empleado@tienda.com" />
+              <label htmlFor="email" className="ui-label">
+                {t("email")}
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                className="ui-input"
+                placeholder={t("emailPlaceholder")}
+              />
             </div>
             <div>
-              <label htmlFor="password" className="ui-label mb-1.5">Contraseña</label>
-              <PasswordInput id="password" name="password" required placeholder="Mínimo 8 caracteres" />
+              <label htmlFor="password" className="ui-label">
+                {t("password")}
+              </label>
+              <PasswordInput
+                id="password"
+                name="password"
+                required
+                placeholder={t("passwordPlaceholder")}
+              />
             </div>
           </div>
 
@@ -80,45 +124,52 @@ export default function StaffClient({ staff, canAdd, plan, limit }: Props) {
           )}
 
           <div className="flex gap-2">
-            <button type="submit" disabled={creating} className="ui-btn-primary">
-              {creating ? "Guardando…" : "Guardar empleado"}
+            <button
+              type="submit"
+              disabled={creating}
+              className="ui-btn-primary"
+            >
+              {creating ? t("saving") : t("save")}
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
               className="ui-btn-secondary"
             >
-              Cancelar
+              {t("cancel")}
             </button>
           </div>
         </form>
       )}
 
       {staff.length === 0 ? (
-        <div className="ui-alert-info">No hay empleados registrados aún.</div>
+        <div className="ui-empty">
+          <p className="text-sm">{t("empty")}</p>
+        </div>
       ) : (
-        <div className="space-y-2">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {staff.map((member) => (
-            <div key={member.id} className="ui-card flex items-center justify-between gap-4">
+            <div
+              key={member.id}
+              className="ui-row flex items-center justify-between gap-4"
+            >
               <div className="min-w-0">
-                <p className="font-medium text-brand-900 dark:text-brand-50 truncate">
+                <p className="font-medium text-content truncate">
                   {member.name}
                 </p>
-                <p className="text-sm text-brand-600 dark:text-brand-300 truncate">
-                  {member.email}
-                </p>
+                <p className="text-sm text-muted truncate">{member.email}</p>
               </div>
               <button
                 onClick={() => handleDelete(member.id)}
                 disabled={deleting === member.id}
                 className="ui-btn-danger shrink-0 text-xs px-3"
               >
-                {deleting === member.id ? "Eliminando…" : "Eliminar"}
+                {deleting === member.id ? t("deleting") : t("delete")}
               </button>
             </div>
           ))}
         </div>
       )}
     </div>
-  )
+  );
 }

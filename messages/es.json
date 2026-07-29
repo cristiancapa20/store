@@ -8,7 +8,11 @@
     "guide": "Guía",
     "profile": "Tienda",
     "appName": "Mi Comercio",
-    "staff": "Equipo"
+    "staff": "Equipo",
+    "planPro": "Plan Pro",
+    "planBasic": "Plan Básico",
+    "planBasicLimits": "500 productos · 2 usuarios",
+    "planUpgrade": "Mejorar a Pro"
   },
   "auth": {
     "title": "Inventario de Tienda",
@@ -337,7 +341,12 @@
     "planCta": "Empezar ahora →",
     "ctaTitle": "¿Listo para organizar tu tienda?",
     "ctaSubtitle": "Únete a cientos de negocios que ya venden mejor con Mi Comercio.",
-    "ctaBtn": "Crear cuenta gratis"
+    "ctaBtn": "Crear cuenta gratis",
+    "perMonth": "/mes",
+    "sectionFeatures": "Funciones",
+    "sectionHow": "Cómo funciona",
+    "sectionPlans": "Planes",
+    "footerRights": "Todos los derechos reservados"
   },
   "errors": {
     "unauthorized": "Tu sesión expiró. Inicia sesión de nuevo para continuar.",
@@ -350,5 +359,46 @@
     "service_error": "El servicio de inventario tuvo un error. Inténtalo de nuevo en unos segundos.",
     "timeout": "El servicio de inventario tardó demasiado en responder. Inténtalo de nuevo.",
     "network": "No se pudo contactar con el servicio de inventario. Revisa la conexión."
+  },
+  "register": {
+    "title": "Crea tu cuenta gratis",
+    "subtitle": "Empieza a vender en minutos",
+    "storeName": "Nombre de tu tienda",
+    "storeNamePlaceholder": "Ej: Minimarket El Centro",
+    "ownerName": "Tu nombre",
+    "ownerNamePlaceholder": "Tu nombre completo",
+    "email": "Email",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "phone": "Teléfono",
+    "phonePlaceholder": "+593 99 000 0000",
+    "address": "Dirección",
+    "addressPlaceholder": "Av. Principal 123",
+    "password": "Contraseña",
+    "passwordPlaceholder": "Mínimo 8 caracteres",
+    "confirmPassword": "Confirmar contraseña",
+    "submit": "Crear cuenta gratis",
+    "submitting": "Creando cuenta…",
+    "haveAccount": "¿Ya tienes cuenta?",
+    "loginLink": "Inicia sesión"
+  },
+  "staff": {
+    "title": "Empleados",
+    "countLine": "{count}{limit} empleados · Plan {plan}",
+    "add": "Agregar",
+    "limitReached": "Has alcanzado el límite de {limit} usuarios del plan Básico.",
+    "limitUpgrade": "Mejora a Pro para agregar más empleados.",
+    "newTitle": "Nuevo empleado",
+    "name": "Nombre",
+    "namePlaceholder": "Nombre completo",
+    "email": "Email",
+    "emailPlaceholder": "empleado@tienda.com",
+    "password": "Contraseña",
+    "passwordPlaceholder": "Mínimo 8 caracteres",
+    "save": "Guardar empleado",
+    "saving": "Guardando…",
+    "cancel": "Cancelar",
+    "empty": "No hay empleados registrados aún.",
+    "delete": "Eliminar",
+    "deleting": "Eliminando…"
   }
 }

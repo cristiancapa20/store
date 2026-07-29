@@ -34,11 +34,11 @@ function StatusBadge({ status }: { status: string }) {
 
 function PlanBadge({ plan }: { plan: string }) {
   return plan === "pro" ? (
-    <span className="ui-badge bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300">
+    <span className="ui-tag-accent">
       Pro
     </span>
   ) : (
-    <span className="ui-badge bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/60">
+    <span className="ui-tag">
       Básico
     </span>
   )
@@ -96,13 +96,13 @@ export default async function SuperAdminPage() {
     <div className="space-y-6">
       <div>
         <h1 className="ui-page-title">Tiendas registradas</h1>
-        <p className="text-sm text-brand-600 dark:text-brand-300 mt-1">
+        <p className="text-sm text-muted mt-1">
           {orgs.length} {orgs.length === 1 ? "tienda" : "tiendas"} en la plataforma
         </p>
       </div>
 
       {orgs.length === 0 ? (
-        <div className="ui-alert-info">No hay tiendas registradas aún.</div>
+        <div className="ui-empty"><p className="text-sm">No hay tiendas registradas aún.</p></div>
       ) : (
         <>
           {/* Mobile: cards */}
@@ -113,15 +113,15 @@ export default async function SuperAdminPage() {
                   <div className="min-w-0">
                     <OrgDetailsModal
                       org={orgDetails.get(org.id)!}
-                      triggerClassName="font-semibold text-brand-900 dark:text-brand-50 truncate hover:text-brand-600 dark:hover:text-brand-300 hover:underline transition-colors block cursor-pointer"
+                      triggerClassName="font-display font-semibold text-content truncate hover:text-accent transition-colors block cursor-pointer"
                     >
                       <OrgActions org={org} />
                     </OrgDetailsModal>
-                    <p className="text-sm text-brand-600 dark:text-brand-300 truncate">
+                    <p className="text-sm text-muted truncate">
                       {org.email}
                     </p>
                     {org.phone && (
-                      <p className="text-xs text-brand-500 dark:text-brand-400">
+                      <p className="ui-num text-[11px] text-muted mt-0.5">
                         {org.phone}
                       </p>
                     )}
@@ -131,7 +131,7 @@ export default async function SuperAdminPage() {
                     <PlanBadge plan={org.plan} />
                   </div>
                 </div>
-                <div className="flex gap-4 text-xs text-brand-500 dark:text-brand-400">
+                <div className="flex gap-4 font-mono text-[11px] text-muted">
                   <span>{org.user_count} {org.user_count === 1 ? "empleado" : "empleados"}</span>
                   <span>{new Date(org.created_at).toLocaleDateString("es")}</span>
                 </div>
@@ -144,13 +144,13 @@ export default async function SuperAdminPage() {
           <div className="hidden lg:block ui-card p-0 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-brand-100 dark:border-white/10">
-                  <th className="text-left px-5 py-3.5 font-semibold text-brand-600 dark:text-brand-300">Tienda</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-brand-600 dark:text-brand-300">Email</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-brand-600 dark:text-brand-300">Plan</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-brand-600 dark:text-brand-300">Estado</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-brand-600 dark:text-brand-300">Empleados</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-brand-600 dark:text-brand-300">Registro</th>
+                <tr className="border-b border-line">
+                  <th className="text-left px-5 py-3.5 font-mono text-[10px] font-normal uppercase tracking-[0.16em] text-muted">Tienda</th>
+                  <th className="text-left px-5 py-3.5 font-mono text-[10px] font-normal uppercase tracking-[0.16em] text-muted">Email</th>
+                  <th className="text-left px-5 py-3.5 font-mono text-[10px] font-normal uppercase tracking-[0.16em] text-muted">Plan</th>
+                  <th className="text-left px-5 py-3.5 font-mono text-[10px] font-normal uppercase tracking-[0.16em] text-muted">Estado</th>
+                  <th className="text-left px-5 py-3.5 font-mono text-[10px] font-normal uppercase tracking-[0.16em] text-muted">Empleados</th>
+                  <th className="text-left px-5 py-3.5 font-mono text-[10px] font-normal uppercase tracking-[0.16em] text-muted">Registro</th>
                   <th className="px-5 py-3.5" />
                 </tr>
               </thead>
@@ -158,20 +158,20 @@ export default async function SuperAdminPage() {
                 {orgs.map((org, i) => (
                   <tr
                     key={org.id}
-                    className={`border-b border-brand-100/60 dark:border-white/5 last:border-0 ${
-                      i % 2 === 1 ? "bg-brand-50/40 dark:bg-white/[0.02]" : ""
+                    className={`border-b border-line last:border-0 transition-colors hover:bg-[var(--surface-2)] ${
+                      i % 2 === 1 ? "bg-[var(--hairline)]" : ""
                     }`}
                   >
-                    <td className="px-5 py-3.5 font-medium text-brand-900 dark:text-brand-50">
+                    <td className="px-5 py-3.5 font-medium text-content">
                       <OrgDetailsModal org={orgDetails.get(org.id)!}>
                         <OrgActions org={org} compact />
                       </OrgDetailsModal>
                     </td>
-                    <td className="px-5 py-3.5 text-brand-600 dark:text-brand-300">{org.email}</td>
+                    <td className="px-5 py-3.5 text-muted">{org.email}</td>
                     <td className="px-5 py-3.5"><PlanBadge plan={org.plan} /></td>
                     <td className="px-5 py-3.5"><StatusBadge status={org.status} /></td>
-                    <td className="px-5 py-3.5 text-brand-600 dark:text-brand-300">{org.user_count}</td>
-                    <td className="px-5 py-3.5 text-brand-500 dark:text-brand-400 text-xs">
+                    <td className="ui-num px-5 py-3.5 text-muted">{org.user_count}</td>
+                    <td className="ui-num px-5 py-3.5 text-muted text-xs">
                       {new Date(org.created_at).toLocaleDateString("es")}
                     </td>
                     <td className="px-5 py-3.5">
@@ -217,7 +217,7 @@ function OrgActions({ org, compact = false }: { org: OrgRow; compact?: boolean }
       >
         <button
           type="submit"
-          className="text-xs font-medium px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:hover:bg-brand-900/50 dark:text-brand-300 transition-colors"
+          className="text-xs font-medium px-3 min-h-[44px] inline-flex items-center rounded-lg border border-line text-content hover:text-accent hover:border-[color-mix(in_srgb,var(--accent)_45%,transparent)] transition-colors"
         >
           {org.plan === "basic" ? "→ Pro" : "→ Básico"}
         </button>

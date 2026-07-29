@@ -16,9 +16,11 @@ type StaffUser = { id: string; name: string };
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="ui-card flex flex-col gap-1 min-w-0">
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{label}</p>
-      <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100 truncate">{value}</p>
+    <div className="ui-card flex flex-col gap-2 min-w-0">
+      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted truncate">
+        {label}
+      </p>
+      <p className="ui-num text-xl text-content truncate">{value}</p>
     </div>
   );
 }
@@ -27,7 +29,7 @@ function TableSkeleton() {
   return (
     <div className="p-4 flex flex-col gap-3">
       {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl animate-pulse" />
+        <div key={i} className="h-12 bg-surface-2 rounded-xl animate-pulse" />
       ))}
     </div>
   );
@@ -234,13 +236,14 @@ export default function HistoryPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="ui-page-title">{t("title")}</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">{t("subtitle")}</p>
+          <p className="text-sm text-muted mt-1">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setShowFilters((v) => !v)}
-            className={`ui-btn-secondary text-xs px-3 gap-1.5 ${showFilters ? "bg-brand-100 dark:bg-brand-800/70 border-brand-300 dark:border-brand-600" : ""}`}
+            className="ui-btn-secondary text-xs px-3 gap-1.5"
+            style={showFilters ? { borderColor: "color-mix(in srgb, var(--accent) 45%, transparent)", color: "var(--accent)" } : undefined}
           >
             <IconFilter />
             {t("filters")}
@@ -319,7 +322,7 @@ export default function HistoryPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-brand-100 dark:border-brand-700/40">
+                  <tr className="border-b border-line">
                     {[
                       { key: "invoiceId", align: "left" },
                       { key: "client", align: "left" },
@@ -330,17 +333,17 @@ export default function HistoryPage() {
                     ].map(({ key, align }) => (
                       <th
                         key={key}
-                        className={`px-4 py-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400 whitespace-nowrap text-${align}`}
+                        className={`px-4 py-3 font-mono text-[10px] font-normal uppercase tracking-[0.16em] text-muted whitespace-nowrap text-${align}`}
                       >
                         {t(key as Parameters<typeof t>[0])}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-brand-100/60 dark:divide-brand-700/30">
+                <tbody className="divide-y divide-[var(--line)]">
                   {sales.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-14 text-center text-sm text-zinc-400">
+                      <td colSpan={6} className="px-4 py-14 text-center text-sm text-muted">
                         {hasFetched ? t("noSales") : t("loading")}
                       </td>
                     </tr>
@@ -348,23 +351,23 @@ export default function HistoryPage() {
                     sales.map((sale) => (
                       <tr
                         key={sale.id}
-                        className="hover:bg-brand-50/40 dark:hover:bg-brand-800/20 transition-colors"
+                        className="transition-colors hover:bg-[var(--surface-2)]"
                       >
-                        <td className="px-4 py-3 font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
+                        <td className="ui-num px-4 py-3 text-xs text-accent whitespace-nowrap">
                           #{sale.id.slice(0, 8).toUpperCase()}
                         </td>
-                        <td className="px-4 py-3 text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                        <td className="px-4 py-3 text-content whitespace-nowrap">
                           {t("consumerFinal")}
                         </td>
-                        <td className="px-4 py-3 text-zinc-500 dark:text-zinc-400 whitespace-nowrap text-xs">
+                        <td className="ui-num px-4 py-3 text-muted whitespace-nowrap text-xs">
                           {formatDate(sale.createdAt)}
                         </td>
-                        <td className="px-4 py-3 text-right font-semibold text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
+                        <td className="ui-num px-4 py-3 text-right text-content whitespace-nowrap">
                           ${sale.total.toFixed(2)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
+                          <span className="ui-badge-success gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
                             {t("paid")}
                           </span>
                         </td>
@@ -377,7 +380,7 @@ export default function HistoryPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               title={t("viewSale")}
-                              className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-brand-600 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors"
+                              className="inline-flex items-center justify-center w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg text-muted hover:text-accent transition-colors"
                             >
                               <IconEye />
                             </a>
@@ -386,7 +389,7 @@ export default function HistoryPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               title={t("printInvoice")}
-                              className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-brand-600 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors"
+                              className="inline-flex items-center justify-center w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg text-muted hover:text-accent transition-colors"
                             >
                               <IconPrint />
                             </a>
@@ -401,8 +404,8 @@ export default function HistoryPage() {
 
             {/* Pagination footer */}
             {total > 0 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-brand-100 dark:border-brand-700/40 flex-wrap gap-2">
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-line flex-wrap gap-2">
+                <p className="font-mono text-[11px] text-muted">
                   {t("showing", { from: fromIndex, to: toIndex, total })}
                 </p>
                 <div className="flex items-center gap-1">
@@ -410,13 +413,13 @@ export default function HistoryPage() {
                     type="button"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-muted hover:text-accent transition-colors disabled:opacity-30 disabled:pointer-events-none"
                   >
                     <IconChevronLeft />
                   </button>
                   {pageNumbers.map((pg, i) =>
                     pg === "…" ? (
-                      <span key={`dots-${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-zinc-400">
+                      <span key={`dots-${i}`} className="w-9 h-9 flex items-center justify-center text-xs text-muted">
                         …
                       </span>
                     ) : (
@@ -424,10 +427,10 @@ export default function HistoryPage() {
                         key={pg}
                         type="button"
                         onClick={() => setPage(pg)}
-                        className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
+                        className={`ui-num w-9 h-9 rounded-lg text-xs transition-colors ${
                           page === pg
-                            ? "bg-brand-600 text-white shadow-sm"
-                            : "text-zinc-600 dark:text-zinc-400 hover:bg-brand-100 dark:hover:bg-brand-800/40"
+                            ? "bg-[var(--accent-wash)] text-accent border border-[color-mix(in_srgb,var(--accent)_35%,transparent)]"
+                            : "text-muted hover:text-content"
                         }`}
                       >
                         {pg}
@@ -438,7 +441,7 @@ export default function HistoryPage() {
                     type="button"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-brand-100 dark:hover:bg-brand-800/40 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-muted hover:text-accent transition-colors disabled:opacity-30 disabled:pointer-events-none"
                   >
                     <IconChevronRight />
                   </button>

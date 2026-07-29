@@ -8,7 +8,11 @@
     "guide": "Guide",
     "profile": "Store",
     "appName": "Mi Comercio",
-    "staff": "Team"
+    "staff": "Team",
+    "planPro": "Pro plan",
+    "planBasic": "Basic plan",
+    "planBasicLimits": "500 products · 2 users",
+    "planUpgrade": "Upgrade to Pro"
   },
   "auth": {
     "title": "Store Inventory",
@@ -337,7 +341,12 @@
     "planCta": "Get started →",
     "ctaTitle": "Ready to organize your store?",
     "ctaSubtitle": "Join hundreds of businesses already selling better with Mi Comercio.",
-    "ctaBtn": "Create free account"
+    "ctaBtn": "Create free account",
+    "perMonth": "/mo",
+    "sectionFeatures": "Features",
+    "sectionHow": "How it works",
+    "sectionPlans": "Pricing",
+    "footerRights": "All rights reserved"
   },
   "errors": {
     "unauthorized": "Your session expired. Sign in again to continue.",
@@ -350,5 +359,46 @@
     "service_error": "The inventory service hit an error. Try again in a few seconds.",
     "timeout": "The inventory service took too long to respond. Try again.",
     "network": "Could not reach the inventory service. Check the connection."
+  },
+  "register": {
+    "title": "Create your free account",
+    "subtitle": "Start selling in minutes",
+    "storeName": "Store name",
+    "storeNamePlaceholder": "e.g. Downtown Minimarket",
+    "ownerName": "Your name",
+    "ownerNamePlaceholder": "Your full name",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "phone": "Phone",
+    "phonePlaceholder": "+1 555 000 0000",
+    "address": "Address",
+    "addressPlaceholder": "123 Main St",
+    "password": "Password",
+    "passwordPlaceholder": "At least 8 characters",
+    "confirmPassword": "Confirm password",
+    "submit": "Create free account",
+    "submitting": "Creating account…",
+    "haveAccount": "Already have an account?",
+    "loginLink": "Sign in"
+  },
+  "staff": {
+    "title": "Team",
+    "countLine": "{count}{limit} members · {plan} plan",
+    "add": "Add",
+    "limitReached": "You have reached the {limit}-user limit of the Basic plan.",
+    "limitUpgrade": "Upgrade to Pro to add more members.",
+    "newTitle": "New member",
+    "name": "Name",
+    "namePlaceholder": "Full name",
+    "email": "Email",
+    "emailPlaceholder": "member@store.com",
+    "password": "Password",
+    "passwordPlaceholder": "At least 8 characters",
+    "save": "Save member",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "empty": "No team members yet.",
+    "delete": "Remove",
+    "deleting": "Removing…"
   }
 }
